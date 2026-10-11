@@ -50,7 +50,7 @@ PWA para organizar a biblioteca de músicas, os eventos e os setlists de um mini
 | ID | Requisito |
 |---|---|
 | **Acesso e contas** | |
-| RF01 | Coordenadores e o admin geram links de convite com o cargo que a pessoa terá. O link vale 30 minutos e serve uma única vez. |
+| RF01 | Coordenadores e o admin geram links de convite com o cargo que a pessoa terá. O link vale 30 minutos e serve uma única vez. Ao gerar o link, quem o criou vê quanto tempo falta para ele expirar. |
 | RF02 | Quem recebe o convite cria a conta (nome completo, e-mail, senha) e entra logado. |
 | RF03 | Coordenadores e o admin geram o link de convite de **um evento** para uma pessoa de fora (convidado). |
 | RF04 | Os usuários fazem login e logout. O botão **Lembrar de mim** vem marcado por padrão: marcado, o login fica salvo no aparelho e é renovado a cada acesso, sem prazo para expirar; desmarcado, vale só enquanto a sessão do navegador estiver aberta. |
@@ -103,6 +103,7 @@ PWA para organizar a biblioteca de músicas, os eventos e os setlists de um mini
 | RF45 | Cada conta pode ter vários e-mails, todos com o mesmo peso. A pessoa adiciona e verifica cada um, e qualquer um verificado serve para entrar ou recuperar a senha. |
 | RF46 | Trocar a senha na tela de segurança, informando a senha atual. |
 | RF47 | Desativar a própria conta na tela de segurança, com confirmação pela senha. Quem a reativa é um coordenador ou o admin. |
+| RF48 | Só o admin altera o e-mail e a senha de outra pessoa. Ele adiciona, remove ou verifica e-mails de qualquer conta e envia o link de redefinição de senha para um e-mail verificado da pessoa, vendo quanto tempo falta para o link expirar. Coordenadores não fazem nenhuma dessas trocas. |
 
 ### Requisitos não funcionais
 
@@ -131,7 +132,7 @@ PWA para organizar a biblioteca de músicas, os eventos e os setlists de um mini
 | ID | Regra |
 |---|---|
 | RN01 | O acesso é só por convite. A única exceção é a conta inicial, criada direto no banco. |
-| RN02 | Um convite é de uso único, vale **30 minutos** (valor fixo, que quem convida não altera) e carrega o cargo da pessoa. Não tem e-mail: é um link. |
+| RN02 | Um convite é de uso único, vale **30 minutos** (valor fixo, que quem convida não altera) e carrega o cargo da pessoa. Não tem e-mail: é um link. Quem gera o convite vê o tempo restante até a expiração. |
 | RN03 | Cada e-mail é único no sistema e gravado em minúsculas. O `slug` de usuário, autor, instrumento e evento também é único. |
 | RN04 | O cargo é `COORDENADOR`, `MINISTERIADO` ou `CONVIDADO`. O admin (`is_admin`) é um indicador independente do cargo e não existe para convidados. |
 | RN05 | Só coordenadores e o admin convidam, alteram cargos, criam eventos, desativam e reativam contas de outras pessoas. |
@@ -248,11 +249,12 @@ PWA para organizar a biblioteca de músicas, os eventos e os setlists de um mini
 | RN71 | Um e-mail pertence a uma única conta. Só serve para entrar ou recuperar a senha depois de verificado. |
 | RN72 | Toda conta ativa tem pelo menos um e-mail verificado. O último e-mail verificado não pode ser removido. |
 | RN73 | O pedido de "esqueci a senha" responde da mesma forma exista ou não a conta, para não revelar quais e-mails estão cadastrados. |
-| RN74 | O link de redefinição de senha vale 30 minutos e serve uma única vez, igual ao convite. |
+| RN74 | O link de redefinição de senha vale 30 minutos e serve uma única vez, igual ao convite. Quando o admin gera o link para outra pessoa (RF48), ele vê quanto tempo falta para a expiração. |
 | RN75 | Trocar a senha exige a senha atual. |
 | RN76 | A própria pessoa pode desativar a própria conta, na tela de segurança, com confirmação pela senha. Valem as mesmas regras de RN06 e RN07: ela sai da escala de eventos futuros e continua vendo os dados e confirmando presença. |
 | RN77 | Só um coordenador ou o admin reativa uma conta desativada pela própria pessoa. Reativar não a recoloca na escala (RN07). |
 | RN78 | Nenhuma conta é apagada pela aplicação. O histórico de eventos, escalas, presenças e rankings sempre permanece. |
+| RN79 | Só o admin altera o e-mail e a senha de outra pessoa. Coordenadores não podem fazer isso. O admin não define senha manualmente: a troca de senha de outra pessoa é feita pelo link de redefinição enviado a um e-mail verificado dela (RN74). O admin tem acesso total ao banco, por isso a conta de admin deve ser restrita a quem é de confiança. |
 
 ## Usuários, papéis e permissões
 
@@ -276,7 +278,7 @@ PWA para organizar a biblioteca de músicas, os eventos e os setlists de um mini
 
 ## Convites e primeiro acesso
 
-Coordenadores e o admin geram um **link de convite** e o enviam à pessoa. O link tem o cargo que a pessoa terá (ministeriado ou coordenador), é de uso único e vale 30 minutos. Não há e-mail do convidado, e quem convida só escolhe o cargo.
+Coordenadores e o admin geram um **link de convite** e o enviam à pessoa. O link tem o cargo que a pessoa terá (ministeriado ou coordenador), é de uso único e vale 30 minutos. Não há e-mail do convidado, e quem convida só escolhe o cargo. Logo após gerar o link, quem o criou vê a contagem do tempo restante até a expiração.
 
 1. A pessoa abre o link e informa nome completo, e-mail e senha. O sistema cria a conta com o cargo do convite e já deixa a pessoa logada.
 2. Se o e-mail já tem conta, a API responde `409 CONTA_EXISTENTE` e o app orienta a fazer login e abrir o link de novo.
