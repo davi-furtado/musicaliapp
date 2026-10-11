@@ -248,7 +248,7 @@ PWA para organizar a biblioteca de músicas, os eventos e os setlists de um mini
 | RN71 | Um e-mail pertence a uma única conta. Só serve para entrar ou recuperar a senha depois de verificado. |
 | RN72 | Toda conta ativa tem pelo menos um e-mail verificado. O último e-mail verificado não pode ser removido. |
 | RN73 | O pedido de "esqueci a senha" responde da mesma forma exista ou não a conta, para não revelar quais e-mails estão cadastrados. |
-| RN74 | O link de redefinição vale 1 hora e serve uma única vez. |
+| RN74 | O link de redefinição de senha vale 30 minutos e serve uma única vez, igual ao convite. |
 | RN75 | Trocar a senha exige a senha atual. |
 | RN76 | A própria pessoa pode desativar a própria conta, na tela de segurança, com confirmação pela senha. Valem as mesmas regras de RN06 e RN07: ela sai da escala de eventos futuros e continua vendo os dados e confirmando presença. |
 | RN77 | Só um coordenador ou o admin reativa uma conta desativada pela própria pessoa. Reativar não a recoloca na escala (RN07). |
@@ -548,7 +548,7 @@ O banco não tem colunas de criação ou edição. As únicas datas são `evento
 |---|---|
 | `usuarios` | Pessoas. `papel` (`COORDENADOR`, `MINISTERIADO` ou `CONVIDADO`), `is_admin`, `ativo` (vazio para convidados), `foto_url`, `slug` e hash da senha. |
 | `emails_usuario` | Os e-mails de cada conta, todos com o mesmo peso, em minúsculas e únicos no sistema. `verificado` libera o login e a recuperação de senha. |
-| `redefinicoes_senha` | Pedidos de "esqueci a senha": hash do token, e-mail, expiração de 1 hora e se já foi usado. |
+| `redefinicoes_senha` | Pedidos de "esqueci a senha": hash do token, e-mail, expiração de 30 minutos e se já foi usado. |
 | `instrumentos` | Catálogo de instrumentos, com `nome` e `slug`. |
 | `usuarios_instrumentos` | Quais instrumentos cada pessoa toca. |
 | `autores` | Compositores, com página pública. |
@@ -812,7 +812,7 @@ psql "postgresql://postgres:dev@localhost:5432/musicaliapp" -c \
 - O Swagger e o `openapi.json` exigem sessão de admin.
 - A chave privada VAPID, o `JWT_SECRET`, o `CRON_SECRET` e a chave de serviço do Supabase nunca vão para o front nem para o repositório.
 - Login, aceitação de convite e pedidos de "esqueci a senha" têm limite de tentativas (rate limit).
-- O pedido de "esqueci a senha" responde igual exista ou não a conta. O token de redefinição é guardado em hash, vale 1 hora e serve uma única vez.
+- O pedido de "esqueci a senha" responde igual exista ou não a conta. O token de redefinição é guardado em hash, vale 30 minutos e serve uma única vez.
 
 ## Sprints e milestones
 
