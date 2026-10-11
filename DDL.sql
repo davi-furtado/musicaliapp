@@ -114,7 +114,6 @@ CREATE TABLE autores (
 -- A biblioteca de músicas. A cifra fica em graus; a música não guarda
 -- tom nem músicos (isso existe só em colecao_musicas e
 -- colecao_musicas_musicos).
--- arquivada: some da busca, mas preserva o histórico dos eventos.
 CREATE TABLE musicas (
     id                    UUID     NOT NULL DEFAULT gen_random_uuid(),
     titulo                TEXT     NOT NULL,
@@ -122,7 +121,6 @@ CREATE TABLE musicas (
     cifra                 TEXT,                      -- em graus
     link_youtube          TEXT,                      -- opcional
     marcada_para_revisao  BOOLEAN  NOT NULL DEFAULT FALSE,
-    arquivada             BOOLEAN  NOT NULL DEFAULT FALSE,
     versao                INTEGER  NOT NULL DEFAULT 1,
     CONSTRAINT pk_musicas PRIMARY KEY (id),
     CONSTRAINT fk_musicas_autor FOREIGN KEY (autor_id)
@@ -235,7 +233,7 @@ CREATE TABLE secoes (
 -- Música dentro da coleção. tom é o tom que será tocado (opcional).
 -- cifra NULL = usa a cifra da música; preenchida = cifra só deste setlist
 -- ("Salvar só neste setlist"), também em graus.
--- RESTRICT: música usada em setlist ou lista não é apagada (arquive).
+-- RESTRICT: música usada em setlist ou lista não pode ser apagada.
 CREATE TABLE colecao_musicas (
     id          UUID              NOT NULL DEFAULT gen_random_uuid(),
     colecao_id  UUID              NOT NULL,
@@ -383,13 +381,13 @@ CREATE INDEX ix_musicas_titulo_trgm ON musicas USING gin (titulo gin_trgm_ops);
 -- ---------------------------------------------------------------------
 
 -- Totais do dashboard. músicos = contas ativas (CONVIDADO não conta);
--- músicas = não arquivadas.
+-- músicas = todas as cadastradas.
 CREATE VIEW vw_dashboard_resumo AS
 SELECT
     (SELECT COUNT(*) FROM usuarios WHERE ativo)::INTEGER                       AS total_musicos,
-    (SELECT COUNT(*) FROM musicas WHERE NOT arquivada)::INTEGER                AS total_musicas,
+    (SELECT COUNT(*) FROM musicas)::INTEGER                                    AS total_musicas,
     (SELECT COUNT(*) FROM musicas
-      WHERE NOT arquivada AND marcada_para_revisao)::INTEGER                   AS total_para_revisao;
+      WHERE marcada_para_revisao)::INTEGER                                     AS total_para_revisao;
 
 -- Músicos ativos por instrumento. Quem toca mais de um instrumento
 -- aparece em cada um; instrumentos sem músicos aparecem com 0.
@@ -444,7 +442,6 @@ SELECT
 FROM musicas m
 LEFT JOIN autores a     ON a.id = m.autor_id
 LEFT JOIN vw_execucoes x ON x.musica_id = m.id
-WHERE NOT m.arquivada
 GROUP BY m.id, m.titulo, a.id, a.nome;
 
 -- Ranking geral de autores: soma das execuções das músicas do autor.
@@ -455,7 +452,7 @@ SELECT
     a.slug  AS autor_slug,
     COUNT(x.evento_id)::INTEGER AS execucoes
 FROM autores a
-LEFT JOIN musicas m      ON m.autor_id = a.id AND NOT m.arquivada
+LEFT JOIN musicas m      ON m.autor_id = a.id
 LEFT JOIN vw_execucoes x ON x.musica_id = m.id
 GROUP BY a.id, a.nome, a.slug;
 
@@ -471,4 +468,4 @@ INSERT INTO instrumentos (nome, slug) VALUES
     ('Baixo',      'baixo'),
     ('Teclado',    'teclado'),
     ('Bateria',    'bateria'),
-    ('Percussão',  'percussao');
+    ('Cajón',      'cajon');
