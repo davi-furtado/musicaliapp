@@ -34,7 +34,7 @@ PWA para organizar a biblioteca de músicas, os eventos e os setlists de um mini
 ## Visão geral
 
 - Mantém uma **biblioteca de músicas** com a cifra escrita em **graus do campo harmônico**, que o app mostra em qualquer tom.
-- Organiza **eventos** (cultos, ensaios, retiros) e **setlists**, com seções, escala de músicos e tom tocado em cada evento.
+- Organiza **eventos** (missas, ensaios, retiros) e **setlists**, com seções, escala de músicos e tom tocado em cada evento.
 - Mostra um **dashboard** com os números do ministério, os próximos eventos e os rankings de músicas e autores, visível a todos os membros.
 - Permite **convidar pessoas de fora** para participarem de um evento, sem acesso ao resto do ministério.
 - Atualiza os dados quando o app é aberto ou a página é recarregada.
@@ -556,7 +556,7 @@ O banco não tem colunas de criação ou edição. As únicas datas são `evento
 | `autores` | Compositores, com página pública. |
 | `musicas` | A biblioteca: título, autor, cifra em graus, link do YouTube, marca de revisão e `versao`. Sem tom e sem músicos. |
 | `status_escuta` | Status pessoal por usuário × música. |
-| `eventos` | Cultos, ensaios, retiros: nome, `slug`, data e hora, `requerir_presenca` e `cancelado`. |
+| `eventos` | Missas, ensaios, retiros: nome, `slug`, data e hora, `requerir_presenca` e `cancelado`. |
 | `eventos_convidados` | Quais eventos cada convidado pode acessar. |
 | `convites_acesso` | Convites de uso único: token, cargo, quem criou, evento (só para convidados), `usado`, `usado_por_id` e `expira_em` (30 minutos). |
 | `confirmacoes_presenca` | Presença por evento × usuário (vazio, vai ou não vai). |
