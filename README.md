@@ -70,7 +70,7 @@ PWA para organizar a biblioteca de músicas, os eventos e os setlists de um mini
 | **Músicas** | |
 | RF17 | Cadastrar uma música (título, autor, cifra, link do YouTube opcional), com aviso quando já existe uma parecida. |
 | RF18 | Escrever a cifra em graus ou em um tom qualquer; o app a guarda sempre em graus. |
-| RF19 | Ver a cifra em qualquer tom, aumentar a fonte e usar a **rolagem automática**, com a velocidade ajustável durante a rolagem. Só o botão pausa; rolar a tela com o dedo avança a música e não pausa. |
+| RF19 | Ver a cifra em qualquer tom, transpor de meio em meio tom ou de tom em tom, aumentar a fonte e usar a **rolagem automática**, com a velocidade ajustável durante a rolagem. Só o botão pausa; rolar a tela com o dedo avança a música e não pausa. |
 | RF20 | Editar qualquer música, com aviso quando outra pessoa a alterou antes. |
 | RF21 | Marcar e desmarcar uma música para revisão. |
 | RF22 | Marcar o status de escuta de uma música (Não ouvi, Ouvi, Toquei). |
@@ -182,7 +182,7 @@ PWA para organizar a biblioteca de músicas, os eventos e os setlists de um mini
 | RN30 | A música não tem tom nem músicos. A cifra é sempre guardada em graus. |
 | RN31 | Quem escreve a cifra pode usar graus ou um tom qualquer. O front converte para graus antes de enviar. |
 | RN32 | O tom só é salvo em uma música de **setlist ou lista**, e é opcional. Esse tom nunca altera a música. |
-| RN33 | Em qualquer tela o front pode mostrar a cifra em outro tom. É só visualização e nada é gravado. |
+| RN33 | Em qualquer tela o front pode mostrar a cifra em outro tom. É só visualização e nada é gravado. A opção de transpose (meio tom ou tom em tom) só fica ativa com um tom de referência: na biblioteca, o tom escolhido para ver a música; no setlist, o tom tocado do item. Em graus do campo harmônico, fica desativada. |
 | RN34 | Não existem duas músicas com o mesmo título (sem diferenciar maiúsculas) e o mesmo autor. Ao cadastrar, o app avisa sobre títulos parecidos. |
 | RN35 | A marca de revisão é só sim ou não, sem motivo. Qualquer usuário ativo marca e desmarca. Convidados não marcam. |
 | RN36 | O status de escuta é por usuário e por música, e o padrão é "Não ouvi". |
@@ -415,6 +415,7 @@ Na tela de uma música com cifra:
 
 - **Tamanho da fonte:** botões para aumentar e diminuir.
 - **Rolagem automática:** botão de iniciar e pausar, com botões de mais e menos velocidade que valem na hora, no estilo do Cifra Club. Só o botão pausa: rolar a tela com o dedo avança a música e não pausa.
+- **Transpose:** botões de meio tom e de tom, para cima e para baixo, a partir do tom de referência (veja RN33). Desativado sem tom de referência e em graus.
 - O tamanho da fonte e a velocidade ficam salvos no próprio aparelho, sem passar pelo servidor.
 
 ## Eventos, setlists e listas
@@ -821,7 +822,7 @@ Premissas: sprints de **2 semanas**. As datas de início e de fim serão definid
 |---|---|---|---|
 | S1 | **M1 Fundação** | Projeto Next com TypeScript, banco aplicado a partir do `DDL.SQL`, login com "Lembrar de mim", convites de 30 minutos, cargos, instrumentos, conta com foto, e-mails, esqueci a senha, troca de senha e desativação pela própria pessoa. Página pública. PWA instalável. | RF01, RF02, RF04 a RF09, RF42, RF44 a RF47 |
 | S2 | **M2 Biblioteca** | Cadastro e edição de músicas e autores. Cifra em graus, com conversão para qualquer tom. Busca por título com aviso de músicas parecidas. Controle de versão. Revisão e status de escuta. | RF17, RF18, RF20 a RF25 |
-| S3 | **M3 Leitura da cifra** | Tela da cifra com troca de tom, aumento de fonte e rolagem automática com velocidade ajustável. Preferências salvas no aparelho. | RF19 |
+| S3 | **M3 Leitura da cifra** | Tela da cifra com troca de tom, transpose, aumento de fonte e rolagem automática com velocidade ajustável. Preferências salvas no aparelho. | RF19 |
 | S4 | **M4 Eventos e setlists** | Eventos com `slug`, cancelamento, setlists e listas com seções. Reordenação por arrastar e soltar. Tom tocado por música. Cifra local e "Salvar na música" ou "Salvar só neste setlist". Copiar setlist. | RF26 a RF29, RF33, RF34 |
 | S5 | **M5 Escala, presença e convidados** | Escala por música e por seção, com as opções sobrescrever ou completar. Aviso de conflito de horário. Presença com Vou e Não vou. Aviso de substituição. Convite de convidado para um evento. Página de instrumento com os músicos. | RF03, RF30, RF31, RF35 a RF38 |
 | S6 | **M6 Dashboard e rankings** | Dashboard com os números, instrumentos e próximos eventos. Rankings de músicas e de autores, mais e menos tocados, com período mês, ano, geral ou um mês ou ano escolhido. | RF10 a RF16 |
