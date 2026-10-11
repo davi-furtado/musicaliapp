@@ -74,7 +74,7 @@ PWA para organizar a biblioteca de músicas, os eventos e os setlists de um mini
 | RF20 | Editar qualquer música, com aviso quando outra pessoa a alterou antes. |
 | RF21 | Marcar e desmarcar uma música para revisão. |
 | RF22 | Marcar o status de escuta de uma música (Não ouvi, Ouvi, Toquei). |
-| RF23 | Arquivar e desarquivar músicas, e apagar as que não estão em nenhum setlist ou lista. |
+| RF23 | Apagar as músicas que não estão em nenhum setlist ou lista. |
 | RF24 | Buscar músicas por título e autor, vendo a última vez em que cada uma foi tocada. |
 | RF25 | Criar, editar e apagar instrumentos e cadastrar autores. |
 | **Eventos, setlists e listas** | |
@@ -158,7 +158,7 @@ PWA para organizar a biblioteca de músicas, os eventos e os setlists de um mini
 | RN16 | Não existem dois instrumentos com o mesmo nome, nem com caixa diferente ("Violão" e "violão"). |
 | RN17 | Um instrumento novo fica disponível na hora, sem aprovação. |
 | RN18 | Um instrumento que alguém toca, ou em que alguém está escalado, não pode ser apagado. |
-| RN19 | A página de um instrumento lista as contas ativas que o tocam. |
+| RN19 | A página de um instrumento mostra o total de contas ativas que o tocam, igual ao número do dashboard, e depois a lista delas. |
 
 ### Dashboard e rankings
 
@@ -166,13 +166,13 @@ PWA para organizar a biblioteca de músicas, os eventos e os setlists de um mini
 |---|---|
 | RN20 | Todo membro logado vê o dashboard, inclusive com a conta desativada. Convidados não o veem. |
 | RN21 | O **número de músicos** é a quantidade de contas ativas. Convidados não entram. |
-| RN22 | O **número de músicas** é a quantidade de músicas não arquivadas. |
+| RN22 | O **número de músicas** é a quantidade de músicas cadastradas. |
 | RN23 | O **número de músicos por instrumento** conta as contas ativas que tocam cada instrumento. Quem toca dois instrumentos entra nos dois, e um instrumento sem músicos aparece com zero. |
 | RN24 | Uma música é **tocada** em um evento quando está no setlist **publicado** de um evento que já aconteceu e não foi cancelado. Cada evento conta uma vez por música. Listas não contam. |
 | RN25 | As execuções de um **autor** são a soma das execuções das músicas dele. Autor sem música tocada aparece com zero. |
 | RN26 | O período do ranking é o mês ou o ano do calendário, o histórico inteiro (geral) ou um mês ou ano específico. As datas são no horário local do ministério. |
 | RN27 | "Mais tocadas" lista só quem tem ao menos uma execução. "Menos tocadas" inclui quem tem zero. Empates são desempatados pela ordem alfabética. |
-| RN28 | Músicas arquivadas não aparecem nos rankings. |
+| RN28 | Todas as músicas cadastradas entram nos rankings, inclusive as nunca tocadas. |
 | RN29 | Os próximos eventos do dashboard são os que ainda vão acontecer e não foram cancelados, do mais próximo ao mais distante. |
 
 ### Músicas e cifras
@@ -186,7 +186,7 @@ PWA para organizar a biblioteca de músicas, os eventos e os setlists de um mini
 | RN34 | Não existem duas músicas com o mesmo título (sem diferenciar maiúsculas) e o mesmo autor. Ao cadastrar, o app avisa sobre títulos parecidos. |
 | RN35 | A marca de revisão é só sim ou não, sem motivo. Qualquer usuário ativo marca e desmarca. Convidados não marcam. |
 | RN36 | O status de escuta é por usuário e por música, e o padrão é "Não ouvi". |
-| RN37 | Uma música que aparece em algum setlist ou lista não pode ser apagada. Ela pode ser **arquivada**, o que a tira da busca e dos rankings e preserva o histórico. |
+| RN37 | Uma música que aparece em algum setlist ou lista não pode ser apagada. Ela continua no banco e no histórico dos eventos. |
 | RN38 | Cada música e cada item de setlist tem um número de versão. Se a versão mudou desde que a pessoa abriu a tela, a gravação é recusada com aviso. |
 | RN39 | A música pode ter um link do YouTube, que é opcional. O app não guarda arquivos de áudio. |
 
@@ -266,7 +266,7 @@ PWA para organizar a biblioteca de músicas, os eventos e os setlists de um mini
 **Qualquer usuário ativo** pode:
 
 - cadastrar e editar músicas e cifras, e definir o tom de uma música no setlist;
-- marcar e desmarcar músicas para revisão e arquivá-las;
+- marcar e desmarcar músicas para revisão;
 - escalar músicos nos setlists e publicar setlists de eventos;
 - criar e editar instrumentos e autores;
 - alterar nome, e-mails, senha, foto e os instrumentos que toca;
@@ -309,7 +309,7 @@ Página inicial do app para **todos os membros logados**. Convidados não a veem
 | Indicador | O que mostra |
 |---|---|
 | **Músicos** | Contas ativas. |
-| **Músicas** | Músicas não arquivadas. |
+| **Músicas** | Todas as músicas cadastradas. |
 | **Para revisão** | Músicas marcadas para revisão. |
 | **Músicos por instrumento** | Contas ativas que tocam cada instrumento. Quem toca dois instrumentos entra nos dois, e instrumentos sem músicos aparecem com zero. Cada barra leva à página do instrumento. |
 | **Próximos eventos** | Nome, data e hora, e os botões **Vou** e **Não vou** (a resposta pode ser trocada). Cada item leva à página do evento. |
@@ -331,7 +331,7 @@ As duas têm seletor de período: **mês** (o atual), **ano** (o atual), **geral
 
 ### Como se conta
 
-Uma música é **tocada** quando está no setlist publicado de um evento que já aconteceu e não foi cancelado, uma vez por evento. As execuções de um autor são a soma das execuções das músicas dele. Músicas arquivadas ficam de fora, e as nunca tocadas entram com zero.
+Uma música é **tocada** quando está no setlist publicado de um evento que já aconteceu e não foi cancelado, uma vez por evento. As execuções de um autor são a soma das execuções das músicas dele. As nunca tocadas entram com zero.
 
 A view `vw_execucoes` tem uma linha por música tocada em cada evento. O ranking de um período filtra essa view pela data do evento, em uma consulta como esta (músicas):
 
@@ -341,8 +341,7 @@ FROM musicas m
 LEFT JOIN autores a      ON a.id = m.autor_id
 LEFT JOIN vw_execucoes x ON x.musica_id = m.id
                         AND x.data_evento >= :inicio AND x.data_evento < :fim
-WHERE NOT m.arquivada
-  AND (:autor_id IS NULL OR m.autor_id = :autor_id)
+WHERE (:autor_id IS NULL OR m.autor_id = :autor_id)
 GROUP BY m.id, m.titulo, a.nome
 ORDER BY execucoes DESC, m.titulo;   -- execucoes ASC para as menos tocadas
 ```
@@ -367,9 +366,9 @@ O botão **"+"** abre o formulário de nova música. Ao digitar o título, o app
 
 Qualquer usuário ativo edita uma música. Cada música tem um número de versão: a gravação só é aceita se a versão que a pessoa leu ainda for a atual. Se outra pessoa alterou antes, a API responde `409 CONFLITO_VERSAO` e o app mostra o aviso.
 
-### Arquivar e apagar
+### Apagar
 
-Uma música que aparece em algum setlist ou lista não pode ser apagada (o banco impede). Para tirá-la de circulação, a pessoa a **arquiva**: ela some da busca e dos rankings, e os eventos antigos continuam mostrando-a. Uma música que não está em nenhuma coleção pode ser apagada.
+Uma música que aparece em algum setlist ou lista não pode ser apagada (o banco impede), e continua no histórico dos eventos. Uma música que não está em nenhuma coleção pode ser apagada.
 
 ### Revisão
 
@@ -552,7 +551,7 @@ O banco não tem colunas de criação ou edição. As únicas datas são `evento
 | `instrumentos` | Catálogo de instrumentos, com `nome` e `slug`. |
 | `usuarios_instrumentos` | Quais instrumentos cada pessoa toca. |
 | `autores` | Compositores, com página pública. |
-| `musicas` | A biblioteca: título, autor, cifra em graus, link do YouTube, marca de revisão, `arquivada` e `versao`. Sem tom e sem músicos. |
+| `musicas` | A biblioteca: título, autor, cifra em graus, link do YouTube, marca de revisão e `versao`. Sem tom e sem músicos. |
 | `status_escuta` | Status pessoal por usuário × música. |
 | `eventos` | Cultos, ensaios, retiros: nome, `slug`, data e hora, `requerir_presenca` e `cancelado`. |
 | `eventos_convidados` | Quais eventos cada convidado pode acessar. |
@@ -574,7 +573,7 @@ O banco não tem colunas de criação ou edição. As únicas datas são `evento
 | `vw_ranking_musicas_geral` | Execuções por música, em todo o histórico. |
 | `vw_ranking_autores_geral` | Execuções por autor, em todo o histórico. |
 
-Os ids são `UUID` gerados pelo banco (`gen_random_uuid()`), então um `INSERT` direto no `psql` funciona sem informar o id. A parte 4 do `DDL.SQL` cadastra os instrumentos iniciais: Voz, Violão, Guitarra, Baixo, Teclado, Bateria e Percussão.
+Os ids são `UUID` gerados pelo banco (`gen_random_uuid()`), então um `INSERT` direto no `psql` funciona sem informar o id. A parte 4 do `DDL.SQL` cadastra os instrumentos iniciais: Voz, Violão, Guitarra, Baixo, Teclado, Bateria e Cajón.
 
 ### Diagrama
 
@@ -648,9 +647,9 @@ A especificação é gerada a partir dos **schemas Zod** que já validam as requ
 | Rankings | `GET /api/rankings/musicas`, `GET /api/rankings/autores` (parâmetros: `periodo=mes\|ano\|geral`, `ano`, `mes`, `autor`, `ordem=desc\|asc`, `pagina`) |
 | Usuários | `GET /api/usuarios`, `GET /api/usuarios/{slug}`, `PATCH /api/usuarios/{id}` (cargo), `PATCH /api/usuarios/{id}/ativo` (desativar e reativar), `PUT /api/usuarios/{id}/instrumentos` |
 | Convites | `POST /api/convites` (com `papel` e, para convidados, `evento_id`) |
-| Instrumentos | `GET, POST /api/instrumentos`, `GET /api/instrumentos/{slug}` (com os músicos), `PATCH, DELETE /api/instrumentos/{id}` |
+| Instrumentos | `GET, POST /api/instrumentos`, `GET /api/instrumentos/{slug}` (com o total e os músicos), `PATCH, DELETE /api/instrumentos/{id}` |
 | Autores | `GET, POST /api/autores`, `GET /api/autores/{slug}` |
-| Músicas | `GET, POST /api/musicas?busca=&autor=&revisao=`, `GET /api/musicas/parecidas?titulo=`, `GET, PATCH, DELETE /api/musicas/{id}`, `PUT /api/musicas/{id}/revisao`, `PUT /api/musicas/{id}/arquivada`, `PUT /api/musicas/{id}/status-escuta` |
+| Músicas | `GET, POST /api/musicas?busca=&autor=&revisao=`, `GET /api/musicas/parecidas?titulo=`, `GET, PATCH, DELETE /api/musicas/{id}`, `PUT /api/musicas/{id}/revisao`, `PUT /api/musicas/{id}/status-escuta` |
 | Eventos | `GET, POST /api/eventos`, `GET /api/eventos/{slug}`, `PATCH, DELETE /api/eventos/{id}` (inclui cancelar), `POST /api/eventos/{id}/publicar`, `POST /api/eventos/{id}/copiar-setlist` |
 | Convidados do evento | `GET /api/eventos/{id}/convidados`, `DELETE /api/eventos/{id}/convidados/{usuarioId}` |
 | Presença | `PUT /api/eventos/{id}/presenca` |
@@ -821,7 +820,7 @@ Premissas: sprints de **2 semanas**. As datas de início e de fim serão definid
 | Sprint | Milestone | Entrega principal | Requisitos |
 |---|---|---|---|
 | S1 | **M1 Fundação** | Projeto Next com TypeScript, banco aplicado a partir do `DDL.SQL`, login com "Lembrar de mim", convites de 30 minutos, cargos, instrumentos, conta com foto, e-mails, esqueci a senha, troca de senha e desativação pela própria pessoa. Página pública. PWA instalável. | RF01, RF02, RF04 a RF09, RF42, RF44 a RF47 |
-| S2 | **M2 Biblioteca** | Cadastro e edição de músicas e autores. Cifra em graus, com conversão para qualquer tom. Busca por título com aviso de músicas parecidas. Controle de versão. Revisão, arquivar e status de escuta. | RF17, RF18, RF20 a RF25 |
+| S2 | **M2 Biblioteca** | Cadastro e edição de músicas e autores. Cifra em graus, com conversão para qualquer tom. Busca por título com aviso de músicas parecidas. Controle de versão. Revisão e status de escuta. | RF17, RF18, RF20 a RF25 |
 | S3 | **M3 Leitura da cifra** | Tela da cifra com troca de tom, aumento de fonte e rolagem automática com velocidade ajustável. Preferências salvas no aparelho. | RF19 |
 | S4 | **M4 Eventos e setlists** | Eventos com `slug`, cancelamento, setlists e listas com seções. Reordenação por arrastar e soltar. Tom tocado por música. Cifra local e "Salvar na música" ou "Salvar só neste setlist". Copiar setlist. | RF26 a RF29, RF33, RF34 |
 | S5 | **M5 Escala, presença e convidados** | Escala por música e por seção, com as opções sobrescrever ou completar. Aviso de conflito de horário. Presença com Vou e Não vou. Aviso de substituição. Convite de convidado para um evento. Página de instrumento com os músicos. | RF03, RF30, RF31, RF35 a RF38 |
