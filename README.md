@@ -18,7 +18,7 @@ PWA para organizar a biblioteca de músicas, os eventos e os setlists de um mini
 12. [Confirmação de presença](#confirmação-de-presença)
 13. [Notificações push](#notificações-push)
 14. [PWA e uso offline](#pwa-e-uso-offline)
-15. [Desativação e exclusão de contas](#desativação-e-exclusão-de-contas)
+15. [Desativação de contas](#desativação-de-contas)
 16. [Stack técnica](#stack-técnica)
 17. [Modelo de dados](#modelo-de-dados)
 18. [API e Swagger](#api-e-swagger)
@@ -102,7 +102,7 @@ PWA para organizar a biblioteca de músicas, os eventos e os setlists de um mini
 | RF44 | Esqueci a senha: a pessoa informa um e-mail verificado da conta e recebe um link para criar nova senha. |
 | RF45 | Cada conta pode ter vários e-mails, todos com o mesmo peso. A pessoa adiciona e verifica cada um, e qualquer um verificado serve para entrar ou recuperar a senha. |
 | RF46 | Trocar a senha na tela de segurança, informando a senha atual. |
-| RF47 | Apagar a própria conta na tela de segurança, com confirmação pela senha. |
+| RF47 | Desativar a própria conta na tela de segurança, com confirmação pela senha. Quem a reativa é um coordenador ou o admin. |
 
 ### Requisitos não funcionais
 
@@ -134,7 +134,7 @@ PWA para organizar a biblioteca de músicas, os eventos e os setlists de um mini
 | RN02 | Um convite é de uso único, vale **30 minutos** (valor fixo, que quem convida não altera) e carrega o cargo da pessoa. Não tem e-mail: é um link. |
 | RN03 | Cada e-mail é único no sistema e gravado em minúsculas. O `slug` de usuário, autor, instrumento e evento também é único. |
 | RN04 | O cargo é `COORDENADOR`, `MINISTERIADO` ou `CONVIDADO`. O admin (`is_admin`) é um indicador independente do cargo e não existe para convidados. |
-| RN05 | Só coordenadores e o admin convidam, alteram cargos, criam eventos e desativam ou reativam contas. |
+| RN05 | Só coordenadores e o admin convidam, alteram cargos, criam eventos, desativam e reativam contas de outras pessoas. |
 | RN06 | Conta desativada (`ativo = false`) só visualiza os dados e confirma presença. |
 | RN07 | Desativar uma conta tira a pessoa da escala dos setlists de eventos futuros. Reativar não a recoloca. |
 | RN08 | Todo usuário ativo pode editar cifra e tom, marcar revisão, escalar músicos, publicar setlists, criar e editar instrumentos, anexar a foto de perfil e escolher seus instrumentos. |
@@ -240,7 +240,7 @@ PWA para organizar a biblioteca de músicas, os eventos e os setlists de um mini
 | RN68 | O Swagger e a especificação OpenAPI só são acessíveis ao admin. |
 | RN69 | Toda rota decide o acesso por uma função central que considera o cargo, o estado `ativo` e, para convidados, o evento. |
 
-### Conta, e-mails e exclusão
+### Conta, e-mails e desativação
 
 | ID | Regra |
 |---|---|
@@ -250,10 +250,9 @@ PWA para organizar a biblioteca de músicas, os eventos e os setlists de um mini
 | RN73 | O pedido de "esqueci a senha" responde da mesma forma exista ou não a conta, para não revelar quais e-mails estão cadastrados. |
 | RN74 | O link de redefinição vale 1 hora e serve uma única vez. |
 | RN75 | Trocar a senha exige a senha atual. |
-| RN76 | Apagar a conta é uma anonimização: o nome vira "Ex-membro", os e-mails, a senha, a foto e os instrumentos são removidos, e a conta não pode mais entrar. |
-| RN77 | Ao apagar a conta, a pessoa sai da escala de eventos futuros e as confirmações pendentes dela são removidas. Escalas e presenças de eventos passados ficam no histórico, com o nome "Ex-membro". |
-| RN78 | Só a própria pessoa apaga a conta dela. Coordenadores e o admin desativam contas, mas não as apagam. |
-| RN79 | Uma conta apagada não tem mais página pública. |
+| RN76 | A própria pessoa pode desativar a própria conta, na tela de segurança, com confirmação pela senha. Valem as mesmas regras de RN06 e RN07: ela sai da escala de eventos futuros e continua vendo os dados e confirmando presença. |
+| RN77 | Só um coordenador ou o admin reativa uma conta desativada pela própria pessoa. Reativar não a recoloca na escala (RN07). |
+| RN78 | Nenhuma conta é apagada pela aplicação. O histórico de eventos, escalas, presenças e rankings sempre permanece. |
 
 ## Usuários, papéis e permissões
 
@@ -506,24 +505,19 @@ Gere as chaves com `npx web-push generate-vapid-keys`.
 - Cache local de dados em IndexedDB/LocalStorage. O contador de versão de cada registro indica quando o cache está desatualizado.
 - A leitura offline inclui a cifra, o tamanho da fonte e a rolagem automática, que não dependem de rede.
 
-## Desativação e exclusão de contas
+## Desativação de contas
 
 Desativar uma conta (`ativo = false`) tira a pessoa da **escala dos setlists de eventos futuros**, e a vaga fica em aberto, com o mesmo aviso de substituição da presença. A pessoa continua vendo os dados e confirmando presença. Reativar a conta **não** a recoloca na escala.
 
-Coordenadores e o admin podem desativar e reativar contas. Convidados não têm o campo `ativo`: para encerrar o acesso de um convidado, o coordenador o remove do evento.
+Coordenadores e o admin podem desativar e reativar contas. A própria pessoa também pode desativar a conta dela, mas só um coordenador ou o admin a reativa. Convidados não têm o campo `ativo`: para encerrar o acesso de um convidado, o coordenador o remove do evento.
 
-### Exclusão da conta
+### Desativação pela própria pessoa
 
-A própria pessoa apaga a conta dela, na tela de segurança, com confirmação pela senha. A conta é **anonimizada**, e não removida do banco, para que o histórico de eventos e os rankings continuem íntegros:
-
-- o nome vira "Ex-membro" e a página pública deixa de existir;
-- e-mails, senha, foto e instrumentos são removidos;
-- a pessoa sai da escala dos eventos futuros, e as confirmações pendentes são apagadas;
-- escalas e presenças de eventos passados continuam, com o nome "Ex-membro".
+A pessoa desativa a própria conta na tela de segurança, com confirmação pela senha. A conta não é apagada: ela fica inativa, sai da escala dos eventos futuros e pode continuar vendo os dados e confirmando presença. Só um coordenador ou o admin a reativa.
 
 ### Conta e segurança
 
-Na tela de segurança, a pessoa vê e gerencia os próprios e-mails, troca a senha e apaga a conta. A recuperação de senha ("esqueci a senha") fica na tela de login.
+Na tela de segurança, a pessoa vê e gerencia os próprios e-mails, troca a senha e desativa a própria conta. A recuperação de senha ("esqueci a senha") fica na tela de login.
 
 ## Stack técnica
 
@@ -552,7 +546,7 @@ O banco não tem colunas de criação ou edição. As únicas datas são `evento
 
 | Tabela | Propósito |
 |---|---|
-| `usuarios` | Pessoas. `papel` (`COORDENADOR`, `MINISTERIADO` ou `CONVIDADO`), `is_admin`, `ativo` (vazio para convidados), `anonimizada`, `foto_url`, `slug` e hash da senha (vazio só se anonimizada). |
+| `usuarios` | Pessoas. `papel` (`COORDENADOR`, `MINISTERIADO` ou `CONVIDADO`), `is_admin`, `ativo` (vazio para convidados), `foto_url`, `slug` e hash da senha. |
 | `emails_usuario` | Os e-mails de cada conta, todos com o mesmo peso, em minúsculas e únicos no sistema. `verificado` libera o login e a recuperação de senha. |
 | `redefinicoes_senha` | Pedidos de "esqueci a senha": hash do token, e-mail, expiração de 1 hora e se já foi usado. |
 | `instrumentos` | Catálogo de instrumentos, com `nome` e `slug`. |
@@ -619,7 +613,6 @@ Estão na parte 2 do `DDL.SQL` e foram testadas tentando violá-las:
 - O `slug` só aceita minúsculas, números e hífens.
 - Nome de instrumento e de autor **únicos sem diferenciar maiúsculas**.
 - Cada e-mail existe uma única vez no sistema, em minúsculas e com formato mínimo.
-- Conta sem senha só existe se foi anonimizada.
 - Não existem duas músicas com o mesmo título e o mesmo autor, sem diferenciar maiúsculas.
 - Tom tocado no formato `D`, `F#m` ou `Bb`.
 - Em `colecoes`: SETLIST exige evento e não tem dono nem nome; LISTA exige dono e nome, não tem evento e não é publicada.
@@ -721,7 +714,7 @@ Resposta de `GET /api/dashboard?periodo=mes`:
 │  │  │  ├─ usuarios/[slug]/
 │  │  │  ├─ eventos/[slug]/  # evento, setlist, escala e presença
 │  │  │  ├─ listas/
-│  │  │  └─ conta/           # nome, e-mails, senha, foto, instrumentos e exclusão
+│  │  │  └─ conta/           # nome, e-mails, senha, foto, instrumentos e desativação
 │  │  ├─ admin/              # gestão de usuários e convites
 │  │  ├─ docs/               # Swagger UI (só admin)
 │  │  └─ api/                # Route Handlers
@@ -827,7 +820,7 @@ Premissas: sprints de **2 semanas**. As datas de início e de fim serão definid
 
 | Sprint | Milestone | Entrega principal | Requisitos |
 |---|---|---|---|
-| S1 | **M1 Fundação** | Projeto Next com TypeScript, banco aplicado a partir do `DDL.SQL`, login com "Lembrar de mim", convites de 30 minutos, cargos, instrumentos, conta com foto, e-mails, esqueci a senha, troca de senha e exclusão da conta. Página pública. PWA instalável. | RF01, RF02, RF04 a RF09, RF42, RF44 a RF47 |
+| S1 | **M1 Fundação** | Projeto Next com TypeScript, banco aplicado a partir do `DDL.SQL`, login com "Lembrar de mim", convites de 30 minutos, cargos, instrumentos, conta com foto, e-mails, esqueci a senha, troca de senha e desativação pela própria pessoa. Página pública. PWA instalável. | RF01, RF02, RF04 a RF09, RF42, RF44 a RF47 |
 | S2 | **M2 Biblioteca** | Cadastro e edição de músicas e autores. Cifra em graus, com conversão para qualquer tom. Busca por título com aviso de músicas parecidas. Controle de versão. Revisão, arquivar e status de escuta. | RF17, RF18, RF20 a RF25 |
 | S3 | **M3 Leitura da cifra** | Tela da cifra com troca de tom, aumento de fonte e rolagem automática com velocidade ajustável. Preferências salvas no aparelho. | RF19 |
 | S4 | **M4 Eventos e setlists** | Eventos com `slug`, cancelamento, setlists e listas com seções. Reordenação por arrastar e soltar. Tom tocado por música. Cifra local e "Salvar na música" ou "Salvar só neste setlist". Copiar setlist. | RF26 a RF29, RF33, RF34 |
