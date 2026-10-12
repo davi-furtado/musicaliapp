@@ -19,8 +19,8 @@
 --  * "ordem" é DOUBLE PRECISION: o drag-and-drop grava a média entre
 --    os vizinhos e só atualiza uma linha.
 --  * Cifras são guardadas em GRAUS do campo harmônico (Nashville
---    Number System: 1 2m 3m 4 5 6m ...). A música não tem tom: o tom só
---    existe em colecao_musicas (setlists e listas).
+--    Number System: 1 2m 3m 4 5 6m ...). A música tem tom original opcional, só
+--    informativo; o tom tocado existe só em colecao_musicas (setlists e listas).
 --  * Valores de enum são VARCHAR validados na PARTE 2:
 --      papel:   COORDENADOR | MINISTERIADO | CONVIDADO
 --      tipo:    SETLIST | LISTA
@@ -125,14 +125,15 @@ CREATE TABLE autores (
     CONSTRAINT uq_autores_slug UNIQUE (slug)
 );
 
--- A biblioteca de músicas. A cifra fica em graus; a música não guarda
--- tom nem músicos (isso existe só em colecao_musicas e
--- colecao_musicas_musicos).
+-- A biblioteca de músicas. A cifra fica em graus. tom_original é opcional
+-- e só informativo: não altera a cifra. Músicos não ficam aqui (existem só
+-- em colecao_musicas_musicos). O tom tocado fica em colecao_musicas.
 CREATE TABLE musicas (
     id                    UUID     NOT NULL DEFAULT gen_random_uuid(),
     titulo                TEXT     NOT NULL,
     autor_id              UUID,
     cifra                 TEXT,                      -- em graus
+    tom_original          TEXT,                      -- opcional, só informativo
     link_youtube          TEXT,                      -- opcional
     marcada_para_revisao  BOOLEAN  NOT NULL DEFAULT FALSE,
     versao                INTEGER  NOT NULL DEFAULT 1,
@@ -358,6 +359,8 @@ ALTER TABLE eventos ADD CONSTRAINT ck_eventos_slug
 -- Tom tocado: nota A-G, # ou b opcionais, "m" para menor (D, F#m, Bb).
 ALTER TABLE colecao_musicas ADD CONSTRAINT ck_cm_tom
     CHECK (tom IS NULL OR tom ~ '^[A-G][#b]?m?$');
+ALTER TABLE musicas ADD CONSTRAINT ck_musicas_tom_original
+    CHECK (tom_original IS NULL OR tom_original ~ '^[A-G][#b]?m?$');
 
 -- Contadores de versão começam em 1.
 ALTER TABLE musicas ADD CONSTRAINT ck_musicas_versao CHECK (versao >= 1);
