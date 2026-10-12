@@ -12,7 +12,7 @@
 -- Convenções
 --  * ids são UUID gerados pelo banco (gen_random_uuid()).
 --  * As únicas colunas de data/hora são eventos.data_evento e
---    convites_acesso.expira_em e redefinicoes_senha.expira_em.
+--    convites_acesso.expira_em e codigos_email.expira_em.
 --    Não há colunas de criação ou edição.
 --  * "versao" é um contador inteiro: a API só grava se a versão que o
 --    cliente leu ainda for a atual, e incrementa a cada gravação.
@@ -43,41 +43,55 @@ CREATE TABLE usuarios (
     id           UUID         NOT NULL DEFAULT gen_random_uuid(),
     nome         TEXT         NOT NULL,                -- nome completo
     slug         TEXT         NOT NULL,                -- página pública
+    email        TEXT         NOT NULL,                -- sempre em minúsculas
     senha_hash   TEXT         NOT NULL,
-    foto_url     TEXT,                                 -- arquivo no Storage
     papel        VARCHAR(20)  NOT NULL DEFAULT 'MINISTERIADO',
     is_admin     BOOLEAN      NOT NULL DEFAULT FALSE,
     ativo        BOOLEAN      DEFAULT TRUE,            -- NULL só para CONVIDADO
     CONSTRAINT pk_usuarios PRIMARY KEY (id),
-    CONSTRAINT uq_usuarios_slug UNIQUE (slug)
+    CONSTRAINT uq_usuarios_slug UNIQUE (slug),
+    CONSTRAINT uq_usuarios_email UNIQUE (email)
 );
 
--- E-mails da conta. Todos têm o mesmo peso (não há e-mail principal).
--- Um e-mail pertence a uma única conta; só serve para entrar ou recuperar
--- a senha depois de verificado.
-CREATE TABLE emails_usuario (
-    id          UUID     NOT NULL DEFAULT gen_random_uuid(),
+-- Foto de perfil, redimensionada pelo servidor antes de gravar.
+-- Fica numa tabela própria para não pesar nas consultas de usuarios.
+CREATE TABLE fotos_perfil (
     usuario_id  UUID     NOT NULL,
-    email       TEXT     NOT NULL,                     -- sempre em minúsculas
-    verificado  BOOLEAN  NOT NULL DEFAULT FALSE,
-    CONSTRAINT pk_emails_usuario PRIMARY KEY (id),
-    CONSTRAINT uq_emails_email UNIQUE (email),
-    CONSTRAINT fk_emails_usuario FOREIGN KEY (usuario_id)
+    conteudo    BYTEA    NOT NULL,
+    tipo_mime   VARCHAR(20) NOT NULL,
+    CONSTRAINT pk_fotos_perfil PRIMARY KEY (usuario_id),
+    CONSTRAINT fk_fotos_perfil_usuario FOREIGN KEY (usuario_id)
         REFERENCES usuarios (id) ON DELETE CASCADE
 );
 
--- Pedidos de "esqueci a senha". Só o hash do token é guardado.
--- Vale 30 minutos e serve uma única vez.
-CREATE TABLE redefinicoes_senha (
-    id          UUID       NOT NULL DEFAULT gen_random_uuid(),
-    email_id    UUID       NOT NULL,
-    token_hash  TEXT       NOT NULL,
-    expira_em   TIMESTAMP  NOT NULL DEFAULT (CURRENT_TIMESTAMP + INTERVAL '30 minutes'),
-    usado       BOOLEAN    NOT NULL DEFAULT FALSE,
-    CONSTRAINT pk_redefinicoes_senha PRIMARY KEY (id),
-    CONSTRAINT uq_redefinicoes_token UNIQUE (token_hash),
-    CONSTRAINT fk_redefinicoes_email FOREIGN KEY (email_id)
-        REFERENCES emails_usuario (id) ON DELETE CASCADE
+-- Códigos de 6 dígitos enviados por e-mail. Só o hash é guardado.
+-- CADASTRO: antes de a conta existir (usuario_id NULL).
+-- REDEFINICAO: "esqueci a senha" ou troca de e-mail pelo admin.
+-- Valem 30 minutos, servem uma única vez e têm contador de tentativas.
+CREATE TABLE codigos_email (
+    id           UUID         NOT NULL DEFAULT gen_random_uuid(),
+    usuario_id   UUID,
+    email        TEXT         NOT NULL,
+    finalidade   VARCHAR(12)  NOT NULL,
+    codigo_hash  TEXT         NOT NULL,
+    expira_em    TIMESTAMP    NOT NULL DEFAULT (CURRENT_TIMESTAMP + INTERVAL '30 minutes'),
+    usado        BOOLEAN      NOT NULL DEFAULT FALSE,
+    tentativas   INTEGER      NOT NULL DEFAULT 0,
+    CONSTRAINT pk_codigos_email PRIMARY KEY (id),
+    CONSTRAINT fk_codigos_email_usuario FOREIGN KEY (usuario_id)
+        REFERENCES usuarios (id) ON DELETE CASCADE
+);
+
+-- Códigos de recuperação, gerados pela própria pessoa e mostrados uma vez.
+-- Só o hash é guardado. Cada código serve uma única vez.
+CREATE TABLE codigos_recuperacao (
+    id           UUID     NOT NULL DEFAULT gen_random_uuid(),
+    usuario_id   UUID     NOT NULL,
+    codigo_hash  TEXT     NOT NULL,
+    usado        BOOLEAN  NOT NULL DEFAULT FALSE,
+    CONSTRAINT pk_codigos_recuperacao PRIMARY KEY (id),
+    CONSTRAINT fk_codigos_rec_usuario FOREIGN KEY (usuario_id)
+        REFERENCES usuarios (id) ON DELETE CASCADE
 );
 
 -- Catálogo de instrumentos. Cada instrumento tem uma tela própria
@@ -319,8 +333,17 @@ ALTER TABLE colecoes ADD CONSTRAINT ck_colecoes_tipo_consistente CHECK (
 );
 
 -- E-mail em minúsculas e com formato mínimo (algo@algo).
-ALTER TABLE emails_usuario ADD CONSTRAINT ck_emails_formato
+ALTER TABLE usuarios ADD CONSTRAINT ck_usuarios_email
     CHECK (email = lower(email) AND email LIKE '%_@_%');
+ALTER TABLE fotos_perfil ADD CONSTRAINT ck_fotos_tipo
+    CHECK (tipo_mime IN ('image/webp', 'image/jpeg'));
+ALTER TABLE codigos_email ADD CONSTRAINT ck_codigos_email_formato
+    CHECK (email = lower(email) AND email LIKE '%_@_%');
+ALTER TABLE codigos_email ADD CONSTRAINT ck_codigos_finalidade CHECK (
+    (finalidade = 'CADASTRO' AND usuario_id IS NULL)
+    OR
+    (finalidade = 'REDEFINICAO' AND usuario_id IS NOT NULL)
+);
 
 -- Slugs: minúsculas, números e hífens.
 ALTER TABLE usuarios ADD CONSTRAINT ck_usuarios_slug
@@ -368,8 +391,9 @@ CREATE INDEX ix_cm_secao ON colecao_musicas (secao_id);
 CREATE INDEX ix_cmm_usuario ON colecao_musicas_musicos (usuario_id);
 CREATE INDEX ix_cmm_instrumento ON colecao_musicas_musicos (instrumento_id);
 CREATE INDEX ix_device_usuario ON device_tokens (usuario_id);
-CREATE INDEX ix_emails_usuario ON emails_usuario (usuario_id);
-CREATE INDEX ix_redefinicoes_email ON redefinicoes_senha (email_id);
+CREATE INDEX ix_codigos_email_usuario ON codigos_email (usuario_id);
+CREATE INDEX ix_codigos_email_email ON codigos_email (email);
+CREATE INDEX ix_codigos_rec_usuario ON codigos_recuperacao (usuario_id);
 
 -- Busca por título aproximado (aviso de música parecida ao cadastrar).
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
