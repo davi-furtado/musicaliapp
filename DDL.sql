@@ -155,7 +155,7 @@ CREATE TABLE status_escuta (
         REFERENCES musicas (id) ON DELETE CASCADE
 );
 
--- Cultos, ensaios, retiros. slug = nome + data (ex.: missa-de-domingo-2026-10-12).
+-- Missas, ensaios, retiros. slug = nome + data (ex.: missa-de-domingo-2026-10-12).
 CREATE TABLE eventos (
     id                 UUID       NOT NULL DEFAULT gen_random_uuid(),
     nome               TEXT       NOT NULL,
