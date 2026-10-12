@@ -41,7 +41,7 @@ PWA para organizar a biblioteca de músicas, os eventos e os setlists de um mini
 - Funciona offline **somente para leitura**, com cache do que já foi carregado.
 - Avisa por notificação push quando um setlist é **publicado** e lembra de confirmar presença na véspera.
 - Cada usuário, autor, instrumento e evento tem uma página própria, acessada por um `slug` amigável.
-- Cada pessoa pode ter vários e-mails e recuperar a senha por qualquer um deles verificado.
+- Cada conta tem um e-mail, confirmado por código. A senha pode ser recuperada por código enviado ao e-mail ou por códigos de recuperação guardados pela própria pessoa.
 
 ## Requisitos
 
@@ -51,7 +51,7 @@ PWA para organizar a biblioteca de músicas, os eventos e os setlists de um mini
 |---|---|
 | **Acesso e contas** | |
 | RF01 | Coordenadores e o admin geram links de convite com o cargo que a pessoa terá. O link vale 30 minutos e serve uma única vez. Ao gerar o link, quem o criou vê quanto tempo falta para ele expirar. |
-| RF02 | Quem recebe o convite cria a conta (nome completo, e-mail, senha) e entra logado. |
+| RF02 | Quem recebe o convite informa nome completo, e-mail e senha, confirma o código enviado ao e-mail e entra logado. A conta só é criada depois da confirmação. |
 | RF03 | Coordenadores e o admin geram o link de convite de **um evento** para uma pessoa de fora (convidado). |
 | RF04 | Os usuários fazem login e logout. O botão **Lembrar de mim** vem marcado por padrão: marcado, o login fica salvo no aparelho e é renovado a cada acesso, sem prazo para expirar; desmarcado, vale só enquanto a sessão do navegador estiver aberta. |
 | RF05 | Cada pessoa tem uma área de conta, onde altera nome, senha e **foto de perfil**. |
@@ -99,11 +99,12 @@ PWA para organizar a biblioteca de músicas, os eventos e os setlists de um mini
 | **API** | |
 | RF43 | O admin consulta a documentação da API (Swagger). |
 | **Conta e segurança** | |
-| RF44 | Esqueci a senha: a pessoa informa um e-mail verificado da conta e recebe um link para criar nova senha. |
-| RF45 | Cada conta pode ter vários e-mails, todos com o mesmo peso. A pessoa adiciona e verifica cada um, e qualquer um verificado serve para entrar ou recuperar a senha. |
+| RF44 | Esqueci a senha: a pessoa informa o e-mail da conta, recebe um código de 6 dígitos e o usa para definir a senha nova. Pode usar um código de recuperação no lugar do e-mail. |
+| RF45 | Cada conta tem um único e-mail. Ele é confirmado por código de 6 dígitos enviado a ele antes da criação da conta, e de novo sempre que a pessoa o troca. |
 | RF46 | Trocar a senha na tela de segurança, informando a senha atual. |
 | RF47 | Desativar a própria conta na tela de segurança, com confirmação pela senha. Quem a reativa é um coordenador ou o admin. |
-| RF48 | Só o admin altera o e-mail e a senha de outra pessoa. Ele adiciona, remove ou verifica e-mails de qualquer conta e envia o link de redefinição de senha para um e-mail verificado da pessoa, vendo quanto tempo falta para o link expirar. Coordenadores não fazem nenhuma dessas trocas. |
+| RF48 | Só o admin altera o e-mail de outra pessoa. O admin não define senha: a pessoa redefine a própria senha pelo código enviado ao novo e-mail. Coordenadores não alteram e-mail nem senha de ninguém. |
+| RF49 | A pessoa gera 10 códigos de recuperação na tela de segurança. Eles são mostrados uma única vez, cada um serve uma vez, e gerar de novo invalida os anteriores. |
 
 ### Requisitos não funcionais
 
@@ -116,13 +117,13 @@ PWA para organizar a biblioteca de músicas, os eventos e os setlists de um mini
 | RNF05 | Front e back em um único projeto Next.js com TypeScript no modo `strict`. |
 | RNF06 | Banco PostgreSQL. |
 | RNF07 | Notificações por Web Push com VAPID, sem Firebase. |
-| RNF08 | Hospedagem apenas em Vercel, GitHub e Supabase, com deploy automático por push no GitHub. |
+| RNF08 | Hospedagem apenas em Vercel, GitHub e Supabase (este só como banco PostgreSQL), com deploy automático por push no GitHub. |
 | RNF09 | Senhas com hash bcrypt e sessão em cookie `httpOnly`. |
 | RNF10 | Toda autorização é verificada no servidor, por uma função central. |
 | RNF11 | Não há histórico de notificações. |
 | RNF12 | O banco não tem colunas de criação ou edição. As únicas datas são a do evento e a expiração do convite. |
 | RNF13 | Edições concorrentes são detectadas por um contador de versão, sem sobrescrever em silêncio. |
-| RNF14 | Fotos de perfil têm até 2 MB, em JPG, PNG ou WebP, e são redimensionadas no front antes do envio. |
+| RNF14 | Fotos de perfil têm até 2 MB, em JPG, PNG ou WebP. O servidor as redimensiona para um quadrado de 256 px, em WebP ou JPEG, e só então grava no banco. |
 | RNF15 | Login e aceitação de convite têm limite de tentativas. |
 
 ## Regras de negócio
@@ -241,20 +242,21 @@ PWA para organizar a biblioteca de músicas, os eventos e os setlists de um mini
 | RN68 | O Swagger e a especificação OpenAPI só são acessíveis ao admin. |
 | RN69 | Toda rota decide o acesso por uma função central que considera o cargo, o estado `ativo` e, para convidados, o evento. |
 
-### Conta, e-mails e desativação
+### Conta, e-mail e desativação
 
 | ID | Regra |
 |---|---|
-| RN70 | Cada conta tem um ou mais e-mails, todos com o mesmo peso. Não existe e-mail principal. |
-| RN71 | Um e-mail pertence a uma única conta. Só serve para entrar ou recuperar a senha depois de verificado. |
-| RN72 | Toda conta ativa tem pelo menos um e-mail verificado. O último e-mail verificado não pode ser removido. |
+| RN70 | Cada conta tem um único e-mail, em minúsculas e exclusivo no sistema (RN03). |
+| RN71 | A conta só é criada depois que o código enviado ao e-mail é confirmado. O convite só é consumido nesse momento. |
+| RN72 | Trocar o próprio e-mail exige a senha atual (RN75) e a confirmação por código enviado ao novo endereço. |
 | RN73 | O pedido de "esqueci a senha" responde da mesma forma exista ou não a conta, para não revelar quais e-mails estão cadastrados. |
-| RN74 | O link de redefinição de senha vale 30 minutos e serve uma única vez, igual ao convite. Quando o admin gera o link para outra pessoa (RF48), ele vê quanto tempo falta para a expiração. |
+| RN74 | Os códigos enviados por e-mail (cadastro, redefinição e troca de e-mail) valem 30 minutos, servem uma única vez e são invalidados após o limite de tentativas. |
 | RN75 | Trocar a senha exige a senha atual. |
 | RN76 | A própria pessoa pode desativar a própria conta, na tela de segurança, com confirmação pela senha. Valem as mesmas regras de RN06 e RN07: ela sai da escala de eventos futuros e continua vendo os dados e confirmando presença. |
 | RN77 | Só um coordenador ou o admin reativa uma conta desativada pela própria pessoa. Reativar não a recoloca na escala (RN07). |
 | RN78 | Nenhuma conta é apagada pela aplicação. O histórico de eventos, escalas, presenças e rankings sempre permanece. |
-| RN79 | Só o admin altera o e-mail e a senha de outra pessoa. Coordenadores não podem fazer isso. O admin não define senha manualmente: a troca de senha de outra pessoa é feita pelo link de redefinição enviado a um e-mail verificado dela (RN74). O admin tem acesso total ao banco, por isso a conta de admin deve ser restrita a quem é de confiança. |
+| RN79 | Só o admin altera o e-mail de outra pessoa. Coordenadores não alteram e-mail nem senha de ninguém. O admin não define senha manualmente: a pessoa redefine a própria senha pelo código enviado ao novo e-mail (RN74). O admin tem acesso total ao banco, por isso a conta de admin deve ser restrita a quem é de confiança. |
+| RN80 | Os códigos de recuperação não dependem de e-mail. Usar um deles redefine a senha e o código fica gasto. |
 
 ## Usuários, papéis e permissões
 
@@ -271,7 +273,7 @@ PWA para organizar a biblioteca de músicas, os eventos e os setlists de um mini
 - marcar e desmarcar músicas para revisão;
 - escalar músicos nos setlists e publicar setlists de eventos;
 - criar e editar instrumentos e autores;
-- alterar nome, e-mails, senha, foto e os instrumentos que toca;
+- alterar nome, e-mail, senha, foto e os instrumentos que toca;
 - marcar seu status de escuta e confirmar presença.
 
 **Qualquer membro logado**, ativo ou não, vê o dashboard e os dados do app, e confirma presença.
@@ -280,7 +282,7 @@ PWA para organizar a biblioteca de músicas, os eventos e os setlists de um mini
 
 Coordenadores e o admin geram um **link de convite** e o enviam à pessoa. O link tem o cargo que a pessoa terá (ministeriado ou coordenador), é de uso único e vale 30 minutos. Não há e-mail do convidado, e quem convida só escolhe o cargo. Logo após gerar o link, quem o criou vê a contagem do tempo restante até a expiração.
 
-1. A pessoa abre o link e informa nome completo, e-mail e senha. O sistema cria a conta com o cargo do convite e já deixa a pessoa logada.
+1. A pessoa abre o link, informa nome completo, e-mail e senha e pede o código. O código de 6 dígitos chega ao e-mail; ela o digita e a conta é criada com o cargo do convite, já logada. O convite só é consumido nesse momento.
 2. Se o e-mail já tem conta, a API responde `409 CONTA_EXISTENTE` e o app orienta a fazer login e abrir o link de novo.
 3. No primeiro login, a pessoa escolhe os instrumentos que toca (zero ou mais) e pode alterá-los depois.
 
@@ -519,7 +521,7 @@ A pessoa desativa a própria conta na tela de segurança, com confirmação pela
 
 ### Conta e segurança
 
-Na tela de segurança, a pessoa vê e gerencia os próprios e-mails, troca a senha e desativa a própria conta. A recuperação de senha ("esqueci a senha") fica na tela de login.
+Na tela de segurança, a pessoa vê e troca o próprio e-mail, troca a senha, gera os códigos de recuperação e desativa a própria conta. A recuperação de senha ("esqueci a senha") fica na tela de login.
 
 ## Stack técnica
 
@@ -527,13 +529,13 @@ Na tela de segurança, a pessoa vê e gerencia os próprios e-mails, troca a sen
 |---|---|
 | Frontend e backend | **Next.js 15** (App Router) + **React 19**, tudo em **TypeScript** (`strict`) |
 | API | Route Handlers do Next (`src/app/api/**/route.ts`) |
-| Banco | **PostgreSQL** (Supabase em produção, Postgres em Docker em desenvolvimento) |
+| Banco | **PostgreSQL padrão** (Supabase em produção, usado só como banco; Postgres em Docker em desenvolvimento) |
 | ORM | **Prisma 6**, com o schema gerado do banco (`prisma db pull`) |
 | Validação | **Zod** |
 | Autenticação | **JWT** em cookie `httpOnly`, senhas com **bcryptjs** |
 | Drag-and-drop | **dnd-kit** (`@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities`) |
 | Push | Web Push + VAPID (biblioteca `web-push`) |
-| Fotos de perfil | **Supabase Storage** (só a URL vai para o banco) |
+| Fotos de perfil | **Postgres** (tabela `fotos_perfil`), redimensionadas no servidor com **sharp** |
 | Lembretes | **Vercel Cron** |
 | Documentação da API | **Swagger / OpenAPI**, restrito ao admin |
 | Deploy | **Vercel** (deploy automático por push no GitHub) |
@@ -542,15 +544,16 @@ Tudo num único projeto TypeScript (front e back), sem plataformas além de Verc
 
 ## Modelo de dados
 
-17 tabelas e 7 views, definidas em **`DDL.SQL`** (PostgreSQL 13 ou superior). O arquivo tem quatro partes: a **parte 1** (tabelas, chaves e únicas) é a mais segura para visualizadores como o Esquema 3D; a **parte 2** (CHECKs e índices), a **parte 3** (views) e a **parte 4** (instrumentos iniciais) podem ser apagadas se o visualizador não as reconhecer.
+18 tabelas e 7 views, definidas em **`DDL.SQL`** (PostgreSQL 13 ou superior). O arquivo tem quatro partes: a **parte 1** (tabelas, chaves e únicas) é a mais segura para visualizadores como o Esquema 3D; a **parte 2** (CHECKs e índices), a **parte 3** (views) e a **parte 4** (instrumentos iniciais) podem ser apagadas se o visualizador não as reconhecer.
 
-O banco não tem colunas de criação ou edição. As únicas datas são `eventos.data_evento`, `convites_acesso.expira_em` e `redefinicoes_senha.expira_em`. A parte 2 usa a extensão `pg_trgm` para a busca por título.
+O banco não tem colunas de criação ou edição. As únicas datas são `eventos.data_evento`, `convites_acesso.expira_em` e `codigos_email.expira_em`. A parte 2 usa a extensão `pg_trgm` para a busca por título.
 
 | Tabela | Propósito |
 |---|---|
-| `usuarios` | Pessoas. `papel` (`COORDENADOR`, `MINISTERIADO` ou `CONVIDADO`), `is_admin`, `ativo` (vazio para convidados), `foto_url`, `slug` e hash da senha. |
-| `emails_usuario` | Os e-mails de cada conta, todos com o mesmo peso, em minúsculas e únicos no sistema. `verificado` libera o login e a recuperação de senha. |
-| `redefinicoes_senha` | Pedidos de "esqueci a senha": hash do token, e-mail, expiração de 30 minutos e se já foi usado. |
+| `usuarios` | Pessoas. `email` (único, em minúsculas), `papel` (`COORDENADOR`, `MINISTERIADO` ou `CONVIDADO`), `is_admin`, `ativo` (vazio para convidados), `slug` e hash da senha. |
+| `fotos_perfil` | A foto de perfil de cada pessoa, em bytes (`BYTEA`), já redimensionada, com o tipo MIME. Uma por usuário, no máximo. |
+| `codigos_email` | Códigos de 6 dígitos enviados por e-mail, só o hash. `finalidade` é `CADASTRO` (antes da conta existir) ou `REDEFINICAO`. Tem expiração de 30 minutos, `usado` e contador de `tentativas`. |
+| `codigos_recuperacao` | Os 10 códigos de recuperação de cada pessoa, só o hash, e se cada um já foi usado. |
 | `instrumentos` | Catálogo de instrumentos, com `nome` e `slug`. |
 | `usuarios_instrumentos` | Quais instrumentos cada pessoa toca. |
 | `autores` | Compositores, com página pública. |
@@ -614,7 +617,7 @@ Estão na parte 2 do `DDL.SQL` e foram testadas tentando violá-las:
 - Convite de convidado exige evento; os outros convites não têm evento.
 - O `slug` só aceita minúsculas, números e hífens.
 - Nome de instrumento e de autor **únicos sem diferenciar maiúsculas**.
-- Cada e-mail existe uma única vez no sistema, em minúsculas e com formato mínimo.
+- O e-mail de cada conta existe uma única vez no sistema, em minúsculas e com formato mínimo.
 - Não existem duas músicas com o mesmo título e o mesmo autor, sem diferenciar maiúsculas.
 - Tom tocado no formato `D`, `F#m` ou `Bb`.
 - Em `colecoes`: SETLIST exige evento e não tem dono nem nome; LISTA exige dono e nome, não tem evento e não é publicada.
@@ -632,7 +635,7 @@ O banco não cobre estas:
 - O convidado só acessa os eventos em `eventos_convidados` e só altera as músicas dentro do evento.
 - A gravação só é aceita se a `versao` enviada ainda for a atual.
 - Nomes reservados pelas rotas não são aceitos como `slug`.
-- Toda conta ativa tem pelo menos um e-mail verificado; o último não pode ser removido.
+- Um código de e-mail ou de recuperação serve uma única vez. O código de e-mail é invalidado após o limite de tentativas.
 
 ## API e Swagger
 
@@ -716,7 +719,7 @@ Resposta de `GET /api/dashboard?periodo=mes`:
 │  │  │  ├─ usuarios/[slug]/
 │  │  │  ├─ eventos/[slug]/  # evento, setlist, escala e presença
 │  │  │  ├─ listas/
-│  │  │  └─ conta/           # nome, e-mails, senha, foto, instrumentos e desativação
+│  │  │  └─ conta/           # nome, e-mail, senha, foto, instrumentos e desativação
 │  │  ├─ admin/              # gestão de usuários e convites
 │  │  ├─ docs/               # Swagger UI (só admin)
 │  │  └─ api/                # Route Handlers
@@ -745,7 +748,7 @@ npx create-next-app@latest musicaliapp
 
 # 3. Dependências
 npm i prisma@6 @prisma/client@6 zod jsonwebtoken bcryptjs web-push \
-      @supabase/supabase-js @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities
+      sharp @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities
 npm i -D @types/jsonwebtoken @types/web-push
 
 # 4. Variáveis de ambiente
@@ -770,11 +773,10 @@ Como o acesso é por convite, a primeira conta é criada direto no banco:
 HASH=$(node -e "console.log(require('bcryptjs').hashSync('SUA_SENHA', 10))")
 psql "postgresql://postgres:dev@localhost:5432/musicaliapp" -c \
   "WITH u AS (
-     INSERT INTO usuarios (nome, slug, senha_hash, papel, is_admin)
-     VALUES ('Seu Nome Completo', 'seu-nome', '$HASH', 'COORDENADOR', TRUE)
+     INSERT INTO usuarios (nome, slug, email, senha_hash, papel, is_admin)
+     VALUES ('Seu Nome Completo', 'seu-nome', 'voce@exemplo.com', '$HASH', 'COORDENADOR', TRUE)
      RETURNING id)
-   INSERT INTO emails_usuario (usuario_id, email, verificado)
-   SELECT id, 'voce@exemplo.com', TRUE FROM u;"
+   SELECT id FROM u;"
 ```
 
 ### Comandos úteis
@@ -790,15 +792,12 @@ psql "postgresql://postgres:dev@localhost:5432/musicaliapp" -c \
 | `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | Chave pública VAPID, enviada ao navegador. |
 | `VAPID_PRIVATE_KEY` | Chave privada VAPID. **Só no servidor.** |
 | `VAPID_SUBJECT` | `mailto:` de contato exigido pelo VAPID. |
-| `SUPABASE_URL` | Endereço do projeto Supabase, usado para enviar as fotos de perfil. |
-| `SUPABASE_SERVICE_ROLE_KEY` | Chave de serviço do Supabase Storage. **Só no servidor.** |
 | `CRON_SECRET` | Segredo que o Vercel Cron envia à rota de lembretes. |
 | `NODE_ENV` | `development` ou `production` (controla o cookie `secure`). |
 
 ## Deploy
 
-- **Supabase:** crie o projeto na região de São Paulo e execute o `DDL.SQL` no *SQL Editor* (a extensão `pg_trgm` está disponível). Crie um bucket de Storage `fotos-perfil` para as fotos.
-- **Vercel:** projeto único, com deploy automático a cada push no GitHub. Cadastre as variáveis acima em *Settings → Environment Variables*. O `vercel.json` agenda a rota `/api/cron/lembretes` uma vez por dia.
+- **Supabase:** crie o projeto na região de São Paulo e execute o `DDL.SQL` no *SQL Editor* (a extensão `pg_trgm` está disponível).- **Vercel:** projeto único, com deploy automático a cada push no GitHub. Cadastre as variáveis acima em *Settings → Environment Variables*. O `vercel.json` agenda a rota `/api/cron/lembretes` uma vez por dia.
 - **Conexão serverless:** em `DATABASE_URL`, use a conexão do **pooler** do Supabase com `?pgbouncer=true`.
 - **Conta inicial:** crie-a com o mesmo `INSERT` da seção anterior, pelo SQL Editor.
 
@@ -810,11 +809,11 @@ psql "postgresql://postgres:dev@localhost:5432/musicaliapp" -c \
 - Toda entrada validada com **Zod**.
 - **Autorização sempre no servidor**, por uma função central usada em todas as rotas: ela confere o cargo, o estado `ativo` e, para convidados, se o evento está liberado. O que o front esconde não conta como proteção.
 - A rota `GET /api/cron/lembretes` só aceita a chamada que traz o `CRON_SECRET`.
-- Fotos de perfil validadas no servidor (tipo e tamanho) e gravadas com nome aleatório.
+- Fotos de perfil validadas no servidor (tipo e tamanho do arquivo enviado). Antes de gravar, são decodificadas e regravadas pelo `sharp`, o que remove metadados como localização e descarta conteúdo que não seja imagem válida.
 - O Swagger e o `openapi.json` exigem sessão de admin.
-- A chave privada VAPID, o `JWT_SECRET`, o `CRON_SECRET` e a chave de serviço do Supabase nunca vão para o front nem para o repositório.
+- A chave privada VAPID, o `JWT_SECRET` e o `CRON_SECRET` nunca vão para o front nem para o repositório.
 - Login, aceitação de convite e pedidos de "esqueci a senha" têm limite de tentativas (rate limit).
-- O pedido de "esqueci a senha" responde igual exista ou não a conta. O token de redefinição é guardado em hash, vale 30 minutos e serve uma única vez.
+- O pedido de "esqueci a senha" responde igual exista ou não a conta. Os códigos de e-mail e de recuperação são guardados em hash. Os de e-mail valem 30 minutos e servem uma única vez.
 
 ## Sprints e milestones
 
@@ -822,7 +821,7 @@ Premissas: sprints de **2 semanas**. As datas de início e de fim serão definid
 
 | Sprint | Milestone | Entrega principal | Requisitos |
 |---|---|---|---|
-| S1 | **M1 Fundação** | Projeto Next com TypeScript, banco aplicado a partir do `DDL.SQL`, login com "Lembrar de mim", convites de 30 minutos, cargos, instrumentos, conta com foto, e-mails, esqueci a senha, troca de senha e desativação pela própria pessoa. Página pública. PWA instalável. | RF01, RF02, RF04 a RF09, RF42, RF44 a RF47 |
+| S1 | **M1 Fundação** | Projeto Next com TypeScript, banco aplicado a partir do `DDL.SQL`, login com "Lembrar de mim", convites de 30 minutos, cargos, instrumentos, conta com foto, e-mail confirmado por código, esqueci a senha por código, códigos de recuperação, troca de senha e desativação pela própria pessoa. Página pública. PWA instalável. | RF01, RF02, RF04 a RF09, RF42, RF44 a RF49 |
 | S2 | **M2 Biblioteca** | Cadastro e edição de músicas e autores. Cifra em graus, com conversão para qualquer tom. Busca por título com aviso de músicas parecidas. Controle de versão. Revisão e status de escuta. | RF17, RF18, RF20 a RF25 |
 | S3 | **M3 Leitura da cifra** | Tela da cifra com troca de tom, transpose, aumento de fonte e rolagem automática com velocidade ajustável. Preferências salvas no aparelho. | RF19 |
 | S4 | **M4 Eventos e setlists** | Eventos com `slug`, cancelamento, setlists e listas com seções. Reordenação por arrastar e soltar. Tom tocado por música. Cifra local e "Salvar na música" ou "Salvar só neste setlist". Copiar setlist. | RF26 a RF29, RF33, RF34 |
