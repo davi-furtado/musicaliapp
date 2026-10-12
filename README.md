@@ -68,8 +68,8 @@ PWA para organizar a biblioteca de músicas, os eventos e os setlists de um mini
 | RF15 | Há uma página com o **ranking completo de autores**, ordenado do mais ou do menos tocado. |
 | RF16 | Os rankings aceitam o período **mês**, **ano**, **geral** ou um mês ou ano específico escolhido pela pessoa. |
 | **Músicas** | |
-| RF17 | Cadastrar uma música (título, autor, cifra, link do YouTube opcional), com aviso quando já existe uma parecida. |
-| RF18 | Escrever a cifra em graus ou em um tom qualquer; o app a guarda sempre em graus. |
+| RF17 | Cadastrar uma música (título, autor, tom original opcional, cifra, link do YouTube opcional), com aviso quando já existe uma parecida. |
+| RF18 | Escrever a cifra em graus ou em um tom qualquer; o app a guarda sempre em graus. A tela de escrita tem o campo **tom da escrita**, que é **graus** por padrão ou um tom. Esse campo só diz como converter o que foi digitado e não é guardado. |
 | RF19 | Ver a cifra em qualquer tom, transpor de meio em meio tom ou de tom em tom, aumentar a fonte e usar a **rolagem automática**, com a velocidade ajustável durante a rolagem. Só o botão pausa; rolar a tela com o dedo avança a música e não pausa. Há também a opção **Letra**, que mostra só a letra, sem os acordes. Nesse modo a transposição fica desativada, porque não há acordes para transpor. |
 | RF20 | Editar qualquer música, com aviso quando outra pessoa a alterou antes. |
 | RF21 | Marcar e desmarcar uma música para revisão. |
@@ -181,10 +181,10 @@ PWA para organizar a biblioteca de músicas, os eventos e os setlists de um mini
 
 | ID | Regra |
 |---|---|
-| RN30 | A música não tem tom nem músicos. A cifra é sempre guardada em graus. |
+| RN30 | A música pode ter um tom original, opcional, informado no cadastro ou depois na edição. Ele é só informativo: não altera a cifra, que é sempre guardada em graus, e não é o tom tocado (RN32). A pessoa pode escrever a cifra no tom original ou em graus; isso não muda o tom original. A música não tem músicos. |
 | RN31 | Quem escreve a cifra pode usar graus ou um tom qualquer. O front converte para graus antes de enviar. |
 | RN32 | O tom só é salvo em uma música de **setlist ou lista**, e é opcional. Esse tom nunca altera a música. |
-| RN33 | Em qualquer tela o front pode mostrar a cifra em outro tom. É só visualização e nada é gravado. A opção de transpose (meio tom ou tom em tom) só fica ativa com um tom de referência: na biblioteca, o tom escolhido para ver a música; no setlist, o tom tocado do item. Em graus do campo harmônico, fica desativada. |
+| RN33 | Em qualquer tela o front pode mostrar a cifra em outro tom. É só visualização e nada é gravado. O tom original aparece destacado na lista de tons da visualização, mas a biblioteca não abre nele: abre em graus, a não ser que a pessoa escolha outro tom. A opção de transpose (meio tom ou tom em tom) só fica ativa com um tom de referência: na biblioteca, o tom escolhido para ver a música; no setlist, o tom tocado do item. Em graus do campo harmônico, fica desativada. |
 | RN34 | Não existem duas músicas com o mesmo título (sem diferenciar maiúsculas) e o mesmo autor. Ao cadastrar, o app avisa sobre títulos parecidos. |
 | RN35 | A marca de revisão é só sim ou não, sem motivo. Qualquer usuário ativo marca e desmarca. Convidados não marcam. |
 | RN36 | O status de escuta é por usuário e por música, e o padrão é "Não ouvi". |
@@ -200,7 +200,7 @@ PWA para organizar a biblioteca de músicas, os eventos e os setlists de um mini
 | RN41 | Um evento cancelado fica no histórico, não aparece nos próximos eventos e não conta nos rankings. |
 | RN42 | Uma coleção (setlist ou lista) pode ter seções opcionais, nomeadas livremente e ordenadas. Cada seção pertence a uma única coleção. |
 | RN43 | Uma música no setlist ou na lista pode ter tom e cifra próprios. Mudanças locais não afetam a música por padrão. |
-| RN44 | Ao salvar a cifra de uma música da coleção, a pessoa escolhe **Salvar na música**, **Salvar só neste setlist** ou **Cancelar**. O tom nunca é salvo na música. Sair sem salvar descarta as mudanças. |
+| RN44 | Ao salvar a cifra de uma música da coleção, a pessoa escolhe **Salvar na música**, **Salvar só neste setlist** ou **Cancelar**. O tom tocado nunca é salvo na música. Sair sem salvar descarta as mudanças. |
 | RN45 | A escala de músicos existe só nos setlists. Listas genéricas não têm músicos. |
 | RN46 | Ao escalar, escolhe-se o instrumento e depois uma pessoa entre as que tocam aquele instrumento. Uma pessoa pode tocar mais de um instrumento na mesma música. |
 | RN47 | Ao escalar uma **seção**, se alguma música dela já tem músicos, aparecem as opções **Sobrescrever existentes**, **Escrever nas que não têm** e **Cancelar**. A escala da seção é uma ação em massa: grava a escala em cada música, e a seção não guarda escala própria. |
@@ -360,7 +360,7 @@ Tudo é servido por `GET /api/dashboard` e `GET /api/rankings/*`. Como o resto d
 
 Há uma única biblioteca de músicas, sem divisão por períodos. A ordem de grandeza é de pelo menos 500 músicas, e a busca por título e autor precisa continuar fluida (índice de busca por similaridade no banco).
 
-Uma música tem **título**, **autor**, **cifra** (em graus), **link do YouTube** (opcional) e a marca de revisão. **Não tem tom nem músicos**: o tom é definido apenas nos setlists e listas, e os músicos apenas nos setlists. A música não guarda arquivos de áudio.
+Uma música tem **título**, **autor**, **cifra** (em graus), **tom original** (opcional, só informativo), **link do YouTube** (opcional) e a marca de revisão. **Não tem músicos**: estes existem apenas nos setlists. O tom tocado é definido apenas nos setlists e listas. A música não guarda arquivos de áudio.
 
 ### Cadastro
 
@@ -398,18 +398,32 @@ A cifra é guardada **em graus do campo harmônico**, no estilo do Nashville Num
 |---|---|
 | `1`, `4`, `5` | Acordes sobre o primeiro, quarto e quinto graus. |
 | `2m`, `3m`, `6m` | Acordes menores. |
-| `b3`, `b7`, `#4` | Graus alterados. |
+| `3b`, `7b`, `4#` | Graus alterados: o `b` ou o `#` vem depois do grau. |
 | `5sus4`, `1maj7`, `5/7` | Variações, extensões e baixo. |
 | `1m` | Tônica menor (em música de tom menor, o grau `1` é sempre a tônica). |
 
 ### Formato
 
-A cifra é um texto com os acordes entre colchetes, no ponto exato da letra em que mudam (por exemplo `[1]Senhor, [5]tu és [6m]fiel`). O front posiciona os acordes acima da letra, como em um site de cifras.
+A cifra é um texto no mesmo formato do Cifra Club: a linha de acordes fica logo acima da linha da letra, e cada acorde começa na coluna da sílaba onde deve ser tocado. Por exemplo:
+
+```
+1       5     6m
+Senhor, tu és fiel
+```
+
+- **Linha de acordes:** uma linha cujos itens são todos acordes válidos (pela gramática de graus). Um marcador `[Seção]` no início da linha é permitido e não conta como acorde. Por isso, `[Intro] D Em A` é uma linha de acordes. Uma linha de acordes pode ser seguida de outra linha de acordes, e isso forma um trecho instrumental.
+- **Linha de letra:** qualquer outra linha. A linha de acordes logo acima dela vale para ela.
+- **Linha instrumental:** linha de acordes sem linha de letra logo abaixo. Ela aparece na visualização com acordes. No modo Letra, os acordes somem, mas o marcador de seção que estiver nela (como `[Intro]` ou `[Solo]`) continua aparecendo.
+- **Seção da música:** uma linha só com `[Nome]`, como `[Refrão]` ou `[Verso 1]`, sem acordes. Ao salvar, o app garante uma linha em branco acima e outra abaixo, mesmo que a pessoa não as tenha digitado. O app não valida o nome. É um marcador de organização, separado das seções do setlist.
+- **Monoespaçado e quebra por pares:** a cifra é exibida em fonte de largura fixa. O editor não quebra linha. O visualizador pode quebrar uma linha longa, mas quebra a linha de acordes junto com a linha de letra, no mesmo ponto, em um espaço da letra. Cada trecho mostra os próprios acordes acima do próprio texto. Por exemplo, `A       B` sobre `Linha longa` vira dois blocos: `A` sobre `Linha` e `B` sobre `longa`.
+- **Modo Letra:** mostra só as linhas de letra e as seções, incluindo as de intro e solo, sem os acordes. Sem alinhamento a preservar, a letra pode quebrar linha normalmente.
+
+Como os acordes são identificados pela gramática, não há escape nem validação de colchetes na letra.
 
 ### Como funciona
 
 - **Escrever:** a pessoa digita a cifra em graus ou em um tom qualquer e informa o tom em que digitou. O front converte tudo para graus antes de enviar. O banco recebe e guarda só graus.
-- **Ler:** a tela da música mostra os graus. A pessoa escolhe um tom e o front converte na hora para as notas daquele tom. A escolha vale só para quem está vendo, e nada é gravado.
+- **Ler:** a tela da música mostra os graus. A pessoa escolhe um tom e o front converte na hora para as notas daquele tom. A escolha vale só para quem está vendo, e nada é gravado. Se a música tem tom original, ele aparece destacado na lista de tons, sem ser escolhido por padrão.
 - **Tom do evento:** no setlist ou na lista, uma música pode ter um **tom tocado** (por exemplo, "no evento X tocamos esta música em D"). Quem abre o evento vê a cifra já nesse tom. Esse tom fica só no item do setlist e nunca altera a música. Em tom menor (`F#m`), a tônica (`F#`) é o que vale para a conversão.
 - **Cifra local:** no setlist, a cifra pode ser editada só para aquele evento (também em graus), sem mudar a música.
 
@@ -558,7 +572,7 @@ O banco não tem colunas de criação ou edição. As únicas datas são `evento
 | `instrumentos` | Catálogo de instrumentos, com `nome` e `slug`. |
 | `usuarios_instrumentos` | Quais instrumentos cada pessoa toca. |
 | `autores` | Compositores, com página pública. |
-| `musicas` | A biblioteca: título, autor, cifra em graus, link do YouTube, marca de revisão e `versao`. Sem tom e sem músicos. |
+| `musicas` | A biblioteca: título, autor, cifra em graus, tom original (opcional, só informativo), link do YouTube, marca de revisão e `versao`. Sem músicos. |
 | `status_escuta` | Status pessoal por usuário × música. |
 | `eventos` | Missas, ensaios, retiros: nome, `slug`, data e hora, `requerir_presenca` e `cancelado`. |
 | `eventos_convidados` | Quais eventos cada convidado pode acessar. |
@@ -620,7 +634,7 @@ Estão na parte 2 do `DDL.SQL` e foram testadas tentando violá-las:
 - Nome de instrumento e de autor **únicos sem diferenciar maiúsculas**.
 - O e-mail de cada conta existe uma única vez no sistema, em minúsculas e com formato mínimo.
 - Não existem duas músicas com o mesmo título e o mesmo autor, sem diferenciar maiúsculas.
-- Tom tocado no formato `D`, `F#m` ou `Bb`.
+- Tom tocado e tom original no formato `D`, `F#m` ou `Bb`.
 - Em `colecoes`: SETLIST exige evento e não tem dono nem nome; LISTA exige dono e nome, não tem evento e não é publicada.
 - Instrumento em uso e música usada em setlist ou lista não podem ser apagados (`RESTRICT`).
 - O convite expira 30 minutos depois de criado, por padrão do banco.
