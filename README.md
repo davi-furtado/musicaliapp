@@ -404,10 +404,10 @@ A cifra é guardada **em graus do campo harmônico**, no estilo do Nashville Num
 
 ### Formato
 
-A cifra é um texto no mesmo formato do Cifra Club: a linha de acordes fica logo acima da linha da letra, e cada acorde começa na coluna da sílaba onde deve ser tocado. Por exemplo:
+A cifra é um texto em que a linha de acordes fica logo acima da linha da letra, e cada acorde começa na coluna da sílaba onde deve ser tocado. Por exemplo:
 
 ```
-1       5     6m
+1        5     6m
 Senhor, tu és fiel
 ```
 
@@ -432,7 +432,7 @@ Como os acordes são identificados pela gramática, não há escape nem validaç
 Na tela de uma música com cifra:
 
 - **Tamanho da fonte:** botões para aumentar e diminuir.
-- **Rolagem automática:** botão de iniciar e pausar, com botões de mais e menos velocidade que valem na hora, no estilo do Cifra Club. Só o botão pausa: rolar a tela com o dedo avança a música e não pausa.
+- **Rolagem automática:** botão de iniciar e pausar, com botões de mais e menos velocidade que valem na hora. Só o botão pausa: rolar a tela com o dedo avança a música e não pausa.
 - **Transpose:** botões de meio tom e de tom, para cima e para baixo, a partir do tom de referência (veja RN33). Desativado sem tom de referência, em graus e no modo letra.
 - **Letra:** alterna entre a cifra com acordes e só a letra, sem acordes. Combina com o aumento de fonte e com a rolagem automática. A escolha fica salva no aparelho, como as outras preferências de leitura.
 - O tamanho da fonte e a velocidade ficam salvos no próprio aparelho, sem passar pelo servidor.
