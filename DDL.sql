@@ -66,6 +66,21 @@ CREATE TABLE usuarios (
     CONSTRAINT uq_usuarios_slug UNIQUE (slug)
 );
 
+-- Preferências de visualização e exportação de cada pessoa (página de
+-- configurações). Valem em qualquer aparelho. Uma linha por usuário, criada
+-- no cadastro pela API. Os botões da tela não gravam nada aqui.
+CREATE TABLE preferencias_usuario (
+    usuario_id             UUID         NOT NULL,
+    visualizacao_padrao    VARCHAR(6)   NOT NULL DEFAULT 'CIFRA',   -- CIFRA | LETRA
+    letra_com_secoes       BOOLEAN      NOT NULL DEFAULT FALSE,     -- só vale na letra
+    fonte_cifra            VARCHAR(8)   NOT NULL DEFAULT 'MEDIA',   -- PEQUENA | MEDIA | GRANDE
+    exportacao_padrao      VARCHAR(6)   NOT NULL DEFAULT 'CIFRA',   -- CIFRA | LETRA
+    exportacao_com_secoes  BOOLEAN      NOT NULL DEFAULT FALSE,     -- só vale na letra
+    CONSTRAINT pk_preferencias_usuario PRIMARY KEY (usuario_id),
+    CONSTRAINT fk_pref_usuario FOREIGN KEY (usuario_id)
+        REFERENCES usuarios (id) ON DELETE CASCADE
+);
+
 -- E-mails de cada pessoa: de um a três por conta, únicos no sistema e
 -- confirmados por código antes de entrar aqui. A aplicação limita a três
 -- e garante que sempre há ao menos um.
@@ -184,28 +199,6 @@ CREATE TABLE musicas (
     atualizado_em TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT pk_musicas PRIMARY KEY (id),
     CONSTRAINT uq_musicas_slug UNIQUE (slug)
-);
-
--- Histórico da cifra e do tom original, como commits. Cada alteração gera uma
--- versão com título obrigatório, autor e data. Nada é apagado. usuario_id vazio:
--- conta apagada (exibido como "Pessoa removida"). restaurada_de: número da
--- versão de origem, quando esta foi criada por restauração.
-CREATE TABLE musica_versoes (
-    id             UUID         NOT NULL DEFAULT gen_random_uuid(),
-    musica_id      UUID         NOT NULL,
-    numero         INTEGER      NOT NULL,
-    titulo         TEXT         NOT NULL,
-    cifra          TEXT,
-    tom_original   TEXT,
-    usuario_id     UUID,
-    restaurada_de  INTEGER,
-    criado_em      TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT pk_musica_versoes PRIMARY KEY (id),
-    CONSTRAINT uq_musica_versoes_numero UNIQUE (musica_id, numero),
-    CONSTRAINT fk_mv_musica FOREIGN KEY (musica_id)
-        REFERENCES musicas (id) ON DELETE CASCADE,
-    CONSTRAINT fk_mv_usuario FOREIGN KEY (usuario_id)
-        REFERENCES usuarios (id) ON DELETE SET NULL
 );
 
 -- Artistas de cada música. A ordem (posicao) define o 1º artista,
@@ -405,6 +398,53 @@ CREATE TABLE colecao_musicas_musicos (
         REFERENCES instrumentos (id) ON DELETE RESTRICT
 );
 
+-- Histórico da música, como commits. Cada alteração de cifra, tom original,
+-- lista de artistas ou tom tocado gera uma versão com título obrigatório, autor
+-- e data. Nada é apagado. Restaurar uma versão cria outra no fim do histórico.
+--   tipo MUSICA: instantâneo da música (cifra, tom original e artistas em
+--     musica_versoes_artistas).
+--   tipo TOM_TOCADO: tom tocado de um item de setlist ou lista (colecao_id).
+--     tom_tocado NULL significa que o tom tocado foi removido.
+-- usuario_id vazio: conta apagada (exibido como "Pessoa removida").
+-- restaurada_de: número da versão de origem, quando foi criada por restauração.
+-- Fica depois de colecoes, por causa da FK de colecao_id.
+CREATE TABLE musica_versoes (
+    id             UUID         NOT NULL DEFAULT gen_random_uuid(),
+    musica_id      UUID         NOT NULL,
+    numero         INTEGER      NOT NULL,
+    titulo         TEXT         NOT NULL,
+    tipo           VARCHAR(12)  NOT NULL DEFAULT 'MUSICA',
+    cifra          TEXT,
+    tom_original   TEXT,
+    colecao_id     UUID,
+    tom_tocado     TEXT,
+    usuario_id     UUID,
+    restaurada_de  INTEGER,
+    criado_em      TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT pk_musica_versoes PRIMARY KEY (id),
+    CONSTRAINT uq_musica_versoes_numero UNIQUE (musica_id, numero),
+    CONSTRAINT fk_mv_musica FOREIGN KEY (musica_id)
+        REFERENCES musicas (id) ON DELETE CASCADE,
+    CONSTRAINT fk_mv_colecao FOREIGN KEY (colecao_id)
+        REFERENCES colecoes (id) ON DELETE CASCADE,
+    CONSTRAINT fk_mv_usuario FOREIGN KEY (usuario_id)
+        REFERENCES usuarios (id) ON DELETE SET NULL
+);
+
+-- Artistas da música em cada versão do tipo MUSICA. Guarda a referência ao
+-- artista, não o nome: renomear um artista não gera versão.
+CREATE TABLE musica_versoes_artistas (
+    versao_id   UUID     NOT NULL,
+    artista_id  UUID     NOT NULL,
+    posicao     INTEGER  NOT NULL,
+    CONSTRAINT pk_musica_versoes_artistas PRIMARY KEY (versao_id, artista_id),
+    CONSTRAINT uq_mva_posicao UNIQUE (versao_id, posicao),
+    CONSTRAINT fk_mva_versao FOREIGN KEY (versao_id)
+        REFERENCES musica_versoes (id) ON DELETE CASCADE,
+    CONSTRAINT fk_mva_artista FOREIGN KEY (artista_id)
+        REFERENCES artistas (id) ON DELETE RESTRICT
+);
+
 -- Inscrições de Web Push (VAPID).
 CREATE TABLE device_tokens (
     id          UUID  NOT NULL DEFAULT gen_random_uuid(),
@@ -444,10 +484,33 @@ CREATE FUNCTION busca_norm(texto TEXT) RETURNS TEXT
     LANGUAGE sql IMMUTABLE PARALLEL SAFE STRICT
     AS $$ SELECT lower(unaccent('unaccent', texto)) $$;
 
--- Histórico: número positivo e título preenchido.
+-- Histórico: número positivo, título preenchido, tipo coerente e tons válidos.
 ALTER TABLE musica_versoes ADD CONSTRAINT ck_mv_numero CHECK (numero >= 1);
 ALTER TABLE musica_versoes ADD CONSTRAINT ck_mv_titulo CHECK (length(trim(titulo)) > 0);
+ALTER TABLE musica_versoes ADD CONSTRAINT ck_mv_tipo CHECK (
+    tipo IN ('MUSICA', 'TOM_TOCADO')
+    AND (
+        (tipo = 'MUSICA' AND colecao_id IS NULL AND tom_tocado IS NULL)
+        OR
+        (tipo = 'TOM_TOCADO' AND colecao_id IS NOT NULL AND cifra IS NULL AND tom_original IS NULL)
+    )
+);
+ALTER TABLE musica_versoes ADD CONSTRAINT ck_mv_tom_tocado
+    CHECK (tom_tocado IS NULL OR tom_tocado ~ '^[A-G][#b]?m?$');
+ALTER TABLE musica_versoes ADD CONSTRAINT ck_mv_tom_original
+    CHECK (tom_original IS NULL OR tom_original ~ '^[A-G][#b]?m?$');
+ALTER TABLE musica_versoes_artistas ADD CONSTRAINT ck_mva_posicao CHECK (posicao >= 1);
 CREATE INDEX ix_mv_usuario ON musica_versoes (usuario_id);
+CREATE INDEX ix_mv_colecao ON musica_versoes (colecao_id);
+CREATE INDEX ix_mva_artista ON musica_versoes_artistas (artista_id);
+
+-- Preferências: valores permitidos.
+ALTER TABLE preferencias_usuario ADD CONSTRAINT ck_pref_visualizacao
+    CHECK (visualizacao_padrao IN ('CIFRA', 'LETRA'));
+ALTER TABLE preferencias_usuario ADD CONSTRAINT ck_pref_exportacao
+    CHECK (exportacao_padrao IN ('CIFRA', 'LETRA'));
+ALTER TABLE preferencias_usuario ADD CONSTRAINT ck_pref_fonte
+    CHECK (fonte_cifra IN ('PEQUENA', 'MEDIA', 'GRANDE'));
 
 -- atualizado_em sempre é a data da última gravação.
 CREATE FUNCTION set_atualizado_em() RETURNS trigger LANGUAGE plpgsql AS $$
