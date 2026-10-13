@@ -11,9 +11,11 @@
 --
 -- Convenções
 --  * ids são UUID gerados pelo banco (gen_random_uuid()).
---  * As únicas colunas de data/hora são eventos.data_evento,
---    convites_acesso.expira_em, codigos_email.expira_em e
---    limites_tentativas.janela_fim. Não há colunas de criação ou edição.
+--  * Datas: criado_em e atualizado_em nos itens principais (usuários,
+--    instrumentos, artistas, músicas, eventos e coleções); atualizado_em é
+--    mantido por trigger. Também há eventos.data_evento, usuarios.termos_aceitos_em,
+--    musica_versoes.criado_em (autor e data de cada versão), convites_acesso.expira_em,
+--    codigos_email.expira_em e limites_tentativas.janela_fim.
 --    Todas são TIMESTAMPTZ (com fuso); a aplicação calcula dia, mês e ano
 --    em America/Sao_Paulo.
 --  * "versao" é um contador inteiro: a API só grava se a versão que o
@@ -28,7 +30,8 @@
 --      tipo:    SETLIST | LISTA
 --      status:  NAO_OUVI | OUVI | TOQUEI
 --  * slugs: minúsculas, números e hífens (ex.: "violao",
---    "2026-10-12-missa-de-domingo").
+--    "2026-10-12-missa-de-domingo"). Acompanham o nome; os anteriores ficam
+--    em slugs_antigos para o redirecionamento.
 -- =====================================================================
 
 
@@ -42,22 +45,49 @@
 -- estiver em ao menos um evento de eventos_convidados. Nos demais papéis,
 -- ativo = false tira a pessoa da escala dos eventos futuros (feito pela
 -- aplicação).
--- is_admin dá acesso à documentação da API (Swagger).
+-- is_admin libera só a documentação da API (Swagger). Coordenador e admin
+-- têm os mesmos poderes, exceto apagar contas, ver e-mails e mudar nome,
+-- foto ou instrumentos de outras pessoas (regras da aplicação).
 -- token_versao entra no JWT da sessão: trocar ou redefinir a senha o
 -- incrementa e invalida as sessões anteriores.
 CREATE TABLE usuarios (
     id           UUID         NOT NULL DEFAULT gen_random_uuid(),
     nome         TEXT         NOT NULL,                -- nome completo
     slug         TEXT         NOT NULL,                -- página própria
-    email        TEXT         NOT NULL,                -- sempre em minúsculas
     senha_hash   TEXT         NOT NULL,
     token_versao INTEGER      NOT NULL DEFAULT 1,
+    termos_aceitos_em TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,  -- aceite dos termos (RN86)
     papel        VARCHAR(20)  NOT NULL DEFAULT 'MINISTERIADO',
     is_admin     BOOLEAN      NOT NULL DEFAULT FALSE,
     ativo        BOOLEAN      DEFAULT TRUE,            -- NULL só para CONVIDADO
+    criado_em     TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT pk_usuarios PRIMARY KEY (id),
-    CONSTRAINT uq_usuarios_slug UNIQUE (slug),
-    CONSTRAINT uq_usuarios_email UNIQUE (email)
+    CONSTRAINT uq_usuarios_slug UNIQUE (slug)
+);
+
+-- E-mails de cada pessoa: de um a três por conta, únicos no sistema e
+-- confirmados por código antes de entrar aqui. A aplicação limita a três
+-- e garante que sempre há ao menos um.
+CREATE TABLE emails_usuario (
+    id          UUID     NOT NULL DEFAULT gen_random_uuid(),
+    usuario_id  UUID     NOT NULL,
+    email       TEXT     NOT NULL,
+    CONSTRAINT pk_emails_usuario PRIMARY KEY (id),
+    CONSTRAINT uq_emails_email UNIQUE (email),
+    CONSTRAINT fk_emails_usuario FOREIGN KEY (usuario_id)
+        REFERENCES usuarios (id) ON DELETE CASCADE
+);
+
+-- Vínculo com uma conta Google (login com Google). Uma conta Google liga a
+-- uma só conta. google_sub é o identificador estável do Google, não o e-mail.
+CREATE TABLE contas_google (
+    usuario_id  UUID  NOT NULL,
+    google_sub  TEXT  NOT NULL,
+    CONSTRAINT pk_contas_google PRIMARY KEY (usuario_id),
+    CONSTRAINT uq_contas_google_sub UNIQUE (google_sub),
+    CONSTRAINT fk_cg_usuario FOREIGN KEY (usuario_id)
+        REFERENCES usuarios (id) ON DELETE CASCADE
 );
 
 -- Foto de perfil, redimensionada pelo servidor antes de gravar.
@@ -108,6 +138,8 @@ CREATE TABLE instrumentos (
     id    UUID  NOT NULL DEFAULT gen_random_uuid(),
     nome  TEXT  NOT NULL,
     slug  TEXT  NOT NULL,   -- nome em minúsculas, sem acento, hífen no lugar de espaço
+    criado_em     TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT pk_instrumentos PRIMARY KEY (id),
     CONSTRAINT uq_instrumentos_nome UNIQUE (nome),
     CONSTRAINT uq_instrumentos_slug UNIQUE (slug)
@@ -130,6 +162,8 @@ CREATE TABLE artistas (
     id    UUID  NOT NULL DEFAULT gen_random_uuid(),
     nome  TEXT  NOT NULL,
     slug  TEXT  NOT NULL,   -- página própria
+    criado_em     TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT pk_artistas PRIMARY KEY (id),
     CONSTRAINT uq_artistas_slug UNIQUE (slug)
 );
@@ -146,8 +180,32 @@ CREATE TABLE musicas (
     link_youtube          TEXT,                      -- opcional
     marcada_para_revisao  BOOLEAN  NOT NULL DEFAULT FALSE,
     versao                INTEGER  NOT NULL DEFAULT 1,
+    criado_em     TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT pk_musicas PRIMARY KEY (id),
     CONSTRAINT uq_musicas_slug UNIQUE (slug)
+);
+
+-- Histórico da cifra e do tom original, como commits. Cada alteração gera uma
+-- versão com título obrigatório, autor e data. Nada é apagado. usuario_id vazio:
+-- conta apagada (exibido como "Pessoa removida"). restaurada_de: número da
+-- versão de origem, quando esta foi criada por restauração.
+CREATE TABLE musica_versoes (
+    id             UUID         NOT NULL DEFAULT gen_random_uuid(),
+    musica_id      UUID         NOT NULL,
+    numero         INTEGER      NOT NULL,
+    titulo         TEXT         NOT NULL,
+    cifra          TEXT,
+    tom_original   TEXT,
+    usuario_id     UUID,
+    restaurada_de  INTEGER,
+    criado_em      TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT pk_musica_versoes PRIMARY KEY (id),
+    CONSTRAINT uq_musica_versoes_numero UNIQUE (musica_id, numero),
+    CONSTRAINT fk_mv_musica FOREIGN KEY (musica_id)
+        REFERENCES musicas (id) ON DELETE CASCADE,
+    CONSTRAINT fk_mv_usuario FOREIGN KEY (usuario_id)
+        REFERENCES usuarios (id) ON DELETE SET NULL
 );
 
 -- Artistas de cada música. A ordem (posicao) define o 1º artista,
@@ -186,6 +244,8 @@ CREATE TABLE eventos (
     data_evento        TIMESTAMPTZ  NOT NULL,
     requerir_presenca  BOOLEAN    NOT NULL DEFAULT FALSE,
     cancelado          BOOLEAN    NOT NULL DEFAULT FALSE,
+    criado_em     TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT pk_eventos PRIMARY KEY (id),
     CONSTRAINT uq_eventos_slug UNIQUE (slug)
 );
@@ -229,38 +289,60 @@ CREATE TABLE convites_acesso (
 CREATE TABLE confirmacoes_presenca (
     id          UUID     NOT NULL DEFAULT gen_random_uuid(),
     evento_id   UUID     NOT NULL,
-    usuario_id  UUID     NOT NULL,
+    usuario_id  UUID,                   -- vazio: pessoa removida (RN85)
     confirmou   BOOLEAN,
     CONSTRAINT pk_confirmacoes_presenca PRIMARY KEY (id),
     CONSTRAINT uq_confirmacoes_evento_usuario UNIQUE (evento_id, usuario_id),
     CONSTRAINT fk_confirmacoes_evento FOREIGN KEY (evento_id)
         REFERENCES eventos (id) ON DELETE CASCADE,
     CONSTRAINT fk_confirmacoes_usuario FOREIGN KEY (usuario_id)
-        REFERENCES usuarios (id) ON DELETE CASCADE
+        REFERENCES usuarios (id) ON DELETE SET NULL
 );
 
 -- Coleção = setlist de evento (tipo SETLIST) ou lista genérica (tipo LISTA).
--- As duas têm seções. publicado = TRUE dispara a notificação push
--- (só SETLIST).
+-- As duas têm seções. publicado = TRUE dispara a notificação push (só SETLIST).
+-- Os donos ficam em listas_donos.
 CREATE TABLE colecoes (
-    id          UUID         NOT NULL DEFAULT gen_random_uuid(),
-    tipo        VARCHAR(10)  NOT NULL,
-    evento_id   UUID,                   -- SETLIST
-    usuario_id  UUID,                   -- LISTA
-    slug        TEXT,                   -- LISTA: dono-nome
-    nome        TEXT,                   -- LISTA
-    publicado   BOOLEAN      NOT NULL DEFAULT FALSE,
+    id           UUID         NOT NULL DEFAULT gen_random_uuid(),
+    tipo         VARCHAR(10)  NOT NULL,
+    evento_id    UUID,                   -- SETLIST
+    slug         TEXT,                   -- LISTA: primeiro-dono-nome
+    nome         TEXT,                   -- LISTA
+    publicado    BOOLEAN      NOT NULL DEFAULT FALSE,
+    criado_em     TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT pk_colecoes PRIMARY KEY (id),
     CONSTRAINT uq_colecoes_evento UNIQUE (evento_id),
     CONSTRAINT uq_colecoes_slug UNIQUE (slug),
     CONSTRAINT fk_colecoes_evento FOREIGN KEY (evento_id)
-        REFERENCES eventos (id) ON DELETE CASCADE,
-    CONSTRAINT fk_colecoes_usuario FOREIGN KEY (usuario_id)
+        REFERENCES eventos (id) ON DELETE CASCADE
+);
+
+-- Donos de uma LISTA (um ou mais). posicao = 1 é o primeiro dono, usado no
+-- slug. A API garante que sempre há ao menos um dono.
+CREATE TABLE listas_donos (
+    colecao_id  UUID     NOT NULL,
+    usuario_id  UUID     NOT NULL,
+    posicao     INTEGER  NOT NULL,
+    CONSTRAINT pk_listas_donos PRIMARY KEY (colecao_id, usuario_id),
+    CONSTRAINT uq_listas_donos_posicao UNIQUE (colecao_id, posicao),
+    CONSTRAINT fk_ld_colecao FOREIGN KEY (colecao_id)
+        REFERENCES colecoes (id) ON DELETE CASCADE,
+    CONSTRAINT fk_ld_usuario FOREIGN KEY (usuario_id)
         REFERENCES usuarios (id) ON DELETE CASCADE
 );
 
--- Pessoas a quem o dono de uma LISTA deu acesso de edição. O dono edita sem
--- precisar estar aqui; só o dono apaga a lista e gerencia estes acessos.
+-- Slugs que deixaram de ser usados (por renomeação). A API redireciona a URL
+-- antiga para o item atual. Sem FK, porque aponta para tabelas diferentes.
+CREATE TABLE slugs_antigos (
+    entidade     VARCHAR(12)  NOT NULL,  -- USUARIO, INSTRUMENTO, ARTISTA, EVENTO, MUSICA, LISTA
+    slug         TEXT         NOT NULL,
+    entidade_id  UUID         NOT NULL,
+    CONSTRAINT pk_slugs_antigos PRIMARY KEY (entidade, slug)
+);
+
+-- Editores de uma LISTA: pessoas a quem os donos (listas_donos) deram acesso
+-- de edição. Os donos editam sem precisar estar aqui.
 -- Só vale para coleções do tipo LISTA (validado pela API).
 CREATE TABLE listas_acessos (
     colecao_id  UUID NOT NULL,
@@ -311,14 +393,14 @@ CREATE TABLE colecao_musicas (
 CREATE TABLE colecao_musicas_musicos (
     id                 UUID  NOT NULL DEFAULT gen_random_uuid(),
     colecao_musica_id  UUID  NOT NULL,
-    usuario_id         UUID  NOT NULL,
+    usuario_id         UUID,                -- vazio: pessoa removida (RN85)
     instrumento_id     UUID  NOT NULL,
     CONSTRAINT pk_colecao_musicas_musicos PRIMARY KEY (id),
     CONSTRAINT uq_cmm UNIQUE (colecao_musica_id, usuario_id, instrumento_id),
     CONSTRAINT fk_cmm_colecao_musica FOREIGN KEY (colecao_musica_id)
         REFERENCES colecao_musicas (id) ON DELETE CASCADE,
     CONSTRAINT fk_cmm_usuario FOREIGN KEY (usuario_id)
-        REFERENCES usuarios (id) ON DELETE CASCADE,
+        REFERENCES usuarios (id) ON DELETE SET NULL,
     CONSTRAINT fk_cmm_instrumento FOREIGN KEY (instrumento_id)
         REFERENCES instrumentos (id) ON DELETE RESTRICT
 );
@@ -362,6 +444,25 @@ CREATE FUNCTION busca_norm(texto TEXT) RETURNS TEXT
     LANGUAGE sql IMMUTABLE PARALLEL SAFE STRICT
     AS $$ SELECT lower(unaccent('unaccent', texto)) $$;
 
+-- Histórico: número positivo e título preenchido.
+ALTER TABLE musica_versoes ADD CONSTRAINT ck_mv_numero CHECK (numero >= 1);
+ALTER TABLE musica_versoes ADD CONSTRAINT ck_mv_titulo CHECK (length(trim(titulo)) > 0);
+CREATE INDEX ix_mv_usuario ON musica_versoes (usuario_id);
+
+-- atualizado_em sempre é a data da última gravação.
+CREATE FUNCTION set_atualizado_em() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+    NEW.atualizado_em := CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$;
+CREATE TRIGGER trg_usuarios_atualizado BEFORE UPDATE ON usuarios FOR EACH ROW EXECUTE FUNCTION set_atualizado_em();
+CREATE TRIGGER trg_instrumentos_atualizado BEFORE UPDATE ON instrumentos FOR EACH ROW EXECUTE FUNCTION set_atualizado_em();
+CREATE TRIGGER trg_artistas_atualizado BEFORE UPDATE ON artistas FOR EACH ROW EXECUTE FUNCTION set_atualizado_em();
+CREATE TRIGGER trg_musicas_atualizado BEFORE UPDATE ON musicas FOR EACH ROW EXECUTE FUNCTION set_atualizado_em();
+CREATE TRIGGER trg_eventos_atualizado BEFORE UPDATE ON eventos FOR EACH ROW EXECUTE FUNCTION set_atualizado_em();
+CREATE TRIGGER trg_colecoes_atualizado BEFORE UPDATE ON colecoes FOR EACH ROW EXECUTE FUNCTION set_atualizado_em();
+
 -- Valores permitidos (no lugar de enums).
 ALTER TABLE usuarios ADD CONSTRAINT ck_usuarios_papel
     CHECK (papel IN ('COORDENADOR', 'MINISTERIADO', 'CONVIDADO'));
@@ -382,18 +483,20 @@ ALTER TABLE convites_acesso ADD CONSTRAINT ck_convites_evento CHECK (
     (papel = 'CONVIDADO') = (evento_id IS NOT NULL)
 );
 
--- SETLIST exige evento e não tem dono nem nome;
--- LISTA exige dono e nome e não tem evento nem publicação.
+-- SETLIST exige evento e não tem nome; LISTA exige nome e não tem evento nem publicação.
 ALTER TABLE colecoes ADD CONSTRAINT ck_colecoes_tipo_consistente CHECK (
-    (tipo = 'SETLIST' AND evento_id IS NOT NULL AND usuario_id IS NULL AND nome IS NULL)
+    (tipo = 'SETLIST' AND evento_id IS NOT NULL AND nome IS NULL)
     OR
-    (tipo = 'LISTA' AND evento_id IS NULL AND usuario_id IS NOT NULL AND nome IS NOT NULL
-        AND publicado = FALSE)
+    (tipo = 'LISTA' AND evento_id IS NULL AND nome IS NOT NULL AND publicado = FALSE)
 );
+ALTER TABLE listas_donos ADD CONSTRAINT ck_ld_posicao CHECK (posicao >= 1);
+ALTER TABLE slugs_antigos ADD CONSTRAINT ck_slugs_antigos_entidade CHECK (
+    entidade IN ('USUARIO', 'INSTRUMENTO', 'ARTISTA', 'EVENTO', 'MUSICA', 'LISTA'));
 
 -- E-mail em minúsculas e com formato mínimo (algo@algo).
-ALTER TABLE usuarios ADD CONSTRAINT ck_usuarios_email
+ALTER TABLE emails_usuario ADD CONSTRAINT ck_emails_formato
     CHECK (email = lower(email) AND email LIKE '%_@_%');
+CREATE INDEX ix_emails_usuario ON emails_usuario (usuario_id);
 ALTER TABLE fotos_perfil ADD CONSTRAINT ck_fotos_tipo
     CHECK (tipo_mime IN ('image/webp', 'image/jpeg'));
 ALTER TABLE codigos_email ADD CONSTRAINT ck_codigos_email_formato
@@ -448,7 +551,7 @@ CREATE INDEX ix_ec_usuario ON eventos_convidados (usuario_id);
 CREATE INDEX ix_convites_criado_por ON convites_acesso (criado_por_id);
 CREATE INDEX ix_convites_evento ON convites_acesso (evento_id);
 CREATE INDEX ix_confirmacoes_usuario ON confirmacoes_presenca (usuario_id);
-CREATE INDEX ix_colecoes_usuario ON colecoes (usuario_id);
+CREATE INDEX ix_ld_usuario ON listas_donos (usuario_id);
 CREATE INDEX ix_la_usuario ON listas_acessos (usuario_id);
 CREATE INDEX ix_secoes_colecao ON secoes (colecao_id, ordem);
 CREATE INDEX ix_cm_colecao_ordem ON colecao_musicas (colecao_id, ordem);
