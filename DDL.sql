@@ -4,16 +4,18 @@
 -- PARTE 1: tabelas, chaves primárias, estrangeiras e únicas.
 --          É a parte mais simples e a mais segura para visualizadores.
 -- PARTE 2: CHECKs e índices (inclusive de expressão e de busca).
--- PARTE 3: views (dashboard, execuções e rankings).
+-- PARTE 3: views (execuções).
 -- PARTE 4: dados iniciais (instrumentos).
 --          Se o visualizador reclamar, apague tudo a partir da
 --          linha "PARTE 2".
 --
 -- Convenções
 --  * ids são UUID gerados pelo banco (gen_random_uuid()).
---  * As únicas colunas de data/hora são eventos.data_evento e
---    convites_acesso.expira_em e codigos_email.expira_em.
---    Não há colunas de criação ou edição.
+--  * As únicas colunas de data/hora são eventos.data_evento,
+--    convites_acesso.expira_em, codigos_email.expira_em e
+--    limites_tentativas.janela_fim. Não há colunas de criação ou edição.
+--    Todas são TIMESTAMPTZ (com fuso); a aplicação calcula dia, mês e ano
+--    em America/Sao_Paulo.
 --  * "versao" é um contador inteiro: a API só grava se a versão que o
 --    cliente leu ainda for a atual, e incrementa a cada gravação.
 --  * "ordem" é DOUBLE PRECISION: o drag-and-drop grava a média entre
@@ -26,7 +28,7 @@
 --      tipo:    SETLIST | LISTA
 --      status:  NAO_OUVI | OUVI | TOQUEI
 --  * slugs: minúsculas, números e hífens (ex.: "violao",
---    "missa-de-domingo-2026-10-12").
+--    "2026-10-12-missa-de-domingo").
 -- =====================================================================
 
 
@@ -35,16 +37,21 @@
 -- ---------------------------------------------------------------------
 
 -- Pessoas. O papel CONVIDADO é de quem entrou por convite de evento:
--- só acessa os eventos listados em eventos_convidados e não tem o campo
--- "ativo" (NULL). Nos demais papéis, ativo = false tira a pessoa da escala
--- dos eventos futuros (feito pela aplicação).
+-- vê tudo, mas não edita (só a própria conta, os instrumentos e a presença),
+-- e não tem o campo "ativo" (NULL). O acesso do convidado dura enquanto ele
+-- estiver em ao menos um evento de eventos_convidados. Nos demais papéis,
+-- ativo = false tira a pessoa da escala dos eventos futuros (feito pela
+-- aplicação).
 -- is_admin dá acesso à documentação da API (Swagger).
+-- token_versao entra no JWT da sessão: trocar ou redefinir a senha o
+-- incrementa e invalida as sessões anteriores.
 CREATE TABLE usuarios (
     id           UUID         NOT NULL DEFAULT gen_random_uuid(),
     nome         TEXT         NOT NULL,                -- nome completo
-    slug         TEXT         NOT NULL,                -- página pública
+    slug         TEXT         NOT NULL,                -- página própria
     email        TEXT         NOT NULL,                -- sempre em minúsculas
     senha_hash   TEXT         NOT NULL,
+    token_versao INTEGER      NOT NULL DEFAULT 1,
     papel        VARCHAR(20)  NOT NULL DEFAULT 'MINISTERIADO',
     is_admin     BOOLEAN      NOT NULL DEFAULT FALSE,
     ativo        BOOLEAN      DEFAULT TRUE,            -- NULL só para CONVIDADO
@@ -67,15 +74,16 @@ CREATE TABLE fotos_perfil (
 -- Códigos de 6 dígitos enviados por e-mail. Só o hash é guardado.
 -- CADASTRO: antes de a conta existir (usuario_id NULL).
 -- REDEFINICAO: "esqueci a senha" ou troca de e-mail pelo admin.
--- Valem 30 minutos, servem uma única vez e têm contador de tentativas.
+-- TROCA_EMAIL: a própria pessoa troca o e-mail (o código vai ao novo endereço).
+-- Valem 30 minutos e têm contador de tentativas. Servem uma única vez: a
+-- linha é apagada ao usar, e a rotina diária apaga as expiradas.
 CREATE TABLE codigos_email (
     id           UUID         NOT NULL DEFAULT gen_random_uuid(),
     usuario_id   UUID,
     email        TEXT         NOT NULL,
     finalidade   VARCHAR(12)  NOT NULL,
     codigo_hash  TEXT         NOT NULL,
-    expira_em    TIMESTAMP    NOT NULL DEFAULT (CURRENT_TIMESTAMP + INTERVAL '30 minutes'),
-    usado        BOOLEAN      NOT NULL DEFAULT FALSE,
+    expira_em    TIMESTAMPTZ  NOT NULL DEFAULT (CURRENT_TIMESTAMP + INTERVAL '30 minutes'),
     tentativas   INTEGER      NOT NULL DEFAULT 0,
     CONSTRAINT pk_codigos_email PRIMARY KEY (id),
     CONSTRAINT fk_codigos_email_usuario FOREIGN KEY (usuario_id)
@@ -117,12 +125,13 @@ CREATE TABLE usuarios_instrumentos (
         REFERENCES instrumentos (id) ON DELETE RESTRICT
 );
 
-CREATE TABLE autores (
+-- Artistas: compositores e intérpretes. Cada música tem pelo menos um.
+CREATE TABLE artistas (
     id    UUID  NOT NULL DEFAULT gen_random_uuid(),
     nome  TEXT  NOT NULL,
-    slug  TEXT  NOT NULL,   -- página pública
-    CONSTRAINT pk_autores PRIMARY KEY (id),
-    CONSTRAINT uq_autores_slug UNIQUE (slug)
+    slug  TEXT  NOT NULL,   -- página própria
+    CONSTRAINT pk_artistas PRIMARY KEY (id),
+    CONSTRAINT uq_artistas_slug UNIQUE (slug)
 );
 
 -- A biblioteca de músicas. A cifra fica em graus. tom_original é opcional
@@ -131,15 +140,28 @@ CREATE TABLE autores (
 CREATE TABLE musicas (
     id                    UUID     NOT NULL DEFAULT gen_random_uuid(),
     titulo                TEXT     NOT NULL,
-    autor_id              UUID,
+    slug                  TEXT     NOT NULL,          -- artista-titulo, com o 1º artista
     cifra                 TEXT,                      -- em graus
     tom_original          TEXT,                      -- opcional, só informativo
     link_youtube          TEXT,                      -- opcional
     marcada_para_revisao  BOOLEAN  NOT NULL DEFAULT FALSE,
     versao                INTEGER  NOT NULL DEFAULT 1,
     CONSTRAINT pk_musicas PRIMARY KEY (id),
-    CONSTRAINT fk_musicas_autor FOREIGN KEY (autor_id)
-        REFERENCES autores (id) ON DELETE SET NULL
+    CONSTRAINT uq_musicas_slug UNIQUE (slug)
+);
+
+-- Artistas de cada música. A ordem (posicao) define o 1º artista,
+-- que é usado no slug. Uma música tem pelo menos um artista (validado pela API).
+CREATE TABLE musica_artistas (
+    musica_id   UUID     NOT NULL,
+    artista_id  UUID     NOT NULL,
+    posicao     INTEGER  NOT NULL,
+    CONSTRAINT pk_musica_artistas PRIMARY KEY (musica_id, artista_id),
+    CONSTRAINT uq_musica_artistas_posicao UNIQUE (musica_id, posicao),
+    CONSTRAINT fk_ma_musica FOREIGN KEY (musica_id)
+        REFERENCES musicas (id) ON DELETE CASCADE,
+    CONSTRAINT fk_ma_artista FOREIGN KEY (artista_id)
+        REFERENCES artistas (id) ON DELETE RESTRICT
 );
 
 -- "Não ouvi" / "Ouvi" / "Toquei", por pessoa e música.
@@ -156,19 +178,21 @@ CREATE TABLE status_escuta (
         REFERENCES musicas (id) ON DELETE CASCADE
 );
 
--- Missas, ensaios, retiros. slug = nome + data (ex.: missa-de-domingo-2026-10-12).
+-- Missas, ensaios, retiros. slug = data ISO + nome (ex.: 2026-10-12-missa-de-domingo).
 CREATE TABLE eventos (
     id                 UUID       NOT NULL DEFAULT gen_random_uuid(),
     nome               TEXT       NOT NULL,
     slug               TEXT       NOT NULL,
-    data_evento        TIMESTAMP  NOT NULL,
+    data_evento        TIMESTAMPTZ  NOT NULL,
     requerir_presenca  BOOLEAN    NOT NULL DEFAULT FALSE,
     cancelado          BOOLEAN    NOT NULL DEFAULT FALSE,
     CONSTRAINT pk_eventos PRIMARY KEY (id),
     CONSTRAINT uq_eventos_slug UNIQUE (slug)
 );
 
--- Eventos a que um CONVIDADO tem acesso.
+-- Eventos a que um CONVIDADO foi convidado. Ele pode ser escalado e
+-- responder à presença só nesses eventos, e o acesso dele ao app dura
+-- enquanto houver ao menos um.
 CREATE TABLE eventos_convidados (
     evento_id   UUID NOT NULL,
     usuario_id  UUID NOT NULL,
@@ -183,21 +207,19 @@ CREATE TABLE eventos_convidados (
 -- personalizável). O papel é o cargo que a pessoa terá ao entrar.
 -- Convite de papel CONVIDADO é sempre de um evento (evento_id).
 -- Não há e-mail do convidado: o convite é um link.
+-- Uso único: a linha é apagada quando o convite é usado (DELETE ... RETURNING,
+-- atômico) e a rotina diária apaga as expiradas.
 CREATE TABLE convites_acesso (
     id             UUID         NOT NULL DEFAULT gen_random_uuid(),
     token          TEXT         NOT NULL,
     criado_por_id  UUID         NOT NULL,
     papel          VARCHAR(20)  NOT NULL DEFAULT 'MINISTERIADO',
     evento_id      UUID,
-    usado          BOOLEAN      NOT NULL DEFAULT FALSE,
-    usado_por_id   UUID,
-    expira_em      TIMESTAMP    NOT NULL DEFAULT (CURRENT_TIMESTAMP + INTERVAL '30 minutes'),
+    expira_em      TIMESTAMPTZ  NOT NULL DEFAULT (CURRENT_TIMESTAMP + INTERVAL '30 minutes'),
     CONSTRAINT pk_convites_acesso PRIMARY KEY (id),
     CONSTRAINT uq_convites_token UNIQUE (token),
     CONSTRAINT fk_convites_criado_por FOREIGN KEY (criado_por_id)
         REFERENCES usuarios (id) ON DELETE CASCADE,
-    CONSTRAINT fk_convites_usado_por FOREIGN KEY (usado_por_id)
-        REFERENCES usuarios (id) ON DELETE SET NULL,
     CONSTRAINT fk_convites_evento FOREIGN KEY (evento_id)
         REFERENCES eventos (id) ON DELETE CASCADE
 );
@@ -225,13 +247,28 @@ CREATE TABLE colecoes (
     tipo        VARCHAR(10)  NOT NULL,
     evento_id   UUID,                   -- SETLIST
     usuario_id  UUID,                   -- LISTA
+    slug        TEXT,                   -- LISTA: dono-nome
     nome        TEXT,                   -- LISTA
     publicado   BOOLEAN      NOT NULL DEFAULT FALSE,
     CONSTRAINT pk_colecoes PRIMARY KEY (id),
     CONSTRAINT uq_colecoes_evento UNIQUE (evento_id),
+    CONSTRAINT uq_colecoes_slug UNIQUE (slug),
     CONSTRAINT fk_colecoes_evento FOREIGN KEY (evento_id)
         REFERENCES eventos (id) ON DELETE CASCADE,
     CONSTRAINT fk_colecoes_usuario FOREIGN KEY (usuario_id)
+        REFERENCES usuarios (id) ON DELETE CASCADE
+);
+
+-- Pessoas a quem o dono de uma LISTA deu acesso de edição. O dono edita sem
+-- precisar estar aqui; só o dono apaga a lista e gerencia estes acessos.
+-- Só vale para coleções do tipo LISTA (validado pela API).
+CREATE TABLE listas_acessos (
+    colecao_id  UUID NOT NULL,
+    usuario_id  UUID NOT NULL,
+    CONSTRAINT pk_listas_acessos PRIMARY KEY (colecao_id, usuario_id),
+    CONSTRAINT fk_la_colecao FOREIGN KEY (colecao_id)
+        REFERENCES colecoes (id) ON DELETE CASCADE,
+    CONSTRAINT fk_la_usuario FOREIGN KEY (usuario_id)
         REFERENCES usuarios (id) ON DELETE CASCADE
 );
 
@@ -299,10 +336,31 @@ CREATE TABLE device_tokens (
         REFERENCES usuarios (id) ON DELETE CASCADE
 );
 
+-- Contador do limite de tentativas (login, convite, códigos). A Vercel não
+-- guarda memória entre as requisições, então o contador fica no banco.
+-- chave: ex. 'login:ip:203.0.113.5' ou 'codigo:ana@exemplo.com'.
+-- Se janela_fim já passou, a API recomeça a contagem. A rotina diária apaga
+-- as linhas vencidas.
+CREATE TABLE limites_tentativas (
+    chave       TEXT         NOT NULL,
+    tentativas  INTEGER      NOT NULL DEFAULT 1,
+    janela_fim  TIMESTAMPTZ  NOT NULL,
+    CONSTRAINT pk_limites_tentativas PRIMARY KEY (chave)
+);
+
 
 -- ---------------------------------------------------------------------
 -- PARTE 2 - CHECKs E ÍNDICES  (apague daqui para baixo se o visualizador falhar)
 -- ---------------------------------------------------------------------
+
+-- Normalização para busca, ordem A-Z e unicidade de nomes: minúsculas e
+-- sem acentos ("Coração" vira "coracao"). A API usa esta mesma função nas
+-- consultas, para que os índices abaixo sejam aproveitados.
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE EXTENSION IF NOT EXISTS unaccent;
+CREATE FUNCTION busca_norm(texto TEXT) RETURNS TEXT
+    LANGUAGE sql IMMUTABLE PARALLEL SAFE STRICT
+    AS $$ SELECT lower(unaccent('unaccent', texto)) $$;
 
 -- Valores permitidos (no lugar de enums).
 ALTER TABLE usuarios ADD CONSTRAINT ck_usuarios_papel
@@ -343,16 +401,26 @@ ALTER TABLE codigos_email ADD CONSTRAINT ck_codigos_email_formato
 ALTER TABLE codigos_email ADD CONSTRAINT ck_codigos_finalidade CHECK (
     (finalidade = 'CADASTRO' AND usuario_id IS NULL)
     OR
-    (finalidade = 'REDEFINICAO' AND usuario_id IS NOT NULL)
+    (finalidade IN ('REDEFINICAO', 'TROCA_EMAIL') AND usuario_id IS NOT NULL)
 );
+ALTER TABLE usuarios ADD CONSTRAINT ck_usuarios_token_versao CHECK (token_versao >= 1);
 
 -- Slugs: minúsculas, números e hífens.
 ALTER TABLE usuarios ADD CONSTRAINT ck_usuarios_slug
     CHECK (slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$');
 ALTER TABLE instrumentos ADD CONSTRAINT ck_instrumentos_slug
     CHECK (slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$');
-ALTER TABLE autores ADD CONSTRAINT ck_autores_slug
+ALTER TABLE artistas ADD CONSTRAINT ck_artistas_slug
     CHECK (slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$');
+ALTER TABLE musica_artistas ADD CONSTRAINT ck_ma_posicao CHECK (posicao >= 1);
+-- Slugs de música e de lista: minúsculas, números e hífens. Lista tem slug; setlist não.
+ALTER TABLE musicas ADD CONSTRAINT ck_musicas_slug
+    CHECK (slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$');
+ALTER TABLE colecoes ADD CONSTRAINT ck_colecoes_slug CHECK (
+    (tipo = 'LISTA' AND slug IS NOT NULL AND slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$')
+    OR
+    (tipo = 'SETLIST' AND slug IS NULL)
+);
 ALTER TABLE eventos ADD CONSTRAINT ck_eventos_slug
     CHECK (slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$');
 
@@ -366,20 +434,14 @@ ALTER TABLE musicas ADD CONSTRAINT ck_musicas_tom_original
 ALTER TABLE musicas ADD CONSTRAINT ck_musicas_versao CHECK (versao >= 1);
 ALTER TABLE colecao_musicas ADD CONSTRAINT ck_cm_versao CHECK (versao >= 1);
 
--- Instrumento e autor não repetem com outra caixa ("Violão" x "violão").
-CREATE UNIQUE INDEX uq_instrumentos_nome_ci ON instrumentos (lower(nome));
-CREATE UNIQUE INDEX uq_autores_nome_ci ON autores (lower(nome));
-
--- Mesma música (título + autor) não é cadastrada duas vezes.
--- Sem autor, o título sozinho é a identidade.
-CREATE UNIQUE INDEX uq_musicas_titulo_autor ON musicas (
-    lower(titulo),
-    COALESCE(autor_id, '00000000-0000-0000-0000-000000000000'::UUID)
-);
+-- Instrumento e artista não repetem com outra caixa ou outro acento
+-- ("Violão" x "violao", "José" x "jose").
+CREATE UNIQUE INDEX uq_instrumentos_nome_ci ON instrumentos (busca_norm(nome));
+CREATE UNIQUE INDEX uq_artistas_nome_ci ON artistas (busca_norm(nome));
 
 -- Índices nas chaves estrangeiras (as únicas já cobrem algumas).
 CREATE INDEX ix_ui_instrumento ON usuarios_instrumentos (instrumento_id);
-CREATE INDEX ix_musicas_autor ON musicas (autor_id);
+CREATE INDEX ix_ma_artista ON musica_artistas (artista_id);
 CREATE INDEX ix_status_musica ON status_escuta (musica_id);
 CREATE INDEX ix_eventos_data ON eventos (data_evento);
 CREATE INDEX ix_ec_usuario ON eventos_convidados (usuario_id);
@@ -387,6 +449,7 @@ CREATE INDEX ix_convites_criado_por ON convites_acesso (criado_por_id);
 CREATE INDEX ix_convites_evento ON convites_acesso (evento_id);
 CREATE INDEX ix_confirmacoes_usuario ON confirmacoes_presenca (usuario_id);
 CREATE INDEX ix_colecoes_usuario ON colecoes (usuario_id);
+CREATE INDEX ix_la_usuario ON listas_acessos (usuario_id);
 CREATE INDEX ix_secoes_colecao ON secoes (colecao_id, ordem);
 CREATE INDEX ix_cm_colecao_ordem ON colecao_musicas (colecao_id, ordem);
 CREATE INDEX ix_cm_musica ON colecao_musicas (musica_id);
@@ -398,90 +461,39 @@ CREATE INDEX ix_codigos_email_usuario ON codigos_email (usuario_id);
 CREATE INDEX ix_codigos_email_email ON codigos_email (email);
 CREATE INDEX ix_codigos_rec_usuario ON codigos_recuperacao (usuario_id);
 
--- Busca por título aproximado (aviso de música parecida ao cadastrar).
-CREATE EXTENSION IF NOT EXISTS pg_trgm;
-CREATE INDEX ix_musicas_titulo_trgm ON musicas USING gin (titulo gin_trgm_ops);
+-- Busca por trechos do título e do nome do artista, sem acento e sem
+-- diferenciar maiúsculas, e aviso de música parecida ao cadastrar.
+CREATE INDEX ix_musicas_titulo_trgm ON musicas USING gin (busca_norm(titulo) gin_trgm_ops);
+CREATE INDEX ix_artistas_nome_trgm ON artistas USING gin (busca_norm(nome) gin_trgm_ops);
 
 
 -- ---------------------------------------------------------------------
 -- PARTE 3 - VIEWS
 -- ---------------------------------------------------------------------
 
--- Totais do dashboard. músicos = contas ativas (CONVIDADO não conta);
--- músicas = todas as cadastradas.
-CREATE VIEW vw_dashboard_resumo AS
-SELECT
-    (SELECT COUNT(*) FROM usuarios WHERE ativo)::INTEGER                       AS total_musicos,
-    (SELECT COUNT(*) FROM musicas)::INTEGER                                    AS total_musicas,
-    (SELECT COUNT(*) FROM musicas
-      WHERE marcada_para_revisao)::INTEGER                                     AS total_para_revisao;
-
--- Músicos ativos por instrumento. Quem toca mais de um instrumento
--- aparece em cada um; instrumentos sem músicos aparecem com 0.
-CREATE VIEW vw_dashboard_musicos_por_instrumento AS
-SELECT
-    i.id                      AS instrumento_id,
-    i.nome                    AS instrumento,
-    i.slug                    AS instrumento_slug,
-    COUNT(u.id)::INTEGER      AS total_musicos
-FROM instrumentos i
-LEFT JOIN usuarios_instrumentos ui ON ui.instrumento_id = i.id
-LEFT JOIN usuarios u ON u.id = ui.usuario_id AND u.ativo
-GROUP BY i.id, i.nome, i.slug;
-
--- Eventos que ainda vão acontecer (a API ordena por data e limita).
-CREATE VIEW vw_dashboard_proximos_eventos AS
-SELECT id AS evento_id, nome, slug, data_evento
-FROM eventos
-WHERE NOT cancelado AND data_evento >= CURRENT_TIMESTAMP;
+-- Os números do dashboard (músicos, músicas, para revisão, músicos por
+-- instrumento e próximos eventos) são consultas simples feitas pela API.
+-- Aqui ficam só as views usadas por mais de uma consulta.
 
 -- Execuções: uma linha por música em setlist publicado de evento que já
--- aconteceu e não foi cancelado. É a base de todos os rankings.
+-- aconteceu e não foi cancelado. É a base de todas as contagens de
+-- músicas e artistas tocados.
 CREATE VIEW vw_execucoes AS
 SELECT
     cm.musica_id,
-    m.autor_id,
     e.id           AS evento_id,
     e.data_evento
 FROM colecao_musicas cm
 JOIN colecoes c  ON c.id = cm.colecao_id AND c.tipo = 'SETLIST' AND c.publicado
 JOIN eventos e   ON e.id = c.evento_id
                 AND NOT e.cancelado
-                AND e.data_evento <= CURRENT_TIMESTAMP
-JOIN musicas m   ON m.id = cm.musica_id;
+                AND e.data_evento <= CURRENT_TIMESTAMP;
 
 -- Última vez que cada música foi tocada.
 CREATE VIEW vw_ultima_execucao AS
 SELECT musica_id, MAX(data_evento) AS ultima_execucao
 FROM vw_execucoes
 GROUP BY musica_id;
-
--- Ranking geral (todos os períodos) de músicas, com 0 para as nunca tocadas.
--- Para mês/ano, a API repete esta consulta filtrando data_evento
--- (ver README).
-CREATE VIEW vw_ranking_musicas_geral AS
-SELECT
-    m.id            AS musica_id,
-    m.titulo,
-    a.id            AS autor_id,
-    a.nome          AS autor,
-    COUNT(x.evento_id)::INTEGER AS execucoes
-FROM musicas m
-LEFT JOIN autores a     ON a.id = m.autor_id
-LEFT JOIN vw_execucoes x ON x.musica_id = m.id
-GROUP BY m.id, m.titulo, a.id, a.nome;
-
--- Ranking geral de autores: soma das execuções das músicas do autor.
-CREATE VIEW vw_ranking_autores_geral AS
-SELECT
-    a.id    AS autor_id,
-    a.nome  AS autor,
-    a.slug  AS autor_slug,
-    COUNT(x.evento_id)::INTEGER AS execucoes
-FROM autores a
-LEFT JOIN musicas m      ON m.autor_id = a.id
-LEFT JOIN vw_execucoes x ON x.musica_id = m.id
-GROUP BY a.id, a.nome, a.slug;
 
 
 -- ---------------------------------------------------------------------
