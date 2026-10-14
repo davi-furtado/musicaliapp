@@ -45,8 +45,8 @@
 -- estiver em ao menos um evento de eventos_convidados. Nos demais papéis,
 -- ativo = false tira a pessoa da escala dos eventos futuros (feito pela
 -- aplicação).
--- is_admin libera só a documentação da API (Swagger). Coordenador e admin
--- têm os mesmos poderes, exceto apagar contas, ver e-mails e mudar nome,
+-- Todo usuário logado acessa a documentação da API (Swagger). Coordenadores
+-- têm os poderes de coordenação, exceto apagar contas, ver e-mails e mudar nome,
 -- foto ou instrumentos de outras pessoas (regras da aplicação).
 -- token_versao entra no JWT da sessão: trocar ou redefinir a senha o
 -- incrementa e invalida as sessões anteriores.
@@ -58,7 +58,6 @@ CREATE TABLE usuarios (
     token_versao INTEGER      NOT NULL DEFAULT 1,
     termos_aceitos_em TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,  -- aceite dos termos (RN86)
     papel        VARCHAR(20)  NOT NULL DEFAULT 'MINISTERIADO',
-    is_admin     BOOLEAN      NOT NULL DEFAULT FALSE,
     ativo        BOOLEAN      DEFAULT TRUE,            -- NULL só para CONVIDADO
     criado_em     TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
     atualizado_em TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -119,7 +118,7 @@ CREATE TABLE fotos_perfil (
 
 -- Códigos de 6 dígitos enviados por e-mail. Só o hash é guardado.
 -- CADASTRO: antes de a conta existir (usuario_id NULL).
--- REDEFINICAO: "esqueci a senha" ou troca de e-mail pelo admin.
+-- REDEFINICAO: "esqueci a senha".
 -- TROCA_EMAIL: a própria pessoa troca o e-mail (o código vai ao novo endereço).
 -- Valem 30 minutos e têm contador de tentativas. Servem uma única vez: a
 -- linha é apagada ao usar, e a rotina diária apaga as expiradas.
@@ -522,6 +521,21 @@ BEGIN
 END;
 $$;
 CREATE TRIGGER trg_usuarios_atualizado BEFORE UPDATE ON usuarios FOR EACH ROW EXECUTE FUNCTION set_atualizado_em();
+
+-- ativo: convidado nunca tem o campo (NULL); os demais começam ativos,
+-- salvo quando a inserção informa o contrário.
+CREATE FUNCTION usuarios_define_ativo() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+    IF NEW.papel = 'CONVIDADO' THEN
+        NEW.ativo := NULL;
+    ELSIF NEW.ativo IS NULL THEN
+        NEW.ativo := TRUE;
+    END IF;
+    RETURN NEW;
+END;
+$$;
+CREATE TRIGGER trg_usuarios_define_ativo BEFORE INSERT OR UPDATE OF papel, ativo ON usuarios
+    FOR EACH ROW EXECUTE FUNCTION usuarios_define_ativo();
 CREATE TRIGGER trg_instrumentos_atualizado BEFORE UPDATE ON instrumentos FOR EACH ROW EXECUTE FUNCTION set_atualizado_em();
 CREATE TRIGGER trg_artistas_atualizado BEFORE UPDATE ON artistas FOR EACH ROW EXECUTE FUNCTION set_atualizado_em();
 CREATE TRIGGER trg_musicas_atualizado BEFORE UPDATE ON musicas FOR EACH ROW EXECUTE FUNCTION set_atualizado_em();
@@ -536,9 +550,9 @@ ALTER TABLE convites_acesso ADD CONSTRAINT ck_convites_papel
 ALTER TABLE status_escuta ADD CONSTRAINT ck_status_escuta
     CHECK (status IN ('NAO_OUVI', 'OUVI', 'TOQUEI'));
 
--- CONVIDADO não tem "ativo" (NULL) nem é admin; os demais papéis têm "ativo".
+-- CONVIDADO não tem "ativo" (NULL); os demais papéis têm "ativo".
 ALTER TABLE usuarios ADD CONSTRAINT ck_usuarios_convidado CHECK (
-    (papel = 'CONVIDADO' AND ativo IS NULL AND is_admin = FALSE)
+    (papel = 'CONVIDADO' AND ativo IS NULL)
     OR
     (papel <> 'CONVIDADO' AND ativo IS NOT NULL)
 );
