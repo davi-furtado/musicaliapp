@@ -1035,6 +1035,9 @@ Resposta de `GET /api/dashboard?periodo=mes`:
 │  │  ├─ ci.yml              # tipos, lint, testes e DDL em Postgres limpo
 │  │  └─ backup.yml          # backup semanal do banco
 │  └─ dependabot.yml         # atualização semanal das dependências
+├─ .editorconfig             # indentação, fim de linha e espaços no fim das linhas
+├─ .prettierrc               # formatação do Prettier (sem vírgula final)
+├─ eslint.config.mjs         # regras do ESLint (`next/core-web-vitals` e `typescript-eslint`)
 ├─ vercel.json               # agenda da rotina diária (Vercel Cron) e região das funções
 ├─ prisma/
 │  └─ schema.prisma          # gerado do banco com `prisma db pull`
@@ -1116,7 +1119,7 @@ npx create-next-app@latest musicaliapp && cd musicaliapp
 npm i prisma@6 @prisma/client@6 zod jose bcryptjs openid-client web-push resend \
       sharp pdf-lib @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities \
       @asteasolutions/zod-to-openapi swagger-ui-react @serwist/next serwist
-npm i -D @types/web-push @types/swagger-ui-react vitest @playwright/test prettier
+npm i -D @types/web-push @types/swagger-ui-react vitest @playwright/test prettier eslint
 
 # 4. Variáveis de ambiente
 cp .env.example .env.local
