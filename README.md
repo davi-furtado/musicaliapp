@@ -67,7 +67,6 @@ Os requisitos têm identificadores estáveis: **RF** (requisito funcional), **RN
 | Marcador de seção | A linha `[Refrão]` ou `[Verso 1]` dentro da cifra. Não é a seção da coleção. |
 | Execução | Uma música tocada no setlist publicado de um evento que já aconteceu (RN24). |
 | Ministeriado e coordenador | Cargos de membro. O coordenador convida e gerencia eventos e contas (RN05). |
-| Admin | Indicador à parte do cargo. Só ele acessa o Swagger (RN04). |
 | Convidado | Pessoa de fora, convidada para eventos. Vê tudo e não edita (RN56). |
 | Slug | Parte legível da URL (`/musicas/<slug>`). Acompanha o nome (RN13). |
 | Versão do histórico | Um ponto do histórico da música, com título, autor e data (RN92). |
@@ -80,14 +79,14 @@ Os requisitos têm identificadores estáveis: **RF** (requisito funcional), **RN
 | ID | Requisito |
 |---|---|
 | **Acesso e contas** | |
-| RF01 | Coordenadores e o admin geram links de convite com o cargo que a pessoa terá. O link vale 30 minutos e serve uma única vez. Ao gerar o link, quem o criou vê quanto tempo falta para ele expirar. |
+| RF01 | Coordenadores geram links de convite com o cargo que a pessoa terá. O link vale 30 minutos e serve uma única vez. Ao gerar o link, quem o criou vê quanto tempo falta para ele expirar. |
 | RF02 | Quem recebe o convite informa nome completo, e-mail e senha, aceita os Termos de Uso e a Política de Privacidade (RF59), confirma o código enviado ao e-mail e entra logado. A conta só é criada depois da confirmação. |
-| RF03 | Coordenadores e o admin geram o link de convite de **um evento** para uma pessoa de fora (convidado). |
+| RF03 | Coordenadores geram o link de convite de **um evento** para uma pessoa de fora (convidado). |
 | RF04 | Os usuários fazem login e logout. O botão **Lembrar de mim** vem marcado por padrão: marcado, o login fica salvo no aparelho e é renovado a cada acesso, sem prazo para expirar; desmarcado, vale só enquanto a sessão do navegador estiver aberta. |
 | RF05 | Cada pessoa tem uma área de conta, onde altera nome, **foto de perfil** e instrumentos, e uma página de configurações com a segurança (senha, e-mails, apagar a própria conta), os termos e os padrões de visualização e exportação (RF58, RF66). |
 | RF06 | Cada pessoa escolhe e altera os instrumentos que toca (zero ou mais). |
-| RF07 | Coordenadores e o admin alteram o cargo de qualquer pessoa, inclusive tornando um convidado ministeriado. Nome, foto e instrumentos só são alterados pela própria pessoa (RN05). |
-| RF08 | Coordenadores e o admin desativam e reativam contas. |
+| RF07 | Coordenadores alteram o cargo de qualquer pessoa, inclusive tornando um convidado ministeriado. Nome, foto e instrumentos só são alterados pela própria pessoa (RN05). |
+| RF08 | Coordenadores desativam e reativam contas. |
 | RF09 | Cada usuário, artista, instrumento, evento, música e lista tem página própria, acessada pelo `slug`. O slug acompanha o nome e a URL antiga redireciona (RN13). A página do instrumento lista os músicos que o tocam. |
 | **Dashboard e listagens** | |
 | RF10 | O dashboard mostra o número de músicos, o número de músicas e o número de músicas marcadas para revisão. |
@@ -127,13 +126,13 @@ Os requisitos têm identificadores estáveis: **RF** (requisito funcional), **RN
 | RF41 | Consultar os dados já carregados sem conexão. |
 | RF42 | Instalar o app na tela inicial do celular. |
 | **API** | |
-| RF43 | O admin consulta a documentação da API (Swagger) em `/api/docs`. |
+| RF43 | Qualquer usuário logado consulta a documentação da API (Swagger) em `/api/docs`. |
 | **Conta e segurança** | |
 | RF44 | Esqueci a senha: a pessoa informa o e-mail da conta, recebe um código de 6 dígitos e o usa para definir a senha nova. Pode usar um código de recuperação no lugar do e-mail. |
 | RF45 | Cada conta tem de um a três e-mails, todos únicos no sistema. Cada e-mail é confirmado por código de 6 dígitos enviado a ele ao ser adicionado. Quando um código precisa ser enviado, a pessoa escolhe para qual dos seus e-mails. A pessoa entra com qualquer e-mail confirmado ou com o Google, se vinculado (RF61). |
 | RF46 | Trocar a senha em `/configuracoes/seguranca`, informando a senha atual. |
-| RF47 | Desativar a própria conta em `/configuracoes/seguranca`, com confirmação pela senha. Quem a reativa é um coordenador ou o admin. |
-| RF48 | Coordenadores e o admin não veem os e-mails de ninguém, não apagam contas e não alteram nome, foto ou instrumentos de outra pessoa. O admin não define senha: a pessoa redefine a própria pelo código enviado a um dos seus e-mails. |
+| RF47 | Desativar a própria conta em `/configuracoes/seguranca`, com confirmação pela senha. Quem a reativa é um coordenador. |
+| RF48 | Coordenadores não veem os e-mails de ninguém, não apagam contas e não alteram nome, foto ou instrumentos de outra pessoa. Ninguém define senha por outra pessoa: a pessoa redefine a própria pelo código enviado a um dos seus e-mails. |
 | RF49 | A pessoa gera 10 códigos de recuperação em `/configuracoes/seguranca`. Eles são mostrados uma única vez, cada um serve uma vez, e gerar de novo invalida os anteriores. |
 | RF50 | A página de instrumentos lista todos, 30 por página, sem busca e sem filtro, com ordem A–Z ou Z–A. Cada item leva à página do instrumento. |
 | RF51 | A página de listas tem busca pelo nome e ordem A–Z ou Z–A, 30 por página. Mostra todas as listas (RN81). |
@@ -187,14 +186,14 @@ Os requisitos têm identificadores estáveis: **RF** (requisito funcional), **RN
 | RN01 | O acesso é só por convite. A única exceção é a conta inicial, criada direto no banco. |
 | RN02 | Um convite é de uso único, vale **30 minutos** (valor fixo, que quem convida não altera) e carrega o cargo da pessoa. Não tem e-mail: é um link. Quem gera o convite vê o tempo restante até a expiração. O convite usado é apagado. |
 | RN03 | Cada e-mail é único no sistema e gravado em minúsculas. O `slug` de usuário, artista, instrumento, evento, música e lista também é único. Os formatos são: pessoa, artista e instrumento, o nome em minúsculas com hífens; música, `artista-titulo`, com o primeiro artista da ordem; lista, `primeiro-dono-nome`, com o primeiro dono; evento, `data-nome` no formato ISO (`2026-10-12-missa-de-domingo`). Se o slug já existir, um sufixo numérico é acrescentado. O slug é recalculado quando o nome (ou, em música e lista, o primeiro artista ou dono) muda. A chave interna continua sendo o id (UUID). |
-| RN04 | O cargo é `COORDENADOR`, `MINISTERIADO` ou `CONVIDADO`. O admin (`is_admin`) é um indicador independente do cargo e não existe para convidados. Admin e coordenador têm os mesmos poderes; a única diferença é que só o admin acessa o Swagger (RN68). |
-| RN05 | Coordenadores e o admin convidam, alteram cargos, criam eventos e desativam e reativam contas. Não apagam contas de outras pessoas, não veem e-mails de ninguém e não alteram nome, foto ou instrumentos de outra pessoa (RN79). |
+| RN04 | O cargo é `COORDENADOR`, `MINISTERIADO` ou `CONVIDADO`. Não há outro cargo de administração. Qualquer usuário logado acessa a documentação da API (RN68). |
+| RN05 | Coordenadores convidam, alteram cargos, criam eventos e desativam e reativam contas. Não apagam contas de outras pessoas, não veem e-mails de ninguém e não alteram nome, foto ou instrumentos de outra pessoa (RN79). |
 | RN06 | Conta desativada (`ativo = false`) só visualiza os dados e confirma presença. |
 | RN07 | Desativar uma conta tira a pessoa da escala dos setlists de eventos futuros. Reativar não a recoloca. |
 | RN08 | Todo usuário ativo pode editar cifra e tom, marcar revisão, escalar músicos, publicar setlists, criar e editar instrumentos, renomear artistas, criar listas, anexar a foto de perfil e escolher seus instrumentos. |
 | RN09 | O campo de nome guarda o **nome completo**. |
 | RN10 | Convidado não tem o campo `ativo` e não pode ser desativado. Seu acesso ao app dura enquanto ele estiver em ao menos um evento; ao ser removido de todos, perde o acesso. |
-| RN11 | Um convidado vira ministeriado por um convite de ministeriado aceito com a conta logada, ou por atribuição de um coordenador ou do admin. |
+| RN11 | Um convidado vira ministeriado por um convite de ministeriado aceito com a conta logada, ou por atribuição de um coordenador. |
 
 ### Slugs
 
@@ -203,7 +202,7 @@ Os requisitos têm identificadores estáveis: **RF** (requisito funcional), **RN
 | RN12 | O `slug` usa minúsculas, números e hífens no lugar de espaços e acentos (`Violão` vira `violao`). |
 | RN13 | Quando o slug muda, o anterior vai para a tabela `slugs_antigos` e a URL antiga responde com redirecionamento permanente (308) para a página atual. Se outro item já passou a usar o slug antigo, a URL aponta para esse outro item. |
 | RN14 | O slug de evento é a data ISO mais o nome (`2026-10-12-missa-de-domingo`). Muda quando a data ou o nome muda, com redirecionamento (RN13), e recebe sufixo numérico em caso de repetição. |
-| RN15 | Slugs que coincidem com um trecho fixo de rota (`nova`, `novo`, `editar`, `foto`, `parecidas`, `admin`, `docs`, `api`) não são aceitos: o app gera outro, com sufixo numérico. |
+| RN15 | Slugs que coincidem com um trecho fixo de rota (`nova`, `novo`, `editar`, `foto`, `parecidas`, `coordenacao`, `docs`, `api`) não são aceitos: o app gera outro, com sufixo numérico. |
 
 ### Instrumentos
 
@@ -266,14 +265,14 @@ Os requisitos têm identificadores estáveis: **RF** (requisito funcional), **RN
 
 | ID | Regra |
 |---|---|
-| RN53 | O convite de convidado é sempre de **um evento** e é gerado por coordenador ou admin. |
+| RN53 | O convite de convidado é sempre de **um evento** e é gerado por coordenador. |
 | RN54 | O convidado cria conta (nome completo, e-mail, senha, aceite dos termos), tem área de conta e pode escolher seus instrumentos para ser escalado. |
 | RN55 | O convidado vê tudo o que um membro vê: dashboard, biblioteca, listagens, busca, usuários, eventos, setlists com cifra e link, escala e presença. |
 | RN56 | O convidado **não edita nada**: não altera música, cifra, tom, escala, lista, evento, artista nem instrumento, não marca revisão e não cria listas. Pode apenas alterar a própria conta (nome, foto, senha e e-mail), escolher seus instrumentos, confirmar presença e ativar as notificações. |
-| RN57 | As telas de criação e edição (`/nova`, `/novo`, `/editar`) e o `/admin` não abrem para convidados, e os botões de gravação não aparecem para eles. |
+| RN57 | As telas de criação e edição (`/nova`, `/novo`, `/editar`) e o `/coordenacao` não abrem para convidados, e os botões de gravação não aparecem para eles. |
 | RN58 | O convidado aparece na busca de escala apenas dos eventos aos quais foi convidado. |
 | RN59 | A conta do convidado permanece depois do evento e pode ser convidada para outros eventos. |
-| RN60 | A página de um convidado só é vista por quem está no mesmo evento, pelos coordenadores e pelo admin. |
+| RN60 | A página de um convidado só é vista por quem está no mesmo evento, pelos coordenadores. |
 
 ### Presença e notificações
 
@@ -291,7 +290,7 @@ Os requisitos têm identificadores estáveis: **RF** (requisito funcional), **RN
 | ID | Regra |
 |---|---|
 | RN67 | Offline só há leitura. Qualquer edição exige conexão. |
-| RN68 | O Swagger e a especificação OpenAPI só são acessíveis ao admin. |
+| RN68 | O Swagger e a especificação OpenAPI são acessíveis a qualquer usuário logado. Não há acesso anônimo à documentação. |
 | RN69 | Toda rota decide o acesso por uma função central que considera o cargo, o estado `ativo`, o convidado somente leitura e, nas listas, o dono ou o acesso concedido. |
 
 ### Conta, e-mail e desativação
@@ -305,16 +304,16 @@ Os requisitos têm identificadores estáveis: **RF** (requisito funcional), **RN
 | RN74 | Os códigos enviados por e-mail (cadastro, redefinição e troca de e-mail) valem 30 minutos, servem uma única vez (são apagados ao serem usados) e são invalidados após o limite de tentativas. Os expirados são apagados pela rotina diária. Quando a conta tem mais de um e-mail, a pessoa escolhe para qual deles o código vai. |
 | RN75 | Trocar a senha exige a senha atual. Trocar ou redefinir a senha encerra as outras sessões da pessoa (incrementa `token_versao`). |
 | RN76 | A própria pessoa pode desativar a própria conta, em `/configuracoes/seguranca`, com confirmação pela senha. Valem as mesmas regras de RN06 e RN07: ela sai da escala de eventos futuros e continua vendo os dados e confirmando presença. |
-| RN77 | Só um coordenador ou o admin reativa uma conta desativada pela própria pessoa. Reativar não a recoloca na escala (RN07). |
+| RN77 | Só um coordenador reativa uma conta desativada pela própria pessoa. Reativar não a recoloca na escala (RN07). |
 | RN78 | Contas só são apagadas pela própria pessoa (RN85). O histórico de eventos e execuções sempre permanece. |
-| RN79 | Só a própria pessoa vê, troca ou apaga os seus e-mails. Coordenadores e o admin não veem e-mails de ninguém e não alteram e-mail, senha, nome, foto ou instrumentos de outras pessoas. Ninguém define senha por outra pessoa: a redefinição é sempre pelo código enviado a um dos e-mails confirmados da própria conta (RN74). O admin tem acesso total ao banco, por isso a conta de admin deve ser restrita a quem é de confiança. |
+| RN79 | Só a própria pessoa vê, troca ou apaga os seus e-mails. Coordenadores não veem e-mails de ninguém e não alteram e-mail, senha, nome, foto ou instrumentos de outras pessoas. Ninguém define senha por outra pessoa: a redefinição é sempre pelo código enviado a um dos e-mails confirmados da própria conta (RN74). Quem tem acesso direto ao banco deve ser restrito a pessoas de confiança. |
 | RN80 | Os códigos de recuperação não dependem de e-mail. Usar um deles redefine a senha e o código fica gasto. |
 
 ### Listas, artistas e compartilhamento
 
 | ID | Regra |
 |---|---|
-| RN81 | Todas as listas aparecem para todos os usuários logados, convidados inclusive. Donos e editores editam a lista. Donos também incluem ou retiram donos e dão ou retiram acesso de edição. Editores editam nome, seções, músicas, tom e cifra local, mas não gerenciam donos nem acessos. Só usuários ativos e não convidados podem ser donos ou editores. Ao menos um dono sempre permanece. Coordenadores e o admin podem tudo o que um dono pode (RN05). |
+| RN81 | Todas as listas aparecem para todos os usuários logados, convidados inclusive. Donos e editores editam a lista. Donos também incluem ou retiram donos e dão ou retiram acesso de edição. Editores editam nome, seções, músicas, tom e cifra local, mas não gerenciam donos nem acessos. Só usuários ativos e não convidados podem ser donos ou editores. Ao menos um dono sempre permanece. Coordenadores podem tudo o que um dono pode (RN05). |
 | RN82 | Qualquer usuário ativo renomeia um artista. O slug acompanha o novo nome, e a URL antiga redireciona (RN13). O novo nome não pode repetir outro artista (sem diferenciar maiúsculas nem acentos, RN16). |
 | RN83 | Os e-mails de uma pessoa só são vistos por ela. Nas listagens, no perfil e na busca, os demais veem nome, foto e instrumentos. |
 | RN84 | O botão **Compartilhar** envia o link da página (`/<tipo>/<slug>`). Quem abre precisa estar logado e ter permissão, senão vê 404. Compartilhar o link não dá acesso a nada. |
@@ -332,7 +331,6 @@ Os requisitos têm identificadores estáveis: **RF** (requisito funcional), **RN
 
 | Papel | O que pode |
 |---|---|
-| **Admin** (`is_admin`) | Acessa o Swagger e a especificação da API. Tem os mesmos poderes do coordenador (RN05). |
 | **Coordenador** | Convida pessoas (inclusive convidados de evento), altera o cargo de qualquer usuário, cria e cancela eventos, desativa e reativa contas. Não apaga contas, não vê e-mails e não altera nome, foto ou instrumentos de outras pessoas (RN05). |
 | **Ministeriado** | Usa o app como músico, dentro das permissões de qualquer usuário ativo (abaixo). |
 | **Convidado** | Vê tudo o que um membro vê, mas não edita nada (veja [Convidados de evento](#convidados-de-evento)). |
@@ -351,19 +349,19 @@ Os requisitos têm identificadores estáveis: **RF** (requisito funcional), **RN
 
 ## Convites e primeiro acesso
 
-Coordenadores e o admin geram um **link de convite** e o enviam à pessoa. O link tem o cargo que a pessoa terá (ministeriado ou coordenador), é de uso único e vale 30 minutos. Não há e-mail do convidado, e quem convida só escolhe o cargo. Logo após gerar o link, quem o criou vê a contagem do tempo restante até a expiração.
+Coordenadores geram um **link de convite** e o enviam à pessoa. O link tem o cargo que a pessoa terá (ministeriado ou coordenador), é de uso único e vale 30 minutos. Não há e-mail do convidado, e quem convida só escolhe o cargo. Logo após gerar o link, quem o criou vê a contagem do tempo restante até a expiração.
 
 1. A pessoa abre o link, informa nome completo, e-mail e senha e pede o código. O código de 6 dígitos chega ao e-mail; ela o digita e a conta é criada com o cargo do convite, já logada. O convite só é consumido nesse momento.
 2. Se o e-mail já tem conta, a API responde `409 CONTA_EXISTENTE` e o app orienta a fazer login e abrir o link de novo.
 3. No primeiro login, a pessoa escolhe os instrumentos que toca (zero ou mais) e pode alterá-los depois.
 
-A conta inicial (admin e coordenador) é criada direto no banco, porque ainda não há quem convide. Veja [Rodando localmente](#rodando-localmente).
+A conta inicial (coordenador) é criada direto no banco, porque ainda não há quem convide. Veja [Rodando localmente](#rodando-localmente).
 
 ## Convidados de evento
 
 Permite que alguém de fora do ministério participe de um evento.
 
-1. Um coordenador ou o admin gera o **link de convite do evento**. Ele vale 30 minutos e é de uso único.
+1. Um coordenador gera o **link de convite do evento**. Ele vale 30 minutos e é de uso único.
 2. A pessoa abre o link e cria a conta (ou, se já é convidada, entra e abre o link). Ela é registrada como convidada do evento, em `eventos_convidados`.
 3. A conta tem papel `CONVIDADO` e fica depois do evento. Pode ser convidada para outros eventos e, se virar ministeriada, passa ao papel de ministeriado.
 
@@ -612,15 +610,15 @@ Gere as chaves com `npx web-push generate-vapid-keys`.
 
 Desativar uma conta (`ativo = false`) tira a pessoa da **escala dos setlists de eventos futuros**, e a vaga fica em aberto, com o mesmo aviso de substituição da presença. A pessoa continua vendo os dados e confirmando presença. Reativar a conta **não** a recoloca na escala.
 
-Coordenadores e o admin podem desativar e reativar contas. A própria pessoa também pode desativar a conta dela, mas só um coordenador ou o admin a reativa. Convidados não têm o campo `ativo`: para encerrar o acesso de um convidado, o coordenador o remove de todos os eventos a que foi convidado.
+Coordenadores podem desativar e reativar contas. A própria pessoa também pode desativar a conta dela, mas só um coordenador a reativa. Convidados não têm o campo `ativo`: para encerrar o acesso de um convidado, o coordenador o remove de todos os eventos a que foi convidado.
 
 ### Desativação pela própria pessoa
 
-A pessoa desativa a própria conta em `/configuracoes/seguranca`, com confirmação pela senha. A conta não é apagada: ela fica inativa, sai da escala dos eventos futuros e pode continuar vendo os dados e confirmando presença. Só um coordenador ou o admin a reativa.
+A pessoa desativa a própria conta em `/configuracoes/seguranca`, com confirmação pela senha. A conta não é apagada: ela fica inativa, sai da escala dos eventos futuros e pode continuar vendo os dados e confirmando presença. Só um coordenador a reativa.
 
 ### Apagar a própria conta
 
-A pessoa apaga a própria conta em `/configuracoes/seguranca`, com confirmação pela senha e um aviso do que será perdido. A exclusão é definitiva e segue RN85. Só a própria pessoa apaga a conta; coordenadores e o admin só desativam e reativam.
+A pessoa apaga a própria conta em `/configuracoes/seguranca`, com confirmação pela senha e um aviso do que será perdido. A exclusão é definitiva e segue RN85. Só a própria pessoa apaga a conta; coordenadores só desativam e reativam.
 
 ### Conta e segurança
 
@@ -644,7 +642,7 @@ Em `/configuracoes/seguranca`, a pessoa vê, adiciona e remove os próprios e-ma
 | Exportação | Markdown como texto; PDF gerado por código com `pdf-lib` e fontes embutidas (monoespaçada para a cifra, proporcional para a letra). Sem navegador headless. |
 | E-mail | **Resend** (plano gratuito), isolado em `src/lib/email.ts` para poder ser trocado |
 | Busca | PostgreSQL com `pg_trgm` e `unaccent`, em consultas SQL parametrizadas (`$queryRaw`) |
-| Documentação da API | **Swagger / OpenAPI**, restrito ao admin |
+| Documentação da API | **Swagger / OpenAPI**, para qualquer usuário logado |
 | Deploy | **Vercel** (deploy automático por push no GitHub) |
 
 Tudo num único projeto TypeScript (front e back), sem plataformas além de Vercel, GitHub e Supabase (o Resend, só para e-mail).
@@ -672,7 +670,7 @@ Os itens principais (usuários, instrumentos, artistas, músicas, eventos e cole
 
 | Tabela | Propósito |
 |---|---|
-| `usuarios` | Pessoas. `papel` (`COORDENADOR`, `MINISTERIADO` ou `CONVIDADO`), `is_admin`, `ativo` (vazio para convidados), `slug`, hash da senha, `token_versao` (invalida as sessões antigas quando a senha muda) e `termos_aceitos_em`. |
+| `usuarios` | Pessoas. `papel` (`COORDENADOR`, `MINISTERIADO` ou `CONVIDADO`), `ativo` (vazio para convidados), `slug`, hash da senha, `token_versao` (invalida as sessões antigas quando a senha muda) e `termos_aceitos_em`. |
 | `preferencias_usuario` | A configuração de visualização e de exportação de cada pessoa (RN93): padrão da tela (cifra ou letra), seções na letra, tamanho da fonte e padrão do arquivo exportado. Uma linha por pessoa, guardada na conta. |
 | `emails_usuario` | Os e-mails de cada pessoa: de um a três por conta, únicos no sistema e em minúsculas. Só entram os confirmados por código. |
 | `contas_google` | O vínculo com uma conta Google, para o login com Google (um por conta). |
@@ -748,7 +746,7 @@ erDiagram
 
 Estão na parte 2 do `DDL.SQL` e foram testadas tentando violá-las:
 
-- `papel` só aceita `COORDENADOR`, `MINISTERIADO` ou `CONVIDADO`; convidado tem `ativo` vazio e não é admin, e os demais têm `ativo` preenchido.
+- `papel` só aceita `COORDENADOR`, `MINISTERIADO` ou `CONVIDADO`; convidado tem `ativo` vazio, e os demais têm `ativo` preenchido.
 - Convite de convidado exige evento; os outros convites não têm evento.
 - O `slug` só aceita minúsculas, números e hífens.
 - Nome de instrumento e de artista **únicos sem diferenciar maiúsculas nem acentos** (pela função `busca_norm`).
@@ -770,7 +768,7 @@ O banco não cobre estas:
 
 - A escala (`colecao_musicas_musicos`) só pode existir em coleções SETLIST.
 - A seção de uma música pertence à mesma coleção da música.
-- Apenas coordenadores e o admin convidam, alteram cargos, criam eventos e desativam e reativam contas. Ninguém além da própria pessoa apaga a conta, vê e-mails ou altera nome, foto e instrumentos dela (RN05, RN79).
+- Apenas coordenadores convidam, alteram cargos, criam eventos e desativam e reativam contas. Ninguém além da própria pessoa apaga a conta, vê e-mails ou altera nome, foto e instrumentos dela (RN05, RN79).
 - Conta desativada não edita nada: só visualiza e confirma presença.
 - O convidado só lê (exceto conta, instrumentos e presença) e só tem acesso enquanto está em ao menos um evento de `eventos_convidados`.
 - Uma lista é editada pelos donos e pelos editores (`listas_acessos`). Só os donos apagam a lista e gerenciam donos e acessos. Só usuários ativos e não convidados recebem qualquer papel nela. Todas as listas aparecem para todos os usuários logados (RN81).
@@ -821,15 +819,15 @@ O banco não cobre estas:
 | `/instrumentos` | todos logados | Todos os instrumentos. Criar um instrumento é um diálogo nesta página. |
 | `/instrumentos/[slug]` | todos logados | O total de contas ativas que tocam o instrumento e a lista delas. |
 | `/usuarios` | todos logados | Listagem de usuários. |
-| `/usuarios/[slug]` | todos logados | Perfil: foto, instrumentos e listas. Os e-mails só aparecem para a própria pessoa. Coordenadores e o admin veem aqui o controle de cargo e de ativação. |
+| `/usuarios/[slug]` | todos logados | Perfil: foto, instrumentos e listas. Os e-mails só aparecem para a própria pessoa. Coordenadores veem aqui o controle de cargo e de ativação. |
 | `/listas` | todos logados | Listagem de listas. |
 | `/listas/nova` | membros ativos | Criação de lista. |
 | `/listas/[slug]` | todos logados | A lista, com seções e músicas. Botão **Exportar PDF** para o lote (RF63). |
 | `/listas/[slug]/musicas/[musica]` | todos logados | Uma música dentro da lista (tom tocado e cifra local). `[musica]` é o `slug` da música. |
 | `/eventos` | todos logados | Listagem de eventos. |
-| `/eventos/novo` | coordenadores e admin | Criação de evento. |
+| `/eventos/novo` | coordenadores | Criação de evento. |
 | `/eventos/[slug]` | todos logados | O evento: setlist, seções, escala, presença e convidados. Botão **Exportar PDF** para o lote (RF63). Coordenadores geram aqui o convite de convidado. |
-| `/eventos/[slug]/editar` | coordenadores e admin | Nome, data e hora, presença exigida e cancelamento. |
+| `/eventos/[slug]/editar` | coordenadores | Nome, data e hora, presença exigida e cancelamento. |
 | `/eventos/[slug]/musicas/[musica]` | todos logados | Uma música dentro do setlist: cifra, tom tocado, escala e aviso de substituição. |
 | `/conta` | todos logados | Nome, foto e instrumentos. |
 | `/configuracoes` | todos logados | Padrões de visualização e de exportação (RN93), com links para as outras partes. |
@@ -837,11 +835,11 @@ O banco não cobre estas:
 | `/configuracoes/termos` | todos logados | Data do aceite dos termos e links para os Termos de Uso e a Política de Privacidade. |
 | `/termos-de-uso` | todos | Termos de Uso, com download em Markdown ou PDF. |
 | `/politica-privacidade` | todos | Política de Privacidade, com download em Markdown ou PDF. |
-| `/admin` | coordenadores e admin | Convites e ativação e desativação de contas. |
-| `/api/docs` | admin | Swagger UI. |
-| `/api/openapi.json` | admin | Especificação OpenAPI. |
+| `/coordenacao` | coordenadores | Convites e ativação e desativação de contas. |
+| `/api/docs` | qualquer usuário logado | Swagger UI. |
+| `/api/openapi.json` | qualquer usuário logado | Especificação OpenAPI. |
 
-O convidado acessa todas as páginas de leitura, `/conta`, `/configuracoes`, `/configuracoes/seguranca`, `/configuracoes/termos`, `/termos-de-uso` e `/politica-privacidade`. As rotas de edição (`/nova`, `/novo`, `/editar`) e `/admin` não abrem para ele.
+O convidado acessa todas as páginas de leitura, `/conta`, `/configuracoes`, `/configuracoes/seguranca`, `/configuracoes/termos`, `/termos-de-uso` e `/politica-privacidade`. As rotas de edição (`/nova`, `/novo`, `/editar`) e `/coordenacao` não abrem para ele.
 
 A conta desativada acessa as páginas normalmente, mas as rotas de edição (`/nova`, `/novo`, `/editar`) e os botões de gravação ficam bloqueados (RN06).
 
@@ -945,9 +943,9 @@ O Prisma não expressa essas funções, então as buscas e as listagens usam con
 
 ## API e Swagger
 
-A API é composta por Route Handlers em `src/app/api`. A documentação é em **OpenAPI 3** com interface **Swagger UI**, **acessível somente ao admin** (`is_admin`).
+A API é composta por Route Handlers em `src/app/api`. A documentação é em **OpenAPI 3** com interface **Swagger UI**, **acessível a qualquer usuário logado**.
 
-A especificação é gerada a partir dos **schemas Zod** que já validam as requisições (por exemplo com `@asteasolutions/zod-to-openapi`), de modo que o contrato e a documentação saem da mesma fonte. Ela é servida em `/api/openapi.json` e a interface em `/api/docs`; ambas exigem sessão de admin. A autenticação é por cookie, declarada como esquema de segurança `cookieAuth`.
+A especificação é gerada a partir dos **schemas Zod** que já validam as requisições (por exemplo com `@asteasolutions/zod-to-openapi`), de modo que o contrato e a documentação saem da mesma fonte. Ela é servida em `/api/openapi.json` e a interface em `/api/docs`; ambas exigem sessão de usuário logado. A autenticação é por cookie, declarada como esquema de segurança `cookieAuth`.
 
 ### Endpoints
 
@@ -1062,9 +1060,9 @@ Resposta de `GET /api/dashboard?periodo=mes`:
 │  │  │  ├─ configuracoes/   # visualização e exportação (padrões)
 │  │  │  │  ├─ seguranca/    # e-mails, senha, Google, códigos, desativação e exclusão
 │  │  │  │  └─ termos/       # aceite dos termos e links dos documentos
-│  │  │  └─ admin/           # convites e gestão de contas
+│  │  │  └─ coordenacao/     # convites e gestão de contas
 │  │  └─ api/                # Route Handlers
-│  │     └─ docs/            # Swagger UI (só admin)
+│  │     └─ docs/            # Swagger UI (usuários logados)
 │  ├─ components/            # componentes React (ui, forms, setlist, cifra, dashboard)
 │  ├─ lib/
 │  │  ├─ db.ts               # cliente Prisma (singleton)
@@ -1126,8 +1124,8 @@ Como o acesso é por convite, a primeira conta é criada direto no banco:
 HASH=$(node -e "console.log(require('bcryptjs').hashSync('SUA_SENHA', 10))")
 psql "postgresql://postgres:dev@localhost:5432/musicaliapp" -c \
   "WITH u AS (
-     INSERT INTO usuarios (nome, slug, senha_hash, papel, is_admin)
-     VALUES ('Seu Nome Completo', 'seu-nome', '$HASH', 'COORDENADOR', TRUE)
+     INSERT INTO usuarios (nome, slug, senha_hash, papel)
+     VALUES ('Seu Nome Completo', 'seu-nome', '$HASH', 'COORDENADOR')
      RETURNING id)
    INSERT INTO emails_usuario (usuario_id, email) SELECT id, 'voce@exemplo.com' FROM u;"
 ```
@@ -1179,7 +1177,7 @@ psql "postgresql://postgres:dev@localhost:5432/musicaliapp" -c \
 | Nível | Ferramenta | O que cobre |
 |---|---|---|
 | Unitário | Vitest | Conversão de graus e tons e gramática de acordes; quebra da cifra em pares; slugs (RN03, RN13, RN15); filtro de busca e escape; datas em `America/Sao_Paulo`; `autorizar` (papel × ação). |
-| Integração | Vitest, com PostgreSQL 16 real (Docker local e *service container* na CI) | Cada rota por papel (admin, coordenador, ministeriado, convidado, conta desativada e sem sessão); `versao` e `409 CONFLITO_VERSAO`; histórico (gravar e restaurar); convite consumido uma só vez em requisições simultâneas; exclusão de conta (RN85); limite de tentativas; as regras do `DDL.SQL`. |
+| Integração | Vitest, com PostgreSQL 16 real (Docker local e *service container* na CI) | Cada rota por papel (coordenador, ministeriado, convidado, conta desativada e sem sessão); `versao` e `409 CONFLITO_VERSAO`; histórico (gravar e restaurar); convite consumido uma só vez em requisições simultâneas; exclusão de conta (RN85); limite de tentativas; as regras do `DDL.SQL`. |
 | Ponta a ponta | Playwright (Chromium, em tela de celular e de computador) | Convite, cadastro com código e login; montar o setlist, reordenar e escalar; confirmar presença; exportar PDF; abrir offline. |
 
 Os testes de integração usam um banco criado a partir do `DDL.SQL`, o que também valida o próprio DDL. Neles, a camada de e-mail é trocada por um *stub* que guarda o código enviado.
@@ -1226,7 +1224,7 @@ O app segue o nível AA do WCAG 2.1: contraste suficiente, tudo operável pelo t
 - **Autorização sempre no servidor**, por uma função central usada em todas as rotas: ela confere o cargo, o estado `ativo`, se o convidado só pode ler, o acesso do convidado (ao menos um evento) e, nas listas, o dono ou o acesso concedido. O que o front esconde não conta como proteção.
 - A rota `GET /api/cron/diario` só aceita a chamada que traz o `CRON_SECRET`.
 - Fotos de perfil validadas no servidor (tipo e tamanho do arquivo enviado). Antes de gravar, são decodificadas e regravadas pelo `sharp`, o que remove metadados como localização e descarta conteúdo que não seja imagem válida.
-- O Swagger e o `openapi.json` exigem sessão de admin.
+- O Swagger e o `openapi.json` exigem sessão de usuário logado.
 - A chave privada VAPID, o `JWT_SECRET` e o `CRON_SECRET` nunca vão para o front nem para o repositório.
 - Login, aceitação de convite e pedidos de "esqueci a senha" têm limite de tentativas (rate limit), contado na tabela `limites_tentativas`, por IP e por e-mail, ambos guardados em hash.
 - A sessão (JWT) leva o `token_versao` da pessoa. Trocar ou redefinir a senha o incrementa, e a função central recusa tokens com versão antiga, o que encerra as outras sessões.
@@ -1256,7 +1254,7 @@ O app trata dados pessoais de membros de um ministério de igreja, e participar 
 
 - **Consentimento:** o cadastro só conclui com o aceite dos Termos de Uso e da Política de Privacidade (RN86).
 - **Minimização:** o app não pede CPF, telefone, endereço nem data de nascimento.
-- **Quem vê o quê:** os e-mails só aparecem para a própria pessoa, e coordenadores e admin não os veem (RN79, RN83). O admin tem acesso total ao banco, por isso essa conta é restrita a quem é de confiança.
+- **Quem vê o quê:** os e-mails só aparecem para a própria pessoa, e coordenadores não os veem (RN79, RN83). Quem tem acesso total ao banco, por isso essa conta é restrita a quem é de confiança.
 - **Eliminação:** a pessoa apaga a própria conta, e seus dados saem (RN85). O histórico de eventos e de cifras permanece sem identificá-la ("Pessoa removida").
 - **Retenção:** os dados duram enquanto a conta existir. Convites e códigos vencidos e os contadores de tentativas são apagados todo dia (RN74).
 - **Pedidos do titular:** corrigir nome, e-mails, foto e instrumentos e apagar a conta a própria pessoa faz no app. Os demais pedidos (como uma cópia dos dados) vão ao responsável indicado na Política de Privacidade.
@@ -1277,7 +1275,7 @@ Premissas: sprints de **2 semanas**. As datas de início e de fim serão definid
 | S5 | **M5 Escala, presença e convidados** | Escala por música e por seção, com as opções sobrescrever ou completar. Aviso de conflito de horário. Presença com Vou e Não vou. Aviso de substituição. Convite de convidado para um evento, com acesso somente leitura. Página de instrumento com os músicos. | RF03, RF30, RF31, RF35 a RF38 |
 | S6 | **M6 Dashboard e listagens** | Dashboard com os números, instrumentos e próximos eventos. Listagens de músicas, artistas, instrumentos, usuários, listas e eventos, com busca, filtros e ordenação, 30 por página. Busca geral. Mais e menos tocados, com período mês, ano, geral ou um mês ou ano escolhido. Datas de criação e atualização nas páginas e listagens. | RF10 a RF16, RF50 a RF54, RF65 |
 | S7 | **M7 Notificações e offline** | Publicação do setlist com push. Lembrete diário de presença pelo Vercel Cron. Cache offline somente leitura, com atualização ao abrir o app. | RF32, RF39 a RF41 |
-| S8 | **M8 Entrega** | Swagger restrito ao admin. Testes de permissão para cada papel (inclusive convidado somente leitura e acesso às listas) e estado da conta. Deploy na Vercel e no Supabase. Conta inicial criada. Backup semanal do banco. | RF43, RNF10, RNF17 |
+| S8 | **M8 Entrega** | Swagger para usuários logados. Testes de permissão para cada papel (inclusive convidado somente leitura e acesso às listas) e estado da conta. Deploy na Vercel e no Supabase. Conta inicial criada. Backup semanal do banco. | RF43, RNF10, RNF17 |
 | S9 | **M9 Complementos** | Status de escuta (Não ouvi, Ouvi, Toquei). Códigos de recuperação de senha. Copiar o setlist de outro evento. Ao mover uma música para uma seção cuja escala é uniforme, oferecer aplicar essa escala (RN48). | RF22, RF33, RF49 |
 
 Dependências: M2 depende de M1. M3 depende de M2. M4 depende de M2. M5 depende de M4. M6 depende de M2 e M4. M7 depende de M5. M8 fecha a entrega inicial. M9 depende de M5 e pode vir depois do M8.
