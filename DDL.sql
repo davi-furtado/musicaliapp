@@ -68,7 +68,8 @@ CREATE TABLE usuarios (
 
 -- Preferências de visualização e exportação de cada pessoa (página de
 -- configurações). Valem em qualquer aparelho. Uma linha por usuário, criada
--- no cadastro pela API. Os botões da tela não gravam nada aqui.
+-- na primeira gravação; sem linha, valem os padrões abaixo. Os botões da tela
+-- não gravam nada aqui.
 CREATE TABLE preferencias_usuario (
     usuario_id             UUID         NOT NULL,
     visualizacao_padrao    VARCHAR(6)   NOT NULL DEFAULT 'CIFRA',   -- CIFRA | LETRA
@@ -460,7 +461,8 @@ CREATE TABLE device_tokens (
 
 -- Contador do limite de tentativas (login, convite, códigos). A Vercel não
 -- guarda memória entre as requisições, então o contador fica no banco.
--- chave: ex. 'login:ip:203.0.113.5' ou 'codigo:ana@exemplo.com'.
+-- chave: tipo e hash do IP ou do e-mail, ex. 'login:ip:9f86d081...' ou
+-- 'codigo:email:60303ae2...'. Nunca o IP ou o e-mail puros.
 -- Se janela_fim já passou, a API recomeça a contagem. A rotina diária apaga
 -- as linhas vencidas.
 CREATE TABLE limites_tentativas (
@@ -589,6 +591,19 @@ ALTER TABLE colecoes ADD CONSTRAINT ck_colecoes_slug CHECK (
 );
 ALTER TABLE eventos ADD CONSTRAINT ck_eventos_slug
     CHECK (slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$');
+
+-- Nomes e títulos não podem ser vazios nem só espaços.
+ALTER TABLE usuarios ADD CONSTRAINT ck_usuarios_nome CHECK (length(trim(nome)) > 0);
+ALTER TABLE instrumentos ADD CONSTRAINT ck_instrumentos_nome CHECK (length(trim(nome)) > 0);
+ALTER TABLE artistas ADD CONSTRAINT ck_artistas_nome CHECK (length(trim(nome)) > 0);
+ALTER TABLE musicas ADD CONSTRAINT ck_musicas_titulo CHECK (length(trim(titulo)) > 0);
+ALTER TABLE eventos ADD CONSTRAINT ck_eventos_nome CHECK (length(trim(nome)) > 0);
+ALTER TABLE colecoes ADD CONSTRAINT ck_colecoes_nome CHECK (nome IS NULL OR length(trim(nome)) > 0);
+ALTER TABLE secoes ADD CONSTRAINT ck_secoes_nome CHECK (length(trim(nome)) > 0);
+
+-- Link do YouTube: endereço web, quando preenchido.
+ALTER TABLE musicas ADD CONSTRAINT ck_musicas_link_youtube
+    CHECK (link_youtube IS NULL OR link_youtube ~ '^https?://');
 
 -- Tom tocado: nota A-G, # ou b opcionais, "m" para menor (D, F#m, Bb).
 ALTER TABLE colecao_musicas ADD CONSTRAINT ck_cm_tom
