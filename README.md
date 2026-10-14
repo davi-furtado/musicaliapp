@@ -27,9 +27,11 @@ PWA para organizar a biblioteca de músicas, os eventos e os setlists de um mini
 21. [Estrutura de pastas](#estrutura-de-pastas)
 22. [Rodando localmente](#rodando-localmente)
 23. [Variáveis de ambiente](#variáveis-de-ambiente)
-24. [Deploy](#deploy)
-25. [Segurança](#segurança)
-26. [Sprints e milestones](#sprints-e-milestones)
+24. [Qualidade e testes](#qualidade-e-testes)
+25. [Deploy](#deploy)
+26. [Segurança](#segurança)
+27. [Privacidade e LGPD](#privacidade-e-lgpd)
+28. [Sprints e milestones](#sprints-e-milestones)
 
 ---
 
@@ -45,6 +47,32 @@ PWA para organizar a biblioteca de músicas, os eventos e os setlists de um mini
 - Cada usuário, artista, instrumento, evento, música e lista tem uma página própria, acessada por um `slug` amigável, com um botão **Compartilhar**.
 - Cada conta tem de um a três e-mails, confirmados por código. A pessoa pode também entrar com Google e apagar a própria conta. A senha pode ser recuperada por código enviado ao e-mail ou por códigos de recuperação guardados pela própria pessoa.
 
+### Como ler este documento
+
+Os requisitos têm identificadores estáveis: **RF** (requisito funcional), **RNF** (não funcional) e **RN** (regra de negócio). Um identificador não é reaproveitado, e as referências (por exemplo, "RN92") apontam para a regra de mesmo número. O texto, a interface, o banco, as rotas e as mensagens do app estão em português do Brasil.
+
+### Glossário
+
+| Termo | Significado |
+|---|---|
+| Cifra | A música escrita com acordes sobre a letra. Fica guardada em graus. |
+| Grau | O acorde pela posição no campo harmônico (`1`, `4`, `5`, `6m`…). Não depende do tom. |
+| Tom original | O tom em que a música costuma ser tocada ou foi escrita. Opcional e só informativo. |
+| Tom tocado | O tom escolhido para uma música em um setlist ou lista. Vale só ali. |
+| Evento | Missa, ensaio ou retiro, com data e hora. |
+| Setlist | O repertório de um evento, no máximo um por evento. |
+| Lista | Um repertório avulso, sem evento, com um ou mais donos. |
+| Coleção | O que o setlist e a lista têm em comum: seções e músicas em ordem. |
+| Seção | Agrupamento dentro de uma coleção ("Animação", "Adoração"). |
+| Marcador de seção | A linha `[Refrão]` ou `[Verso 1]` dentro da cifra. Não é a seção da coleção. |
+| Execução | Uma música tocada no setlist publicado de um evento que já aconteceu (RN24). |
+| Ministeriado e coordenador | Cargos de membro. O coordenador convida e gerencia eventos e contas (RN05). |
+| Admin | Indicador à parte do cargo. Só ele acessa o Swagger (RN04). |
+| Convidado | Pessoa de fora, convidada para eventos. Vê tudo e não edita (RN56). |
+| Slug | Parte legível da URL (`/musicas/<slug>`). Acompanha o nome (RN13). |
+| Versão do histórico | Um ponto do histórico da música, com título, autor e data (RN92). |
+| `versao` (contador) | Número que detecta edições simultâneas (RN38). Não é o histórico. |
+
 ## Requisitos
 
 ### Requisitos funcionais
@@ -56,7 +84,7 @@ PWA para organizar a biblioteca de músicas, os eventos e os setlists de um mini
 | RF02 | Quem recebe o convite informa nome completo, e-mail e senha, aceita os Termos de Uso e a Política de Privacidade (RF59), confirma o código enviado ao e-mail e entra logado. A conta só é criada depois da confirmação. |
 | RF03 | Coordenadores e o admin geram o link de convite de **um evento** para uma pessoa de fora (convidado). |
 | RF04 | Os usuários fazem login e logout. O botão **Lembrar de mim** vem marcado por padrão: marcado, o login fica salvo no aparelho e é renovado a cada acesso, sem prazo para expirar; desmarcado, vale só enquanto a sessão do navegador estiver aberta. |
-| RF05 | Cada pessoa tem uma área de conta, onde altera nome, senha, **foto de perfil** e instrumentos, e pode apagar a própria conta (RF58). |
+| RF05 | Cada pessoa tem uma área de conta, onde altera nome, **foto de perfil** e instrumentos, e uma página de configurações com a segurança (senha, e-mails, apagar a própria conta), os termos e os padrões de visualização e exportação (RF58, RF66). |
 | RF06 | Cada pessoa escolhe e altera os instrumentos que toca (zero ou mais). |
 | RF07 | Coordenadores e o admin alteram o cargo de qualquer pessoa, inclusive tornando um convidado ministeriado. Nome, foto e instrumentos só são alterados pela própria pessoa (RN05). |
 | RF08 | Coordenadores e o admin desativam e reativam contas. |
@@ -145,7 +173,10 @@ PWA para organizar a biblioteca de músicas, os eventos e os setlists de um mini
 | RNF14 | Fotos de perfil têm até 2 MB, em JPG, PNG ou WebP. O servidor as redimensiona para um quadrado de 256 px, em WebP ou JPEG, e só então grava no banco. |
 | RNF15 | Login, aceitação de convite, pedidos de código e envio de códigos têm limite de tentativas, contado no banco (tabela `limites_tentativas`), porque a Vercel não guarda memória entre as requisições. |
 | RNF16 | Datas e horas são guardadas com fuso (`TIMESTAMPTZ`) e calculadas e exibidas em `America/Sao_Paulo`. |
-| RNF17 | Um backup semanal do banco fica guardado fora dele (veja [Deploy](#deploy)). |
+| RNF17 | Um backup semanal do banco fica guardado fora dele, cifrado (veja [Deploy](#deploy)). |
+| RNF18 | A interface segue o nível AA do WCAG 2.1 e está toda em português do Brasil (veja [Acessibilidade e idioma](#acessibilidade-e-idioma)). |
+| RNF19 | Toda regra crítica (cifra, slugs, permissões, histórico, exclusão de conta) tem teste automatizado, e a integração contínua barra o código que quebra os testes (veja [Qualidade e testes](#qualidade-e-testes)). |
+| RNF20 | Os logs não registram senhas, códigos, tokens, e-mails nem IP puro (veja [Segurança](#segurança)). |
 
 ## Regras de negócio
 
@@ -284,10 +315,10 @@ PWA para organizar a biblioteca de músicas, os eventos e os setlists de um mini
 | ID | Regra |
 |---|---|
 | RN81 | Todas as listas aparecem para todos os usuários logados, convidados inclusive. Donos e editores editam a lista. Donos também incluem ou retiram donos e dão ou retiram acesso de edição. Editores editam nome, seções, músicas, tom e cifra local, mas não gerenciam donos nem acessos. Só usuários ativos e não convidados podem ser donos ou editores. Ao menos um dono sempre permanece. Coordenadores e o admin podem tudo o que um dono pode (RN05). |
-| RN82 | Qualquer usuário ativo renomeia um artista. O slug não muda (RN13) e o novo nome não pode repetir outro artista (sem diferenciar maiúsculas nem acentos, RN16). |
+| RN82 | Qualquer usuário ativo renomeia um artista. O slug acompanha o novo nome, e a URL antiga redireciona (RN13). O novo nome não pode repetir outro artista (sem diferenciar maiúsculas nem acentos, RN16). |
 | RN83 | Os e-mails de uma pessoa só são vistos por ela. Nas listagens, no perfil e na busca, os demais veem nome, foto e instrumentos. |
 | RN84 | O botão **Compartilhar** envia o link da página (`/<tipo>/<slug>`). Quem abre precisa estar logado e ter permissão, senão vê 404. Compartilhar o link não dá acesso a nada. |
-| RN85 | Ao apagar a própria conta, a pessoa sai de tudo: e-mails, senha, foto, instrumentos, códigos, inscrições de notificação, presenças e escalas de eventos futuros. Escalas e presenças de eventos passados ficam como "Pessoa removida", para manter o histórico. Listas em que ela era a única dona são apagadas com seus itens; nas que têm outros donos, a lista continua e ela só deixa de ser dona. Convites que ela criou são apagados. Músicas, cifras e artistas que ela cadastrou continuam. Nas versões do histórico que ela fez, o autor vira "Pessoa removida". |
+| RN85 | Ao apagar a própria conta, a pessoa sai de tudo: e-mails, senha, foto, instrumentos, configurações, códigos, inscrições de notificação, presenças e escalas de eventos futuros. Escalas e presenças de eventos passados ficam como "Pessoa removida", para manter o histórico. Listas em que ela era a única dona são apagadas com seus itens; nas que têm outros donos, a lista continua e ela só deixa de ser dona. Convites que ela criou são apagados. Músicas, cifras e artistas que ela cadastrou continuam. Nas versões do histórico que ela fez, o autor vira "Pessoa removida". |
 | RN86 | O cadastro, por convite ou de convidado, só conclui com o aceite dos Termos de Uso e da Política de Privacidade, registrado com a data em `usuarios.termos_aceitos_em`. |
 | RN87 | O login com Google só vale para contas com o vínculo feito. O vínculo exige a senha atual, é feito em `/configuracoes/seguranca` e liga uma conta Google a uma só conta. Desvincular também pede a senha. O e-mail do Google não entra na lista de e-mails da conta. |
 | RN88 | A exportação é só leitura e não grava nada. O Markdown leva a cifra em bloco de código, para preservar o alinhamento. O PDF da cifra usa fonte monoespaçada e quebra as linhas em pares, como a tela. O PDF e o Markdown da letra usam texto normal e quebram as linhas normalmente. O link do YouTube só sai se a opção estiver marcada, e o padrão é não sair. Quem pode ver a música pode exportá-la. |
@@ -295,7 +326,7 @@ PWA para organizar a biblioteca de músicas, os eventos e os setlists de um mini
 | RN90 | O tom da exportação é, por padrão, o tom que a pessoa vê na tela, inclusive no setlist e na lista. No diálogo de exportação de uma música, a pessoa pode trocar o tom sem mudar o da tela. Em lote, o padrão é o tom tocado de cada item do setlist ou da lista; sem tom tocado, o tom original da música; sem ele, graus. O diálogo de lote pode aplicar um único tom a todas as músicas. |
 | RN91 | O lote aceita até 100 músicas por PDF. Cada música começa em página nova, depois da capa com o título, a data (se for evento) e o índice. A ordem é A–Z no artista e a ordem do setlist ou da lista nos eventos e listas. Quem exporta um evento precisa ver o evento: convidados só exportam dos seus. |
 | RN92 | Cada gravação que muda a cifra, o tom original, a lista de artistas ou o tom tocado (no setlist ou na lista) cria uma versão no histórico da música, com título obrigatório, autor e data. Título, link e o nome de um artista não geram versão: a música guarda a referência ao artista, não o nome. Qualquer usuário ativo vê o histórico e pode comparar uma versão com a atual. Voltar a uma versão cria uma nova versão com o conteúdo antigo, marcada como restaurada, e nada é apagado. Se o autor apagar a conta, a versão continua, com "Pessoa removida". |
-| RN93 | Cada pessoa tem uma configuração de visualização e de exportação, guardada na conta. Visualização: a tela abre em cifra ou em letra (padrão: cifra), com ou sem seções na letra (padrão: sem seções), e com um tamanho padrão da fonte da cifra (pequeno, médio ou grande; padrão: médio). Exportação: o arquivo sai em cifra ou em letra (padrão: cifra), com ou sem seções na letra (padrão: sem seções). Os botões da tela e do diálogo de exportação valem só naquela vez e não são gravados. |
+| RN93 | Cada pessoa tem uma configuração de visualização e de exportação, guardada na conta. Visualização: a tela abre em cifra ou em letra (padrão: cifra), com ou sem seções na letra (padrão: sem seções), e com um tamanho padrão da fonte da cifra (pequeno, médio ou grande; padrão: médio). Exportação: o arquivo sai em cifra ou em letra (padrão: cifra), com ou sem seções na letra (padrão: sem seções). Os botões da tela e do diálogo de exportação valem só naquela vez e não são gravados. Quem ainda não gravou nada tem os padrões acima. |
 
 ## Usuários, papéis e permissões
 
@@ -501,7 +532,7 @@ Setlist e lista genérica compartilham a estrutura da **coleção**, diferenciad
 
 | | SETLIST | LISTA |
 |---|---|---|
-| Vinculada a | um evento (`evento_id`) | um usuário (`usuario_id`) |
+| Vinculada a | um evento (`evento_id`) | um ou mais donos (`listas_donos`) |
 | Nome | o do evento | `nome` próprio |
 | Publicação | `publicado` | não se aplica |
 | Presença | pode exigir | não |
@@ -604,7 +635,8 @@ Em `/configuracoes/seguranca`, a pessoa vê, adiciona e remove os próprios e-ma
 | Banco | **PostgreSQL padrão** (Supabase em produção, usado só como banco; Postgres em Docker em desenvolvimento) |
 | ORM | **Prisma 6**, com o schema gerado do banco (`prisma db pull`) |
 | Validação | **Zod** |
-| Autenticação | **JWT** em cookie `httpOnly`, senhas com **bcryptjs**; login com Google por OpenID Connect (`openid-client`) |
+| Autenticação | **JWT** (biblioteca `jose`, que roda também no middleware) em cookie `httpOnly`, senhas com **bcryptjs**; login com Google por OpenID Connect (`openid-client`) |
+| Qualidade | **Vitest** (unitários e integração), **Playwright** (ponta a ponta), **ESLint** e **Prettier**, com **GitHub Actions** |
 | Drag-and-drop | **dnd-kit** (`@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities`) |
 | Push | Web Push + VAPID (biblioteca `web-push`) |
 | Fotos de perfil | **Postgres** (tabela `fotos_perfil`), redimensionadas no servidor com **sharp** |
@@ -615,7 +647,22 @@ Em `/configuracoes/seguranca`, a pessoa vê, adiciona e remove os próprios e-ma
 | Documentação da API | **Swagger / OpenAPI**, restrito ao admin |
 | Deploy | **Vercel** (deploy automático por push no GitHub) |
 
-Tudo num único projeto TypeScript (front e back), sem plataformas além de Vercel, GitHub e Supabase.
+Tudo num único projeto TypeScript (front e back), sem plataformas além de Vercel, GitHub e Supabase (o Resend, só para e-mail).
+
+### Decisões e alternativas descartadas
+
+| Decisão | Alternativa descartada | Motivo |
+|---|---|---|
+| Autenticação própria (JWT em cookie `httpOnly`) | Supabase Auth | O Supabase entra só como banco. Vários e-mails por conta, convites de 30 minutos e códigos de recuperação não cabem no fluxo pronto. |
+| Cifra guardada em graus | Guardar um tom e transpor | Uma única fonte serve qualquer tom. O tom original e o tocado são informação à parte. |
+| PDF por código, com `pdf-lib` | HTML2PDF e Puppeteer | O HTML2PDF transforma o texto em imagem, e o Puppeteer é pesado demais para a Vercel. O `pdf-lib` mantém o texto selecionável, com fontes embutidas. |
+| Busca com `pg_trgm` e `unaccent` | Busca de texto completo (`tsvector`) | Os títulos são curtos e a busca é por trecho. Trigramas atendem sem depender de raízes de palavras. |
+| Fotos no Postgres | Storage externo | Menos peças (RNF08), e a foto é pequena (256 px). |
+| Resend atrás de `src/lib/email.ts` | SMTP direto, SES, Brevo | O plano gratuito basta, e a camada própria permite trocar de provedor. |
+| Prisma com `db pull` e `$queryRaw` | Migrations do Prisma | O `DDL.SQL` é a fonte da verdade, e a busca usa funções que o Prisma não expressa. |
+| `ordem` decimal (média dos vizinhos) | Inteiros renumerados | Reordenar atualiza uma única linha (RNF04). |
+| Contador `versao` | Bloqueio pessimista | Detecta edição simultânea sem travar ninguém (RNF13). |
+| Limite de tentativas no banco | Memória do servidor ou Redis | A Vercel não guarda memória entre requisições, e não há outra plataforma (RNF15). |
 
 ## Modelo de dados
 
@@ -708,6 +755,7 @@ Estão na parte 2 do `DDL.SQL` e foram testadas tentando violá-las:
 - Cada e-mail existe uma única vez no sistema, em minúsculas e com formato mínimo. Cada conta tem de um a três e-mails.
 - A posição dos artistas de uma música é única, e a música tem pelo menos um. O conjunto de artistas e o título não se repetem, mas isso é validado pela API, não pelo banco.
 - Tom tocado e tom original no formato `D`, `F#m` ou `Bb`.
+- Nomes e títulos não vazios, e link do YouTube começando com `http://` ou `https://`.
 - Cada versão tem número único por música e título não vazio. Uma versão `MUSICA` não tem setlist; uma `TOM_TOCADO` tem setlist e não tem cifra. Tons válidos em todas. Data de criação e atualização são mantidas pelo banco.
 - A configuração aceita só `CIFRA` ou `LETRA` para visualização e exportação, e só `PEQUENA`, `MEDIA` ou `GRANDE` para a fonte.
 - Em `colecoes`: SETLIST exige evento e não tem nome; LISTA exige nome, não tem evento e não é publicada. Os donos de uma lista ficam em `listas_donos`; a API garante ao menos um.
@@ -731,6 +779,14 @@ O banco não cobre estas:
 - A gravação só é aceita se a `versao` enviada ainda for a atual.
 - Nomes reservados pelas rotas não são aceitos como `slug`.
 - Um código de e-mail ou de recuperação serve uma única vez. O código de e-mail é invalidado após o limite de tentativas.
+
+### Evolução do esquema
+
+- O `DDL.SQL` descreve o esquema completo e atual. Serve para criar um banco novo (desenvolvimento, testes e o primeiro deploy).
+- Depois do primeiro deploy, cada mudança no banco é um script numerado em `db/migracoes/` (`0001_descricao.sql`, `0002_…`), aplicado em ordem em todos os ambientes. O mesmo commit atualiza o `DDL.SQL`, para que ele continue igual ao resultado de todas as migrações.
+- Cada script roda em uma transação e é revisado como código. Uma mudança destrutiva (apagar coluna ou tabela) acontece em dois lançamentos: primeiro o código deixa de usar, depois o script remove.
+- Depois de uma migração, rode `npx prisma db pull` e inclua o `schema.prisma` atualizado no mesmo commit.
+- Antes de aplicar em produção, faça um backup (veja [Deploy](#deploy)) e teste o script em um banco criado com o `DDL.SQL` anterior.
 
 ## Esquema de URLs
 
@@ -824,6 +880,26 @@ Exemplos: `/musicas?ordem=mais&periodo=mes`, `/musicas?busca=coracao&artista=pad
 - Ações que não são só um campo viram um verbo no fim do caminho: `/publicar`, `/copiar-setlist`, `/ativo`, `/presenca`, `/desativar`.
 - A resposta de cada item traz `id` e `slug`.
 
+### Formato das respostas e dos erros
+
+- JSON em UTF-8. As datas seguem o ISO 8601 com fuso (`2026-10-18T19:00:00-03:00`), e os ids são UUID.
+- As listagens devolvem `{ "itens": [...], "total": 412, "pagina": 1, "porPagina": 30 }`.
+- Os erros devolvem `{ "erro": { "codigo": "VALIDACAO", "mensagem": "...", "campos": [{ "campo": "titulo", "mensagem": "..." }] } }`, com `campos` só nos erros de validação. A `mensagem` é em português e pode ser mostrada à pessoa. Nenhum erro revela detalhes internos (consulta, caminho de arquivo ou pilha de chamadas).
+
+| Status | `codigo` | Quando |
+|---|---|---|
+| 401 | `NAO_AUTENTICADO` | Sem sessão, ou com sessão inválida ou encerrada (`token_versao`). |
+| 403 | `PROIBIDO` | A pessoa vê o item, mas não pode fazer a ação (por exemplo, um convidado gravando). |
+| 404 | `NAO_ENCONTRADO` | O item não existe ou a pessoa não pode vê-lo (RN84). |
+| 409 | `CONFLITO_VERSAO` | A `versao` enviada não é mais a atual (RN38). |
+| 409 | `CONTA_EXISTENTE` | O e-mail do cadastro já tem conta. |
+| 409 | `DUPLICADO` | Outra unicidade violada: nome de artista ou instrumento, título com os mesmos artistas, e-mail em outra conta. |
+| 422 | `VALIDACAO` | O corpo ou os parâmetros não passam pelo schema Zod. |
+| 429 | `LIMITE_TENTATIVAS` | Passou do limite de tentativas (RNF15), com `Retry-After` em segundos. |
+| 500 | `ERRO_INTERNO` | Falha inesperada. O detalhe vai só para o log. |
+
+A API é usada só pelo front do próprio app, por isso as rotas não têm número de versão (`/api/v1`).
+
 ## Busca e ordenação
 
 ### Onde há busca
@@ -882,7 +958,7 @@ A especificação é gerada a partir dos **schemas Zod** que já validam as requ
 | Conta | `GET, PATCH /api/conta` (nome), `PUT /api/conta/senha`, `PUT /api/conta/instrumentos`, `GET, POST /api/conta/emails` (lista; envia o código ao novo e-mail), `PUT /api/conta/emails/{id}` (confirma o código), `DELETE /api/conta/emails/{id}`, `DELETE /api/conta` (apaga a própria conta, com a senha), `GET /api/conta/google` (inicia o vínculo), `DELETE /api/conta/google` (desvincula, com a senha), `POST /api/conta/codigos-recuperacao`, `POST /api/conta/desativar`, `PUT, DELETE /api/conta/foto`, `GET, PUT /api/conta/preferencias` (padrões de visualização e de exportação, RN93) |
 | Dashboard | `GET /api/dashboard?periodo=mes\|ano` (usuários logados) |
 | Listagens | `GET /api/musicas`, `GET /api/artistas`, `GET /api/instrumentos`, `GET /api/usuarios`, `GET /api/listas`, `GET /api/eventos`. Os parâmetros são os da seção [Parâmetros das listagens](#parâmetros-das-listagens): `busca`, `ordem`, `pagina`, `periodo`, `ano`, `mes`, `artista`, `revisao`, `de`, `ate`. |
-| Usuários | `GET /api/usuarios/{slug}`, `GET /api/usuarios/{slug}/foto` (com `Cache-Control` e `ETag`), `PATCH /api/usuarios/{id}` (cargo), `PATCH /api/usuarios/{id}/ativo` (desativar e reativar),  |
+| Usuários | `GET /api/usuarios/{slug}`, `GET /api/usuarios/{slug}/foto` (com `Cache-Control` e `ETag`), `PATCH /api/usuarios/{id}` (cargo), `PATCH /api/usuarios/{id}/ativo` (desativar e reativar) |
 | Convites | `POST /api/convites` (com `papel` e, para convidados, `evento_id`) |
 | Instrumentos | `POST /api/instrumentos`, `GET /api/instrumentos/{slug}` (com o total e os músicos), `PATCH, DELETE /api/instrumentos/{id}` |
 | Artistas | `POST /api/artistas`, `GET /api/artistas/{slug}`, `PATCH /api/artistas/{id}` (renomear) |
@@ -913,7 +989,7 @@ Resposta de `GET /api/dashboard?periodo=mes`:
   ],
   "proximosEventos": [
     { "nome": "Missa de domingo", "slug": "2026-10-18-missa-de-domingo",
-      "dataEvento": "2026-10-18T19:00:00", "minhaResposta": null }
+      "dataEvento": "2026-10-18T19:00:00-03:00", "minhaResposta": null }
   ],
   "tocados": {
     "periodo": "mes",
@@ -936,7 +1012,14 @@ Resposta de `GET /api/dashboard?periodo=mes`:
 ```
 .
 ├─ DDL.SQL                   # modelo de dados em SQL (PostgreSQL)
-├─ vercel.json               # agenda da rotina diária (Vercel Cron)
+├─ db/
+│  └─ migracoes/             # scripts numerados, aplicados depois do primeiro deploy
+├─ .github/
+│  ├─ workflows/
+│  │  ├─ ci.yml              # tipos, lint, testes e DDL em Postgres limpo
+│  │  └─ backup.yml          # backup semanal do banco
+│  └─ dependabot.yml         # atualização semanal das dependências
+├─ vercel.json               # agenda da rotina diária (Vercel Cron) e região das funções
 ├─ prisma/
 │  └─ schema.prisma          # gerado do banco com `prisma db pull`
 ├─ public/
@@ -977,9 +1060,8 @@ Resposta de `GET /api/dashboard?periodo=mes`:
 │  │  │  │     └─ musicas/[musica]/
 │  │  │  ├─ conta/           # nome, foto e instrumentos
 │  │  │  ├─ configuracoes/   # visualização e exportação (padrões)
-│  │  │  │  ├─ seguranca/
-│  │  │  │  └─ termos/
-│  │  │  │  └─ seguranca/    # e-mails, senha, Google, códigos, desativação e exclusão
+│  │  │  │  ├─ seguranca/    # e-mails, senha, Google, códigos, desativação e exclusão
+│  │  │  │  └─ termos/       # aceite dos termos e links dos documentos
 │  │  │  └─ admin/           # convites e gestão de contas
 │  │  └─ api/                # Route Handlers
 │  │     └─ docs/            # Swagger UI (só admin)
@@ -995,6 +1077,10 @@ Resposta de `GET /api/dashboard?periodo=mes`:
 │  │  ├─ cifra/              # conversão de tom para graus e de graus para tom
 │  │  └─ ...                 # validadores Zod, slugs, etc.
 │  └─ hooks/
+├─ tests/
+│  ├─ unit/                  # cifra, slugs, busca, autorizar
+│  ├─ integration/           # rotas com PostgreSQL real, criado do DDL.SQL
+│  └─ e2e/                   # Playwright
 └─ .env.example
 ```
 
@@ -1008,16 +1094,19 @@ docker run --name musicaliapp-db -e POSTGRES_PASSWORD=dev -e POSTGRES_DB=musical
   -p 5432:5432 -d postgres:16
 
 # 2. Projeto Next com TypeScript e App Router
-npx create-next-app@latest musicaliapp
+npx create-next-app@latest musicaliapp && cd musicaliapp
 
 # 3. Dependências
-npm i prisma@6 @prisma/client@6 zod jsonwebtoken bcryptjs web-push \
-      sharp @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities
-npm i -D @types/jsonwebtoken @types/web-push
+npm i prisma@6 @prisma/client@6 zod jose bcryptjs openid-client web-push resend \
+      sharp pdf-lib @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities \
+      @asteasolutions/zod-to-openapi swagger-ui-react @serwist/next serwist
+npm i -D @types/web-push @types/swagger-ui-react vitest @playwright/test prettier
 
 # 4. Variáveis de ambiente
 cp .env.example .env.local
 #   DATABASE_URL="postgresql://postgres:dev@localhost:5432/musicaliapp"
+#   DIRECT_URL="postgresql://postgres:dev@localhost:5432/musicaliapp"
+#   APP_URL="http://localhost:3000"
 
 # 5. Banco: aplicar o DDL e gerar o schema do Prisma a partir dele
 psql "postgresql://postgres:dev@localhost:5432/musicaliapp" -f DDL.SQL
@@ -1045,13 +1134,24 @@ psql "postgresql://postgres:dev@localhost:5432/musicaliapp" -c \
 
 ### Comandos úteis
 
-`npx prisma studio` (ver os dados), `npx prisma validate` (checar o schema), `npx tsc --noEmit` (checar tipos).
+| Comando | Para quê |
+|---|---|
+| `npm run dev` | Servidor de desenvolvimento. |
+| `npm run typecheck` | `tsc --noEmit`: checa os tipos. |
+| `npm run lint` | ESLint e checagem do Prettier. |
+| `npm test` | Testes unitários e de integração (Vitest). Os de integração precisam do Postgres local. |
+| `npm run test:e2e` | Testes ponta a ponta (Playwright). |
+| `npx prisma validate` | Checa o schema do Prisma. |
+| `npx prisma db pull` | Atualiza o `schema.prisma` a partir do banco. |
+| `npx prisma studio` | Mostra os dados. |
 
 ## Variáveis de ambiente
 
 | Variável | Para quê |
 |---|---|
 | `DATABASE_URL` | Conexão do Prisma. Em produção, a string do pooler do Supabase. |
+| `DIRECT_URL` | Conexão direta, sem pooler, usada pelo `prisma db pull`, pelas migrações e pelo backup. No schema: `directUrl = env("DIRECT_URL")`. |
+| `APP_URL` | Endereço público do app. Serve para conferir o cabeçalho `Origin` das gravações e para montar links. Ex.: `https://musicaliapp.exemplo.com`. |
 | `JWT_SECRET` | Segredo para assinar o token de sessão. Longo e aleatório. |
 | `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | Chave pública VAPID, enviada ao navegador. |
 | `VAPID_PRIVATE_KEY` | Chave privada VAPID. **Só no servidor.** |
@@ -1064,6 +1164,45 @@ psql "postgresql://postgres:dev@localhost:5432/musicaliapp" -c \
 | `GOOGLE_REDIRECT_URI` | Endereço de retorno do login, ex.: `https://seu-app/api/auth/google/callback`. |
 | `NODE_ENV` | `development` ou `production` (controla o cookie `secure`). |
 
+## Qualidade e testes
+
+### Convenções de código
+
+- TypeScript em modo `strict` (RNF05). ESLint (`next/core-web-vitals` e `typescript-eslint`) e Prettier, com `npm run lint` e `npm run typecheck` sem erros.
+- Nomes do domínio em português, como no banco e nas URLs (`musicas`, `autorizar`, `colecao`), e termos técnicos em inglês (`handler`, `cache`). Os textos mostrados à pessoa são em português do Brasil.
+- Toda entrada de rota passa por um schema Zod, e nenhuma rota lê ou grava no banco antes de chamar `autorizar` (RNF10).
+- Commits no padrão **Conventional Commits** (`feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`). A `main` é protegida: o trabalho entra por pull request com a CI aprovada, e cada pull request ganha um deploy de prévia na Vercel.
+- Segredos só em variáveis de ambiente. O repositório traz apenas o `.env.example`.
+
+### Testes
+
+| Nível | Ferramenta | O que cobre |
+|---|---|---|
+| Unitário | Vitest | Conversão de graus e tons e gramática de acordes; quebra da cifra em pares; slugs (RN03, RN13, RN15); filtro de busca e escape; datas em `America/Sao_Paulo`; `autorizar` (papel × ação). |
+| Integração | Vitest, com PostgreSQL 16 real (Docker local e *service container* na CI) | Cada rota por papel (admin, coordenador, ministeriado, convidado, conta desativada e sem sessão); `versao` e `409 CONFLITO_VERSAO`; histórico (gravar e restaurar); convite consumido uma só vez em requisições simultâneas; exclusão de conta (RN85); limite de tentativas; as regras do `DDL.SQL`. |
+| Ponta a ponta | Playwright (Chromium, em tela de celular e de computador) | Convite, cadastro com código e login; montar o setlist, reordenar e escalar; confirmar presença; exportar PDF; abrir offline. |
+
+Os testes de integração usam um banco criado a partir do `DDL.SQL`, o que também valida o próprio DDL. Neles, a camada de e-mail é trocada por um *stub* que guarda o código enviado.
+
+### Critério de pronto
+
+Um requisito está pronto quando:
+
+1. a regra está implementada e tem teste;
+2. a autorização foi testada para cada papel;
+3. `typecheck`, `lint` e os testes passam na CI;
+4. a tela funciona no celular e pelo teclado;
+5. o `DDL.SQL`, a migração e este README foram atualizados, quando mudaram;
+6. não há segredo, e-mail real nem dado pessoal no código, nos testes ou nos logs.
+
+### Integração contínua
+
+Um workflow do GitHub Actions (`.github/workflows/ci.yml`) roda a cada push e pull request: `npm ci`, `tsc --noEmit`, lint, `prisma validate`, criação de um PostgreSQL 16 limpo com o `DDL.SQL` e os testes unitários e de integração. Os testes ponta a ponta rodam nos pull requests para a `main`. O Dependabot (`.github/dependabot.yml`) abre atualizações toda semana, e o `npm audit` reprova a CI diante de vulnerabilidade alta ou crítica.
+
+### Acessibilidade e idioma
+
+O app segue o nível AA do WCAG 2.1: contraste suficiente, tudo operável pelo teclado, rótulos nos campos, foco visível e alvos de toque de pelo menos 44 px (o uso no palco é com pouca luz e pressa). A interface, as mensagens e os formatos são em português do Brasil: datas como `18/10/2026 19:00`, em `America/Sao_Paulo` (RNF16).
+
 ## Deploy
 
 - **Supabase:** crie o projeto na região de São Paulo e execute o `DDL.SQL` no *SQL Editor* (as extensões `pg_trgm` e `unaccent` estão disponíveis).
@@ -1073,7 +1212,10 @@ psql "postgresql://postgres:dev@localhost:5432/musicaliapp" -c \
 - **Termos e privacidade:** antes do deploy, escreva `/termos-de-uso` e `/politica-privacidade` e revise com um advogado. Sem o aceite, o cadastro não conclui (RN86).
 - **Google:** no Google Cloud, configure a tela de consentimento com os escopos `openid`, `email` e `profile` e publique o app, saindo do modo Teste. O modo Teste limita a 100 usuários e faz os tokens de atualização expirarem em 7 dias. Esses escopos não exigem verificação do Google.
 - **E-mail:** crie a conta no Resend, verifique o domínio de envio nos registros DNS e cadastre `RESEND_API_KEY` e `EMAIL_FROM`. O plano gratuito envia a qualquer destinatário, mas só a partir de um domínio verificado.
-- **Backup:** um workflow agendado do GitHub Actions (semanal) roda `pg_dump` com a conexão direta do Supabase (não o pooler) e guarda o arquivo como artefato do workflow.
+- **Backup:** um workflow agendado do GitHub Actions (semanal) roda `pg_dump` com a conexão direta do Supabase (`DIRECT_URL`, não o pooler), cifra o arquivo (por exemplo, com `age`) e o guarda como artefato do workflow, com prazo de retenção definido. Teste a restauração em um banco vazio antes do uso real e depois de tempos em tempos: um backup que nunca foi restaurado não é garantia.
+- **Ambientes:** desenvolvimento (Docker) e produção (Supabase). Os deploys de prévia da Vercel usam um segundo projeto do Supabase, nunca o banco de produção.
+- **Região:** as funções da Vercel rodam em `gru1` (São Paulo), perto do banco, o que se configura no `vercel.json`.
+- **Verificação depois do deploy:** entrar, abrir um setlist, exportar um PDF, instalar o app e receber um push. Se algo falhar, a Vercel permite voltar para o deploy anterior.
 
 ## Segurança
 
@@ -1086,23 +1228,55 @@ psql "postgresql://postgres:dev@localhost:5432/musicaliapp" -c \
 - Fotos de perfil validadas no servidor (tipo e tamanho do arquivo enviado). Antes de gravar, são decodificadas e regravadas pelo `sharp`, o que remove metadados como localização e descarta conteúdo que não seja imagem válida.
 - O Swagger e o `openapi.json` exigem sessão de admin.
 - A chave privada VAPID, o `JWT_SECRET` e o `CRON_SECRET` nunca vão para o front nem para o repositório.
-- Login, aceitação de convite e pedidos de "esqueci a senha" têm limite de tentativas (rate limit), contado na tabela `limites_tentativas`, por IP e por e-mail.
+- Login, aceitação de convite e pedidos de "esqueci a senha" têm limite de tentativas (rate limit), contado na tabela `limites_tentativas`, por IP e por e-mail, ambos guardados em hash.
 - A sessão (JWT) leva o `token_versao` da pessoa. Trocar ou redefinir a senha o incrementa, e a função central recusa tokens com versão antiga, o que encerra as outras sessões.
 - O pedido de "esqueci a senha" responde igual exista ou não a conta. Os códigos de e-mail e de recuperação são guardados em hash. Os de e-mail valem 30 minutos e servem uma única vez.
+- **Senha:** de 8 a 72 caracteres (o bcrypt ignora o que passa de 72 bytes), com custo 10. A conferência usa `bcrypt.compare`.
+- **CSRF:** toda gravação usa `POST`, `PUT`, `PATCH` ou `DELETE`, com cookie `sameSite=lax`, e a API confere se o cabeçalho `Origin` é o de `APP_URL`. As rotas `GET` não alteram dados.
+- **Login com Google:** `openid-client` com `state`, `nonce` e PKCE. O vínculo usa o `google_sub`, não o e-mail.
+- **Cabeçalhos HTTP:** `Content-Security-Policy` restritiva (`default-src 'self'`, scripts com *nonce* e `frame-ancestors 'none'`), `X-Content-Type-Options: nosniff`, `Strict-Transport-Security` e `Referrer-Policy`, configurados em `next.config.ts` e no middleware.
+- **Entrada e saída:** corpo com tamanho máximo em cada rota (2 MB só na foto), consultas sempre parametrizadas, e cifra e letra tratadas como texto puro, nunca como HTML.
+- **Logs:** estruturados e sem dados pessoais. Não registram senha, código, token, e-mail nem IP puro; usam o id da pessoa e o `codigo` do erro (RNF20).
+- **Dependências:** versões travadas no `package-lock.json`, com Dependabot e `npm audit` na CI.
+- **Rotação de segredos:** trocar o `JWT_SECRET` encerra todas as sessões. Trocar as chaves VAPID invalida as inscrições de push, e as pessoas precisam reativar as notificações.
+
+## Privacidade e LGPD
+
+O app trata dados pessoais de membros de um ministério de igreja, e participar dele pode revelar a crença religiosa, que a LGPD classifica como dado sensível. Por isso o app coleta o mínimo e pede consentimento.
+
+| Dado | Para quê | Onde fica |
+|---|---|---|
+| Nome completo, e-mails (até 3) e hash da senha | Identificar a pessoa e permitir o acesso | `usuarios`, `emails_usuario` |
+| Foto (opcional) | Reconhecer os músicos nas escalas | `fotos_perfil` |
+| Instrumentos, escalas, presenças e status de escuta | Organizar os eventos | `usuarios_instrumentos`, `colecao_musicas_musicos`, `confirmacoes_presenca`, `status_escuta` |
+| Identificador do Google (`google_sub`, opcional) | Login com Google | `contas_google` |
+| Inscrição de push | Avisar sobre setlists | `device_tokens` |
+| Hash do IP e do e-mail, com a contagem de tentativas | Limite de tentativas | `limites_tentativas` (apagado todo dia) |
+| Data do aceite dos termos | Registro do consentimento | `usuarios.termos_aceitos_em` |
+
+- **Consentimento:** o cadastro só conclui com o aceite dos Termos de Uso e da Política de Privacidade (RN86).
+- **Minimização:** o app não pede CPF, telefone, endereço nem data de nascimento.
+- **Quem vê o quê:** os e-mails só aparecem para a própria pessoa, e coordenadores e admin não os veem (RN79, RN83). O admin tem acesso total ao banco, por isso essa conta é restrita a quem é de confiança.
+- **Eliminação:** a pessoa apaga a própria conta, e seus dados saem (RN85). O histórico de eventos e de cifras permanece sem identificá-la ("Pessoa removida").
+- **Retenção:** os dados duram enquanto a conta existir. Convites e códigos vencidos e os contadores de tentativas são apagados todo dia (RN74).
+- **Pedidos do titular:** corrigir nome, e-mails, foto e instrumentos e apagar a conta a própria pessoa faz no app. Os demais pedidos (como uma cópia dos dados) vão ao responsável indicado na Política de Privacidade.
+- **Operadores:** Vercel (hospedagem), Supabase (banco), Resend (e-mail), Google (login opcional) e os serviços de push dos navegadores. Alguns processam dados fora do Brasil, e a Política informa essa transferência.
+- **Incidentes:** identificar e conter, avaliar o risco, trocar os segredos afetados e comunicar a ANPD e as pessoas atingidas nos casos e prazos da regulamentação vigente.
+- **Textos jurídicos:** os Termos de Uso e a Política de Privacidade precisam ser escritos e revisados por advogado antes do uso (veja [Deploy](#deploy)).
 
 ## Sprints e milestones
 
-Premissas: sprints de **2 semanas**. As datas de início e de fim serão definidas quando o desenvolvimento começar. Um milestone termina quando todos os requisitos listados nele estão implementados e testados. A ordem segue as dependências: cada milestone usa o que o anterior entregou.
+Premissas: sprints de **2 semanas**. As datas de início e de fim serão definidas quando o desenvolvimento começar. Um milestone termina quando todos os requisitos listados nele estão implementados e testados, segundo o critério de pronto de [Qualidade e testes](#qualidade-e-testes). Cada requisito funcional (RF) pertence a um único milestone. A ordem segue as dependências: cada milestone usa o que o anterior entregou.
 
 | Sprint | Milestone | Entrega principal | Requisitos |
 |---|---|---|---|
 | S1 | **M1 Fundação** | Projeto Next com TypeScript, banco aplicado a partir do `DDL.SQL`, login com "Lembrar de mim", login com Google vinculado, convites de 30 minutos, cargos, instrumentos, conta com foto, e-mail confirmado por código (envio pelo Resend), esqueci a senha por código, troca de senha e desativação e exclusão pela própria pessoa, termos e privacidade. Limite de tentativas no banco. Páginas próprias por `slug`. PWA instalável. | RF01, RF02, RF04 a RF09, RF42, RF44 a RF48, RF58, RF59, RF61, RNF15 |
-| S2 | **M2 Biblioteca** | Cadastro e edição de músicas e artistas (inclusive renomear). Cifra em graus, com conversão para qualquer tom. Busca por título e artista, com aviso de músicas parecidas. Controle de versão. Revisão. | RF17, RF18, RF20, RF21, RF23 a RF25 |
-| S3 | **M3 Leitura da cifra** | Tela da cifra com troca de tom, transpose, modo letra, aumento de fonte e rolagem automática com velocidade ajustável. Página de configurações com os padrões de visualização e exportação (RN93). Exportação da cifra e da letra (Markdown ou PDF) e exportação em lote. | RF19, RF60, RF62, RF63, RF66 |
-| S4 | **M4 Eventos e setlists** | Eventos com `slug`, cancelamento, setlists e listas com seções e vários donos. Reordenação por arrastar e soltar. Tom tocado por música. Cifra local e "Salvar na música" ou "Salvar só neste setlist". Botão Compartilhar, donos e acesso de edição às listas. Redirecionamento de slugs antigos. | RF26 a RF29, RF34, RF55, RF56 |
+| S2 | **M2 Biblioteca** | Cadastro e edição de músicas e artistas (inclusive renomear). Cifra em graus, com conversão para qualquer tom. Busca por título e artista, com aviso de músicas parecidas. Controle de versão e histórico da cifra, com título, autor e data. Revisão. | RF17, RF18, RF20, RF21, RF23 a RF25, RF64 |
+| S3 | **M3 Leitura da cifra** | Tela da cifra com troca de tom, transpose, modo letra, aumento de fonte e rolagem automática com velocidade ajustável. Página de configurações, com os padrões de visualização e de exportação (RN93); a parte de segurança vem dos milestones M1 e M9. Exportação da cifra e da letra (Markdown ou PDF) e exportação em lote. | RF19, RF60, RF62, RF63, RF66 |
+| S4 | **M4 Eventos e setlists** | Eventos com `slug`, cancelamento, setlists e listas com seções e vários donos. Reordenação por arrastar e soltar. Tom tocado por música. Cifra local e "Salvar na música" ou "Salvar só neste setlist". Botão Compartilhar, donos e acesso de edição às listas. Redirecionamento de slugs antigos. Listas visíveis a todos. | RF26 a RF29, RF34, RF55 a RF57 |
 | S5 | **M5 Escala, presença e convidados** | Escala por música e por seção, com as opções sobrescrever ou completar. Aviso de conflito de horário. Presença com Vou e Não vou. Aviso de substituição. Convite de convidado para um evento, com acesso somente leitura. Página de instrumento com os músicos. | RF03, RF30, RF31, RF35 a RF38 |
-| S6 | **M6 Dashboard e listagens** | Dashboard com os números, instrumentos e próximos eventos. Listagens de músicas, artistas, instrumentos, usuários, listas e eventos, com busca, filtros e ordenação, 30 por página. Busca geral. Mais e menos tocados, com período mês, ano, geral ou um mês ou ano escolhido. | RF10 a RF16, RF50 a RF54 |
-| S7 | **M7 Notificações e offline** | Push na publicação do setlist. Lembrete diário de presença pelo Vercel Cron. Cache offline somente leitura, com atualização ao abrir o app. | RF39 a RF41 |
+| S6 | **M6 Dashboard e listagens** | Dashboard com os números, instrumentos e próximos eventos. Listagens de músicas, artistas, instrumentos, usuários, listas e eventos, com busca, filtros e ordenação, 30 por página. Busca geral. Mais e menos tocados, com período mês, ano, geral ou um mês ou ano escolhido. Datas de criação e atualização nas páginas e listagens. | RF10 a RF16, RF50 a RF54, RF65 |
+| S7 | **M7 Notificações e offline** | Publicação do setlist com push. Lembrete diário de presença pelo Vercel Cron. Cache offline somente leitura, com atualização ao abrir o app. | RF32, RF39 a RF41 |
 | S8 | **M8 Entrega** | Swagger restrito ao admin. Testes de permissão para cada papel (inclusive convidado somente leitura e acesso às listas) e estado da conta. Deploy na Vercel e no Supabase. Conta inicial criada. Backup semanal do banco. | RF43, RNF10, RNF17 |
 | S9 | **M9 Complementos** | Status de escuta (Não ouvi, Ouvi, Toquei). Códigos de recuperação de senha. Copiar o setlist de outro evento. Ao mover uma música para uma seção cuja escala é uniforme, oferecer aplicar essa escala (RN48). | RF22, RF33, RF49 |
 
