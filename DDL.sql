@@ -13,7 +13,7 @@
 --  * ids são UUID gerados pelo banco (gen_random_uuid()).
 --  * Datas: criado_em e atualizado_em nos itens principais (usuários,
 --    instrumentos, artistas, músicas, eventos e coleções); atualizado_em é
---    mantido por trigger. Também há eventos.data_evento, usuarios.termos_aceitos_em,
+--    mantido por trigger. Também há eventos.data_evento,
 --    musica_versoes.criado_em (autor e data de cada versão), convites_acesso.expira_em,
 --    codigos_email.expira_em e limites_tentativas.janela_fim.
 --    Todas são TIMESTAMPTZ (com fuso); a aplicação calcula dia, mês e ano
@@ -56,10 +56,9 @@ CREATE TABLE usuarios (
     slug         TEXT         NOT NULL,                -- página própria
     senha_hash   TEXT         NOT NULL,
     token_versao INTEGER      NOT NULL DEFAULT 1,
-    termos_aceitos_em TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,  -- aceite dos termos (RN86)
     papel        VARCHAR(20)  NOT NULL DEFAULT 'MINISTERIADO',
     ativo        BOOLEAN      DEFAULT TRUE,            -- NULL só para CONVIDADO
-    criado_em     TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    criado_em     TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,  -- data do cadastro, que é o aceite dos termos (RN86)
     atualizado_em TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT pk_usuarios PRIMARY KEY (id),
     CONSTRAINT uq_usuarios_slug UNIQUE (slug)
@@ -382,7 +381,8 @@ CREATE TABLE colecao_musicas (
 
 -- Escala: quem toca cada música. Só existe para coleções SETLIST
 -- (regra validada pela API). A escala de uma seção inteira é uma ação em
--- massa que grava aqui, música a música.
+-- massa que grava aqui, música a música. Quem é escalado precisa tocar o
+-- instrumento: validado pela API (RN46).
 CREATE TABLE colecao_musicas_musicos (
     id                 UUID  NOT NULL DEFAULT gen_random_uuid(),
     colecao_musica_id  UUID  NOT NULL,
@@ -396,6 +396,23 @@ CREATE TABLE colecao_musicas_musicos (
         REFERENCES usuarios (id) ON DELETE SET NULL,
     CONSTRAINT fk_cmm_instrumento FOREIGN KEY (instrumento_id)
         REFERENCES instrumentos (id) ON DELETE RESTRICT
+);
+
+-- Escala do evento: as pessoas escaladas para o evento inteiro, com os
+-- instrumentos que cada uma toca (sem instrumento próprio). Pode incluir quem
+-- não tem instrumento cadastrado. Não preenche as músicas nem as seções. Ao
+-- escalar alguém numa música ou seção, a API inclui a pessoa aqui (RN94).
+-- Só existe para coleções SETLIST (validado pela API).
+CREATE TABLE colecao_musicos (
+    id          UUID  NOT NULL DEFAULT gen_random_uuid(),
+    colecao_id  UUID  NOT NULL,
+    usuario_id  UUID,                -- vazio: pessoa removida (RN85)
+    CONSTRAINT pk_colecao_musicos PRIMARY KEY (id),
+    CONSTRAINT uq_colecao_musicos UNIQUE (colecao_id, usuario_id),
+    CONSTRAINT fk_colecao_musicos_colecao FOREIGN KEY (colecao_id)
+        REFERENCES colecoes (id) ON DELETE CASCADE,
+    CONSTRAINT fk_colecao_musicos_usuario FOREIGN KEY (usuario_id)
+        REFERENCES usuarios (id) ON DELETE SET NULL
 );
 
 -- Histórico da música, como commits. Cada alteração de cifra, tom original,
@@ -651,6 +668,7 @@ CREATE INDEX ix_cm_musica ON colecao_musicas (musica_id);
 CREATE INDEX ix_cm_secao ON colecao_musicas (secao_id);
 CREATE INDEX ix_cmm_usuario ON colecao_musicas_musicos (usuario_id);
 CREATE INDEX ix_cmm_instrumento ON colecao_musicas_musicos (instrumento_id);
+CREATE INDEX ix_colecao_musicos_usuario ON colecao_musicos (usuario_id);
 CREATE INDEX ix_device_usuario ON device_tokens (usuario_id);
 CREATE INDEX ix_codigos_email_usuario ON codigos_email (usuario_id);
 CREATE INDEX ix_codigos_email_email ON codigos_email (email);
