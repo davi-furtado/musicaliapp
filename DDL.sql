@@ -43,8 +43,7 @@
 -- vê tudo, mas não edita (só a própria conta, os instrumentos e a presença),
 -- e não tem o campo "ativo" (NULL). O acesso do convidado dura enquanto ele
 -- estiver em ao menos um evento de eventos_convidados. Nos demais papéis,
--- ativo = false tira a pessoa da escala dos eventos futuros (feito pela
--- aplicação).
+-- ativo = false impede a pessoa de editar (feito pela aplicação).
 -- Todo usuário logado acessa a documentação da API (Swagger). Coordenadores
 -- têm os poderes de coordenação, exceto apagar contas, ver e-mails e mudar nome,
 -- foto ou instrumentos de outras pessoas (regras da aplicação).
@@ -58,7 +57,7 @@ CREATE TABLE usuarios (
     token_versao INTEGER      NOT NULL DEFAULT 1,
     papel        VARCHAR(20)  NOT NULL DEFAULT 'MINISTERIADO',
     ativo        BOOLEAN      DEFAULT TRUE,            -- NULL só para CONVIDADO
-    criado_em     TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,  -- data do cadastro, que é o aceite dos termos (RN86)
+    criado_em     TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,  -- data do cadastro, que é o aceite dos termos (RN84)
     atualizado_em TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT pk_usuarios PRIMARY KEY (id),
     CONSTRAINT uq_usuarios_slug UNIQUE (slug)
@@ -183,8 +182,7 @@ CREATE TABLE artistas (
 );
 
 -- A biblioteca de músicas. A cifra fica em graus. tom_original é opcional
--- e só informativo: não altera a cifra. Músicos não ficam aqui (existem só
--- em colecao_musicas_musicos). O tom tocado fica em colecao_musicas.
+-- e só informativo: não altera a cifra. O tom tocado fica em colecao_musicas.
 CREATE TABLE musicas (
     id                    UUID     NOT NULL DEFAULT gen_random_uuid(),
     titulo                TEXT     NOT NULL,
@@ -242,8 +240,8 @@ CREATE TABLE eventos (
     CONSTRAINT uq_eventos_slug UNIQUE (slug)
 );
 
--- Eventos a que um CONVIDADO foi convidado. Ele pode ser escalado e
--- responder à presença só nesses eventos, e o acesso dele ao app dura
+-- Eventos a que um CONVIDADO foi convidado. Ele pode responder à presença
+-- só nesses eventos, e o acesso dele ao app dura
 -- enquanto houver ao menos um.
 CREATE TABLE eventos_convidados (
     evento_id   UUID NOT NULL,
@@ -281,7 +279,7 @@ CREATE TABLE convites_acesso (
 CREATE TABLE confirmacoes_presenca (
     id          UUID     NOT NULL DEFAULT gen_random_uuid(),
     evento_id   UUID     NOT NULL,
-    usuario_id  UUID,                   -- vazio: pessoa removida (RN85)
+    usuario_id  UUID,                   -- vazio: pessoa removida (RN83)
     confirmou   BOOLEAN,
     CONSTRAINT pk_confirmacoes_presenca PRIMARY KEY (id),
     CONSTRAINT uq_confirmacoes_evento_usuario UNIQUE (evento_id, usuario_id),
@@ -301,17 +299,19 @@ CREATE TABLE colecoes (
     slug         TEXT,                   -- LISTA: primeiro-dono-nome
     nome         TEXT,                   -- LISTA
     publicado    BOOLEAN      NOT NULL DEFAULT FALSE,
+    edicao_publica BOOLEAN    NOT NULL DEFAULT FALSE,  -- LISTA: todo usuário ativo edita (RN79)
     criado_em     TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
     atualizado_em TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT pk_colecoes PRIMARY KEY (id),
     CONSTRAINT uq_colecoes_evento UNIQUE (evento_id),
     CONSTRAINT uq_colecoes_slug UNIQUE (slug),
+    CONSTRAINT ck_colecoes_edicao_publica CHECK (tipo = 'LISTA' OR edicao_publica = FALSE),
     CONSTRAINT fk_colecoes_evento FOREIGN KEY (evento_id)
         REFERENCES eventos (id) ON DELETE CASCADE
 );
 
--- Donos de uma LISTA (um ou mais). posicao = 1 é o primeiro dono, usado no
--- slug. A API garante que sempre há ao menos um dono.
+-- Donos de uma LISTA (zero ou mais). posicao = 1 é o primeiro dono, usado no
+-- slug. Lista sem donos é pública (RN79).
 CREATE TABLE listas_donos (
     colecao_id  UUID     NOT NULL,
     usuario_id  UUID     NOT NULL,
@@ -379,34 +379,33 @@ CREATE TABLE colecao_musicas (
         REFERENCES secoes (id) ON DELETE SET NULL
 );
 
--- Escala: quem toca cada música. Só existe para coleções SETLIST
--- (regra validada pela API). A escala de uma seção inteira é uma ação em
--- massa que grava aqui, música a música. Quem é escalado precisa tocar o
--- instrumento: validado pela API (RN46).
-CREATE TABLE colecao_musicas_musicos (
-    id                 UUID  NOT NULL DEFAULT gen_random_uuid(),
-    colecao_musica_id  UUID  NOT NULL,
-    usuario_id         UUID,                -- vazio: pessoa removida (RN85)
-    instrumento_id     UUID  NOT NULL,
-    CONSTRAINT pk_colecao_musicas_musicos PRIMARY KEY (id),
-    CONSTRAINT uq_cmm UNIQUE (colecao_musica_id, usuario_id, instrumento_id),
-    CONSTRAINT fk_cmm_colecao_musica FOREIGN KEY (colecao_musica_id)
-        REFERENCES colecao_musicas (id) ON DELETE CASCADE,
-    CONSTRAINT fk_cmm_usuario FOREIGN KEY (usuario_id)
+-- Escala por seção: quem toca cada seção do setlist, com o instrumento. Só existe
+-- para seções de coleções SETLIST (validado pela API). Não há escala por música.
+-- Quem é escalado precisa tocar o instrumento: validado pela API (RN46).
+CREATE TABLE secao_musicos (
+    id             UUID  NOT NULL DEFAULT gen_random_uuid(),
+    secao_id       UUID  NOT NULL,
+    usuario_id     UUID,                -- vazio: pessoa removida (RN83)
+    instrumento_id UUID  NOT NULL,
+    CONSTRAINT pk_secao_musicos PRIMARY KEY (id),
+    CONSTRAINT uq_secao_musicos UNIQUE (secao_id, usuario_id, instrumento_id),
+    CONSTRAINT fk_secao_musicos_secao FOREIGN KEY (secao_id)
+        REFERENCES secoes (id) ON DELETE CASCADE,
+    CONSTRAINT fk_secao_musicos_usuario FOREIGN KEY (usuario_id)
         REFERENCES usuarios (id) ON DELETE SET NULL,
-    CONSTRAINT fk_cmm_instrumento FOREIGN KEY (instrumento_id)
+    CONSTRAINT fk_secao_musicos_instrumento FOREIGN KEY (instrumento_id)
         REFERENCES instrumentos (id) ON DELETE RESTRICT
 );
 
 -- Escala do evento: as pessoas escaladas para o evento inteiro, com os
 -- instrumentos que cada uma toca (sem instrumento próprio). Pode incluir quem
--- não tem instrumento cadastrado. Não preenche as músicas nem as seções. Ao
--- escalar alguém numa música ou seção, a API inclui a pessoa aqui (RN94).
+-- não tem instrumento cadastrado. Não preenche as seções. Ao escalar alguém
+-- numa seção, a API inclui a pessoa aqui (RN92).
 -- Só existe para coleções SETLIST (validado pela API).
 CREATE TABLE colecao_musicos (
     id          UUID  NOT NULL DEFAULT gen_random_uuid(),
     colecao_id  UUID  NOT NULL,
-    usuario_id  UUID,                -- vazio: pessoa removida (RN85)
+    usuario_id  UUID,                -- vazio: pessoa removida (RN83)
     CONSTRAINT pk_colecao_musicos PRIMARY KEY (id),
     CONSTRAINT uq_colecao_musicos UNIQUE (colecao_id, usuario_id),
     CONSTRAINT fk_colecao_musicos_colecao FOREIGN KEY (colecao_id)
@@ -666,8 +665,8 @@ CREATE INDEX ix_secoes_colecao ON secoes (colecao_id, ordem);
 CREATE INDEX ix_cm_colecao_ordem ON colecao_musicas (colecao_id, ordem);
 CREATE INDEX ix_cm_musica ON colecao_musicas (musica_id);
 CREATE INDEX ix_cm_secao ON colecao_musicas (secao_id);
-CREATE INDEX ix_cmm_usuario ON colecao_musicas_musicos (usuario_id);
-CREATE INDEX ix_cmm_instrumento ON colecao_musicas_musicos (instrumento_id);
+CREATE INDEX ix_secao_musicos_usuario ON secao_musicos (usuario_id);
+CREATE INDEX ix_secao_musicos_instrumento ON secao_musicos (instrumento_id);
 CREATE INDEX ix_colecao_musicos_usuario ON colecao_musicos (usuario_id);
 CREATE INDEX ix_device_usuario ON device_tokens (usuario_id);
 CREATE INDEX ix_codigos_email_usuario ON codigos_email (usuario_id);
