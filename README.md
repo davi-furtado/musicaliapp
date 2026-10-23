@@ -98,7 +98,7 @@ Os requisitos têm identificadores estáveis: **RF** (requisito funcional), **RN
 | RF16 | Os mais e menos tocados aceitam o período **mês**, **ano**, **geral** ou um mês ou ano específico escolhido pela pessoa. |
 | **Músicas** | |
 | RF17 | Cadastrar uma música (título, pelo menos um artista, **tom original** opcional, cifra, link do YouTube opcional), com aviso quando já existe uma parecida. |
-| RF18 | Escrever a cifra em graus ou em um tom qualquer; o app a guarda sempre em graus. A tela de escrita tem o campo **tom da escrita**, que é **graus** por padrão ou um tom. Esse campo só diz como converter o que foi digitado e não é guardado. |
+| RF18 | Escrever a cifra em graus ou em um tom qualquer; o app a guarda sempre em graus. A tela de escrita tem o campo **tom da escrita**, que é **graus** por padrão ou um tom. Esse campo só diz como converter o que foi digitado e não é guardado. Os acordes seguem sempre o padrão de escrita (RN95). |
 | RF19 | Ver a cifra em qualquer tom, transpor de meio em meio tom ou de tom em tom, aumentar a fonte e usar a **rolagem automática**, com a velocidade ajustável durante a rolagem. Só o botão pausa; rolar a tela com o dedo avança a música e não pausa. Há também a opção **Letra**, que mostra só a letra, sem os acordes, com o botão **Seções** para mostrar ou ocultar os marcadores de seção (padrão: ocultos). Nesse modo a transposição fica desativada, porque não há acordes para transpor. |
 | RF20 | Editar qualquer música, com aviso quando outra pessoa a alterou antes. Cada alteração da cifra, do tom original, dos artistas ou do tom tocado (no setlist ou na lista) gera uma versão no histórico, com título obrigatório (RN90). |
 | RF21 | Marcar e desmarcar uma música para revisão. |
@@ -152,6 +152,7 @@ Os requisitos têm identificadores estáveis: **RF** (requisito funcional), **RN
 | RF65 | Cada pessoa tem uma página de configurações (`/configuracoes`), com quatro partes: **segurança** (as funções de RF45 a RF48, RF57 e RF60), **termos e condições** (data do aceite, que é a data do cadastro, e links para os documentos), **visualização** (a tela abre em cifra ou em letra, com ou sem seções na letra, e com o tamanho padrão da fonte da cifra) e **exportação** (o arquivo sai em cifra ou em letra, com ou sem seções). Os padrões valem em qualquer aparelho (RN91). |
 | RF66 | Ver a lista de escalados do evento, com os instrumentos que cada pessoa toca, e adicionar ou remover pessoas dela, sem preencher as seções (RN92). |
 | RF67 | Botões **Escalar todos** e **Escalar todos os <instrumento>** na lista do evento, que adicionam os membros ativos ou só os que tocam aquele instrumento (RN94). |
+| RF68 | Uma página de tutorial (`/ajuda/acordes`) ensina o padrão de escrita dos acordes, com a tabela de formas, as regras que mais confundem, a tabela de variações aceitas com o que é gravado, um exemplo completo e um campo para testar um acorde. O editor de cifra tem o link para ela (RN95). |
 
 ### Requisitos não funcionais
 
@@ -234,7 +235,7 @@ Os requisitos têm identificadores estáveis: **RF** (requisito funcional), **RN
 | ID | Regra |
 |---|---|
 | RN30 | A música pode ter um tom original, opcional, informado no cadastro ou depois na edição. Ele é só informativo: não altera a cifra, que é sempre guardada em graus, e não é o tom tocado (RN32). A pessoa pode escrever a cifra no tom original ou em graus; isso não muda o tom original. A música não tem músicos. |
-| RN31 | Quem escreve a cifra pode usar graus ou um tom qualquer. O front converte para graus antes de enviar. |
+| RN31 | Quem escreve a cifra pode usar graus ou um tom qualquer. O front converte para graus antes de enviar. Em qualquer dos dois casos, os acordes seguem o padrão de escrita (RN95). |
 | RN32 | O tom só é salvo em uma música de **setlist ou lista**, e é opcional. Esse tom nunca altera a música. |
 | RN33 | Em qualquer tela o front pode mostrar a cifra em outro tom. É só visualização e nada é gravado. O tom original aparece destacado na lista de tons da visualização, mas a biblioteca não abre nele: abre em graus, a não ser que a pessoa escolha outro tom. A opção de transpose (meio tom ou tom em tom) só fica ativa com um tom de referência: na biblioteca, o tom escolhido para ver a música; no setlist, o tom tocado do item. Em graus do campo harmônico, fica desativada. |
 | RN34 | Não existem duas músicas com o mesmo título (sem diferenciar maiúsculas nem acentos) e o mesmo conjunto de artistas. Ao cadastrar, o app avisa sobre títulos parecidos. Toda música tem pelo menos um artista. |
@@ -243,6 +244,7 @@ Os requisitos têm identificadores estáveis: **RF** (requisito funcional), **RN
 | RN37 | Uma música que aparece em algum setlist ou lista não pode ser apagada. Ela continua no banco e no histórico dos eventos. |
 | RN38 | Cada música e cada item de setlist tem um número de versão. Se a versão mudou desde que a pessoa abriu a tela, a gravação é recusada com aviso. |
 | RN39 | A música pode ter um link do YouTube, que é opcional. O app não guarda arquivos de áudio. |
+| RN95 | Os acordes são **gravados** só no padrão desta seção (veja [Padrão de escrita](#padrão-de-escrita)). Ao digitar, o app aceita estas variações e converte para o padrão antes de gravar: (a) dentro dos parênteses, `b` e `#` no lugar de `-` e `+` (`C7(b9)` = `C7(-9)` = `C7(9-)`; `C7(#5)` = `C7(+5)` = `C7(5+)`), e misturas dos dois na mesma extensão; (b) `maj7`, `M7`, `Δ` e `^7` para `7M`; (c) `sus` e `sus4` para `4`, e `sus2` para `2`; (d) `add9` e `add2` para `9`, e `add4` para `11`; (e) `min` e `-` para `m` na raiz (`C-7` = `Cm7`); (f) `º`, `°` e `dim7` para `º`; (g) `dim` para `m5-`; (h) `ø` e `m7b5` para `m7(5-)`. Dentro dos parênteses, `-` e `+` valem como alterações, e `b` e `#` valem como o mesmo sinal. O `b` e o `#` fora dos parênteses continuam sendo acidentes da nota. Um item que o app não reconhece não vira acorde: a linha em que ele aparece é tratada como letra, e o editor avisa, sem bloquear a gravação, com o link para o tutorial (RF68). |
 
 ### Eventos, setlists e listas
 
@@ -472,15 +474,51 @@ O artista tem tabela própria, com `nome` e `slug`, e uma página própria com a
 
 ## Cifra, graus e tons
 
-A cifra é guardada **em graus do campo harmônico**, no estilo do Nashville Number System, e o app a mostra em qualquer tom.
+A cifra é guardada **em graus do campo harmônico**, no estilo do Nashville Number System, com os algarismos de 1 a 7, e o app a mostra em letras, em qualquer tom. A escrita dos acordes segue **um só padrão**, descrito nesta seção. O app grava sempre esse padrão. Ao digitar, aceita também algumas variações de escrita, listadas em RN95, e converte tudo para o padrão antes de gravar.
 
-| Em graus | Significado |
-|---|---|
-| `1`, `4`, `5` | Acordes sobre o primeiro, quarto e quinto graus. |
-| `2m`, `3m`, `6m` | Acordes menores. |
-| `3b`, `7b`, `4#` | Graus alterados: o `b` ou o `#` vem depois do grau. |
-| `5sus4`, `1maj7`, `5/7` | Variações, extensões e baixo. |
-| `1m` | Tônica menor (em música de tom menor, o grau `1` é sempre a tônica). |
+### Padrão de escrita
+
+O grau toma o lugar da letra da nota, e o resto do acorde segue as regras de sufixo, alteração e baixo desta seção.
+
+| Em letras (padrão) | Em graus | Significado |
+|---|---|---|
+| `C` | `1` | Acorde maior sobre o primeiro grau. |
+| `Dm`, `Em`, `Am` | `2m`, `3m`, `6m` | Acordes menores. |
+| `Eb`, `Bb`, `F#` | `3b`, `7b`, `4#` | Graus alterados: o `b` ou o `#` vem depois do grau. |
+| `C7` | `17` | Com sétima. |
+| `C7M` | `17M` | Sétima maior. |
+| `Cm7` | `1m7` | Menor com sétima. |
+| `C6`, `C6(9)` | `16`, `16(9)` | Sexta, e sexta com nona. |
+| `C9` | `19` | Nona adicionada (`add9`), sem sétima. |
+| `C7(9)` | `17(9)` | Nona dominante, com sétima. |
+| `C2` | `12` | Suspensa de segunda. |
+| `C4` | `14` | Suspensa de quarta. |
+| `C7(4)` | `17(4)` | Suspensa de quarta com sétima. |
+| `C11` | `111` | Quarta adicionada (`add4`). |
+| `C5+` | `15+` | Aumentado. |
+| `Cm5-` | `1m5-` | Tríade diminuta. |
+| `Cº` | `1º` | Sétima diminuta. |
+| `Cm7(5-)` | `1m7(5-)` | Meio-diminuto. |
+| `C7(9-)`, `C7(9+)`, `C7(5+)` | `17(9-)`, `17(9+)`, `17(5+)` | Alterações: dentro dos parênteses, o número vem antes do sinal, e o sinal é `+` (aumentado) ou `-` (diminuto). Quem digita também pode usar `b` e `#`, veja RN95. |
+| `C7(9/11+/13-)` | `17(9/11+/13-)` | Várias extensões, em ordem crescente, separadas por `/`. |
+| `C/E`, `D9/C#` | `1/3`, `29/1#` | Baixo depois da barra, também em grau. |
+| `Cm` em tom menor | `1m` | Em música de tom menor, o grau `1` é sempre a tônica. |
+
+O grau tem sempre **um só algarismo**, então `111` lê-se grau `1` com sufixo `11`, e `14` lê-se grau `1` com sufixo `4`. Na tela, o app desenha o grau em destaque e o sufixo menor, em sobrescrito, para a leitura ficar clara.
+
+### Tutorial de acordes
+
+A página `/ajuda/acordes` ensina o padrão de escrita para quem digita a cifra. Qualquer pessoa logada a abre, e o editor de cifra tem o link **Como escrever acordes**. Ela mostra:
+
+1. **Como o app guarda a cifra:** em graus, e por que isso permite ver a música em qualquer tom.
+2. **A tabela do padrão**, com a escrita em letras, a escrita em graus e o significado, agrupada por tipo (maiores e menores, sétimas, suspensas, nona e extensões, alterações, diminutos, baixo).
+3. **As regras que mais confundem:** `9` é nona adicionada e a nona dominante é `7(9)`; `b` e `#` valem na raiz e no baixo; dentro dos parênteses o padrão é `+` e `-`, e `b` e `#` também são aceitos ao digitar, mas o app grava `+` e `-`; `7M` e não `maj7`.
+   - A página mostra uma tabela de equivalências: `C7(b9)` e `C7(-9)` viram `C7(9-)`; `C7(#5)` e `C7(+5)` viram `C7(5+)`.
+4. **Um exemplo completo:** uma estrofe com acordes sobre a letra, escrita em graus e mostrada em letras.
+5. **Experimente:** um campo onde a pessoa digita um acorde e vê na hora se o app o reconhece, como ele é gravado (no padrão) e como aparece em um tom escolhido. Nada é gravado.
+6. **Variações aceitas:** a tabela de RN95, com a grafia digitada, a gravada e a exibida, e uma nota de que o app sempre grava e mostra no padrão, mesmo que a pessoa digite de outro jeito.
+
+A tabela da página, a lista de variações e o leitor de acordes saem da **mesma lista de formas** em `src/lib/cifra/`, então o tutorial nunca diverge do que o app reconhece.
 
 ### Formato
 
@@ -811,6 +849,7 @@ O banco não cobre estas:
 | `/auth/convite/[token]` | sem sessão, ou convidado logado | Cadastro pelo convite (de ministério ou de evento): dados, código do e-mail e entrada logado. Abaixo do botão de cadastro, a frase "Ao se registrar você concorda com nossos termos e condições de uso", com links para os documentos. |
 | `/inicio` | todos logados | Dashboard. |
 | `/busca` | todos logados | Busca geral em todos os tipos, com filtro por tipo. |
+| `/ajuda/acordes` | todos logados | Tutorial do padrão de escrita dos acordes (RF68). |
 | `/musicas` | todos logados | Listagem de músicas. |
 | `/musicas/nova` | membros ativos | Cadastro de música. |
 | `/musicas/[slug]` | todos logados | Tela da cifra (tom, transpose, letra, fonte e rolagem), revisão, status de escuta, exportação, histórico e datas de criação e atualização. |
@@ -1043,6 +1082,8 @@ Resposta de `GET /api/dashboard?periodo=mes`:
 │  │  ├─ (app)/              # área autenticada (o grupo não entra na URL)
 │  │  │  ├─ inicio/          # dashboard
 │  │  │  ├─ busca/           # busca geral
+│  │  │  ├─ ajuda/
+│  │  │  │  └─ acordes/      # tutorial do padrão de escrita (RF68)
 │  │  │  ├─ musicas/         # listagem
 │  │  │  │  ├─ nova/
 │  │  │  │  └─ [slug]/       # tela da cifra
@@ -1078,7 +1119,7 @@ Resposta de `GET /api/dashboard?periodo=mes`:
 │  │  ├─ exportar.ts         # Markdown e PDF da cifra, da letra e das políticas
 │  │  ├─ google.ts           # login com Google (OpenID Connect)
 │  │  ├─ busca.ts            # filtros de busca e ordenação (SQL parametrizado)
-│  │  ├─ cifra/              # conversão de tom para graus e de graus para tom
+│  │  ├─ cifra/              # padrão de escrita, tabela do tutorial, conversão de tom para graus e de graus para tom
 │  │  └─ ...                 # validadores Zod, slugs, etc.
 │  └─ hooks/
 ├─ tests/
@@ -1275,7 +1316,7 @@ Premissas: sprints de **2 semanas**. As datas de início e de fim serão definid
 | Sprint | Milestone | Entrega principal | Requisitos |
 |---|---|---|---|
 | S1 | **M1 Fundação** | Projeto Next com TypeScript, banco aplicado a partir do `DDL.SQL`, login com "Lembrar de mim", login com Google vinculado, convites de 30 minutos, cargos, instrumentos, conta com foto, e-mail confirmado por código (envio pelo Resend), esqueci a senha por código, troca de senha e desativação e exclusão pela própria pessoa, termos e privacidade. Limite de tentativas no banco. Páginas próprias por `slug`. PWA instalável. | RF01, RF02, RF04 a RF09, RF41, RF43 a RF47, RF57, RF58, RF60, RNF15 |
-| S2 | **M2 Biblioteca** | Cadastro e edição de músicas e artistas (inclusive renomear). Cifra em graus, com conversão para qualquer tom. Busca por título e artista, com aviso de músicas parecidas. Controle de versão e histórico da cifra, com título, autor e data. Revisão. | RF17, RF18, RF20, RF21, RF23 a RF25, RF63 |
+| S2 | **M2 Biblioteca** | Cadastro e edição de músicas e artistas (inclusive renomear). Cifra em graus, com conversão para qualquer tom. Busca por título e artista, com aviso de músicas parecidas. Controle de versão e histórico da cifra, com título, autor e data. Revisão. Tutorial de acordes. | RF17, RF18, RF20, RF21, RF23 a RF25, RF63, RF68 |
 | S3 | **M3 Leitura da cifra** | Tela da cifra com troca de tom, transpose, modo letra, aumento de fonte e rolagem automática com velocidade ajustável. Página de configurações, com os padrões de visualização e de exportação (RN91); a parte de segurança vem dos milestones M1 e M9. Exportação da cifra e da letra (Markdown ou PDF) e exportação em lote. | RF19, RF59, RF61, RF62, RF65 |
 | S4 | **M4 Eventos e setlists** | Eventos com `slug`, cancelamento, setlists e listas com seções e vários donos. Reordenação por arrastar e soltar. Tom tocado por música. Cifra local e "Salvar na música" ou "Salvar só neste setlist". Botão Compartilhar, donos e acesso de edição às listas. Redirecionamento de slugs antigos. Listas visíveis a todos. | RF26 a RF29, RF34, RF54 a RF56 |
 | S5 | **M5 Escala, presença e convidados** | Escala por seção e do evento, com os botões Escalar todos e Escalar todos os instrumentos, e as opções sobrescrever ou completar nas seções. Presença com Vou e Não vou. Convite de convidado para um evento, com acesso somente leitura. Página de instrumento com os músicos. | RF03, RF30, RF31, RF35, RF36, RF37, RF66, RF67 |
