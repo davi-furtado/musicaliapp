@@ -61,7 +61,7 @@ Os requisitos têm identificadores estáveis: **RF** (requisito funcional), **RN
 | Tom tocado | O tom escolhido para uma música em um setlist ou lista. Vale só ali. |
 | Evento | Missa, ensaio ou retiro, com data e hora. |
 | Setlist | O repertório de um evento, no máximo um por evento. |
-| Lista | Um repertório avulso, sem evento, com um ou mais donos. Com **Edição pública**, todo usuário ativo a edita. |
+| Lista | Um repertório avulso, sem evento, com um ou mais donos. Com **Edição pública**, todo membro ativo a edita. |
 | Coleção | O que o setlist e a lista têm em comum: seções e músicas em ordem. |
 | Seção | Agrupamento dentro de uma coleção ("Animação", "Adoração"). |
 | Marcador de seção | A linha `[Refrão]` ou `[Verso 1]` dentro da cifra. Não é a seção da coleção. |
@@ -98,14 +98,14 @@ Os requisitos têm identificadores estáveis: **RF** (requisito funcional), **RN
 | RF16 | Os mais e menos tocados aceitam o período **mês**, **ano**, **geral** ou um mês ou ano específico escolhido pela pessoa. |
 | **Músicas** | |
 | RF17 | Cadastrar uma música (título, pelo menos um artista, **tom original** opcional, cifra, link do YouTube opcional), com aviso quando já existe uma parecida. |
-| RF18 | Escrever a cifra em graus ou em um tom qualquer; o app a guarda sempre em graus. A tela de escrita tem o campo **tom da escrita**, que é **graus** por padrão ou um tom. Quando é graus, aparece um botão **Números** ou **Romanos**, para dizer em que forma a cifra foi digitada. Esse campo só diz como converter o que foi digitado e não é guardado. Os acordes seguem sempre o padrão de escrita (RN95). |
+| RF18 | Escrever a cifra em graus ou em um tom qualquer; o app a guarda sempre em graus. A tela de escrita tem o campo **tom da escrita**, que é **graus** por padrão ou um tom. Quando é graus, aparece um botão **Números** ou **Romanos** (padrão: Números), para dizer em que forma a cifra foi digitada. Esse campo só diz como converter o que foi digitado e não é guardado. Os acordes seguem sempre o padrão de escrita (RN95). |
 | RF19 | Ver a cifra em qualquer tom, transpor de meio em meio tom ou de tom em tom, aumentar a fonte e usar a **rolagem automática**, com a velocidade ajustável durante a rolagem. Só o botão pausa; rolar a tela com o dedo avança a música e não pausa. Há também a opção **Letra**, que mostra só a letra, sem os acordes, com o botão **Seções** para mostrar ou ocultar os marcadores de seção (padrão: ocultos). Nesse modo a transposição fica desativada, porque não há acordes para transpor. |
 | RF20 | Editar qualquer música, com aviso quando outra pessoa a alterou antes. Cada alteração da cifra, do tom original, dos artistas ou do tom tocado (no setlist ou na lista) gera uma versão no histórico, com título obrigatório (RN90). |
 | RF21 | Marcar e desmarcar uma música para revisão. |
 | RF22 | Marcar o status de escuta de uma música (Não ouvi, Ouvi, Toquei). |
 | RF23 | Apagar as músicas que não estão em nenhum setlist ou lista. |
 | RF24 | Buscar músicas por título e artista, vendo a última vez em que cada uma foi tocada. |
-| RF25 | Criar, editar e apagar instrumentos, e cadastrar e renomear artistas. Todo usuário ativo pode renomear um artista (RN80). |
+| RF25 | Criar, editar e apagar instrumentos, e cadastrar e renomear artistas. Todo membro ativo pode renomear um artista (RN80). |
 | **Eventos, setlists e listas** | |
 | RF26 | Coordenadores criam, editam e cancelam eventos, com a opção de exigir confirmação de presença. |
 | RF27 | Montar o setlist: adicionar músicas, criar seções e reordenar músicas e seções por arrastar e soltar. |
@@ -139,15 +139,15 @@ Os requisitos têm identificadores estáveis: **RF** (requisito funcional), **RN
 | RF52 | A página de usuários tem busca pelo nome e ordem A–Z ou Z–A, 30 por página. Os e-mails de cada pessoa só aparecem para ela (RN81). |
 | RF53 | Há uma **busca geral**: um campo de busca no topo do app leva à página `/busca`, que pesquisa ao mesmo tempo músicas, artistas, listas, eventos, usuários e instrumentos, com filtro por tipo. |
 | RF54 | Toda página de música, artista, instrumento, usuário, lista e evento tem um botão **Compartilhar**: no celular abre o menu de compartilhamento do aparelho e, onde ele não existir, copia o link. Quem abre o link precisa estar logado (RN82). |
-| RF55 | Os donos de uma lista incluem ou retiram outros donos e dão ou retiram acesso de edição a usuários ativos, pelo botão **Compartilhar** da lista. Enquanto a lista tiver donos, ao menos um permanece (RN79). |
-| RF56 | Todas as listas são visíveis para todos os usuários logados, inclusive convidados. Donos e editores alteram a lista. Com **Edição pública** marcada, ou sem dono, todo usuário ativo a altera (RN79). |
+| RF55 | Os donos de uma lista incluem ou retiram outros donos e dão ou retiram acesso de edição a membros ativos, pelo botão **Compartilhar** da lista. Enquanto a lista tiver donos, ao menos um permanece (RN79). |
+| RF56 | Todas as listas são visíveis para todos os usuários logados, inclusive convidados. Donos e editores alteram a lista. Com **Edição pública** marcada, ou sem dono, todo membro ativo a altera (RN79). |
 | RF57 | A pessoa apaga a própria conta em `/configuracoes/seguranca`, com confirmação pela senha (RN83). |
 | RF58 | Os Termos de Uso (`/documentos/termos-de-uso`) e a Política de Privacidade (`/documentos/politica-privacidade`) ficam publicados e podem ser baixados em Markdown ou PDF. Cada documento tem um único link, o mesmo para visitantes e para usuários logados. O cadastro exige o aceite (RN84). |
 | RF59 | Toda cifra pode ser exportada em Markdown ou PDF. O tom do arquivo é o da tela, e pode ser trocado no diálogo de exportação sem mudar a tela (RN88). Também é possível escolher se o link do YouTube sai no PDF (RN86). |
 | RF60 | A pessoa vincula uma conta Google à própria conta em `/configuracoes/seguranca`, com a senha, e passa a entrar também pelo botão **Entrar com Google** (RN85). O Google não cria conta: o cadastro segue por convite e código de e-mail. |
 | RF61 | A letra de uma música pode ser exportada em Markdown ou PDF, sem acordes, com ou sem seções (RN86, RN87). |
 | RF62 | Um artista, um evento ou uma lista pode ser exportado de uma vez em PDF: cada música em sua página, com a capa e o índice. Vale para cifra ou letra, com ou sem seções e com ou sem o link do YouTube. O tom padrão é o tocado de cada item; sem tom tocado, o tom original da música; sem ele, graus. O diálogo pode aplicar um único tom a todas (RN88, RN89). |
-| RF63 | Cada alteração da cifra, do tom original, dos artistas ou do tom tocado de uma música fica no histórico, com título obrigatório, autor e data. Qualquer usuário ativo vê o histórico, compara versões e volta a uma delas. Voltar cria um novo ponto no histórico, e nada se perde (RN90). |
+| RF63 | Cada alteração da cifra, do tom original, dos artistas ou do tom tocado de uma música fica no histórico, com título obrigatório, autor e data. Qualquer membro ativo vê o histórico, compara versões e volta a uma delas. Voltar cria um novo ponto no histórico, e nada se perde (RN90). |
 | RF64 | Todas as páginas e listagens mostram a data de criação e a de atualização de cada item (RNF12). |
 | RF65 | Cada pessoa tem uma página de configurações (`/configuracoes`), com quatro partes: **segurança** (as funções de RF45 a RF48, RF57 e RF60), **termos e condições** (data do aceite, que é a data do cadastro, e links para os documentos), **visualização** (a tela abre em cifra ou em letra, com ou sem seções na letra, com o tamanho padrão da fonte da cifra, o formato dos graus, em números ou romanos, e se o modo Reduzido começa ligado) e **exportação** (o arquivo sai em cifra ou em letra, com ou sem seções). Os padrões valem em qualquer aparelho (RN91). |
 | RF66 | Ver a lista de escalados do evento, com os instrumentos que cada pessoa toca, e adicionar ou remover pessoas dela, sem preencher as seções (RN92). |
@@ -196,7 +196,7 @@ Os requisitos têm identificadores estáveis: **RF** (requisito funcional), **RN
 | RN05 | Coordenadores convidam, alteram cargos, criam eventos e desativam e reativam contas. Não apagam contas de outras pessoas, não veem e-mails de ninguém e não alteram nome, foto ou instrumentos de outra pessoa (RN77). |
 | RN06 | Conta desativada (`ativo = false`) só visualiza os dados e confirma presença. |
 | RN07 | Desativar uma conta tira a pessoa da lista do evento e de todas as escalas de seção dos eventos futuros. Reativar não a recoloca. |
-| RN08 | Todo usuário ativo pode editar cifra e tom, marcar revisão, escalar músicos em seções e eventos, publicar setlists, criar e editar instrumentos, renomear artistas, criar listas, anexar a foto de perfil e escolher seus instrumentos. |
+| RN08 | Todo membro ativo pode editar cifra e tom, marcar revisão, escalar músicos em seções e eventos, publicar setlists, criar e editar instrumentos, apagar os que ninguém toca (RN18), renomear artistas, criar listas, anexar a foto de perfil e escolher seus instrumentos. |
 | RN09 | O campo de nome guarda o **nome completo**. |
 | RN10 | Convidado não tem o campo `ativo` e não pode ser desativado. Seu acesso ao app dura enquanto ele estiver em ao menos um evento; ao ser removido de todos, perde o acesso. |
 | RN11 | Um convidado vira ministeriado por um convite de ministeriado aceito com a conta logada, ou por atribuição de um coordenador. |
@@ -243,7 +243,7 @@ Os requisitos têm identificadores estáveis: **RF** (requisito funcional), **RN
 | RN32 | O tom só é salvo em uma música de **setlist ou lista**, e é opcional. Esse tom nunca altera a música. |
 | RN33 | Em qualquer tela o front pode mostrar a cifra em outro tom. É só visualização e nada é gravado. O tom original aparece destacado na lista de tons da visualização, mas a biblioteca não abre nele: abre em graus, a não ser que a pessoa escolha outro tom. A opção de transpose (meio tom ou tom em tom) só fica ativa com um tom de referência: na biblioteca, o tom escolhido para ver a música; no setlist, o tom tocado do item. Em graus do campo harmônico, fica desativada. |
 | RN34 | Não existem duas músicas com o mesmo título (sem diferenciar maiúsculas nem acentos) e o mesmo conjunto de artistas. Ao cadastrar, o app avisa sobre títulos parecidos. Toda música tem pelo menos um artista. |
-| RN35 | A marca de revisão é só sim ou não, sem motivo. Qualquer usuário ativo marca e desmarca. Convidados não marcam. |
+| RN35 | A marca de revisão é só sim ou não, sem motivo. Qualquer membro ativo marca e desmarca. Convidados não marcam. |
 | RN36 | O status de escuta é por usuário e por música, e o padrão é "Não ouvi". Convidados não marcam. |
 | RN37 | Uma música que aparece em algum setlist ou lista não pode ser apagada. Ela continua no banco e no histórico dos eventos. |
 | RN38 | Cada música e cada item de setlist tem um número de versão. Se a versão mudou desde que a pessoa abriu a tela, a gravação é recusada com aviso. |
@@ -282,9 +282,9 @@ Os requisitos têm identificadores estáveis: **RF** (requisito funcional), **RN
 | RN54 | O convidado vê tudo o que um membro vê: dashboard, biblioteca, listagens, busca, usuários, eventos, setlists com cifra e link, escala e presença. |
 | RN55 | O convidado edita a escala dos eventos a que foi convidado, mas não altera música, cifra, tom, lista, evento, artista nem instrumento, não marca revisão e não cria listas. Também altera a própria conta (nome, foto, senha e e-mail), confirma presença e ativa as notificações. Escolhe seus instrumentos nas configurações de perfil, como qualquer usuário. |
 | RN56 | As telas de criação e edição (`/nova`, `/novo`, `/editar`) e o `/coordenacao` não abrem para convidados, e os botões de gravação não aparecem para eles. |
-| RN57 | Só coordenadores escalam convidados. Convidados aparecem na busca de escala apenas dos eventos aos quais foram convidados. |
-| RN58 | A conta do convidado permanece depois do evento e pode ser convidada para outros eventos. |
-| RN59 | A página de um convidado só é vista por quem está no mesmo evento, pelos coordenadores. |
+| RN57 | Só coordenadores incluem convidados na escala de um evento. Na busca de escala, os convidados aparecem apenas nos eventos aos quais foram convidados. |
+| RN58 | A conta do convidado permanece depois do evento, sem acesso ao app enquanto ele não estiver em nenhum evento (RN10), e pode ser convidada para outros eventos. |
+| RN59 | A página de um convidado é vista por todos os logados, como a de qualquer usuário. Os e-mails continuam visíveis só para a própria pessoa (RN81). |
 
 ### Presença e notificações
 
@@ -324,8 +324,8 @@ Os requisitos têm identificadores estáveis: **RF** (requisito funcional), **RN
 
 | ID | Regra |
 |---|---|
-| RN79 | Todas as listas aparecem para todos os usuários logados, convidados inclusive. Donos e editores editam a lista. Donos também incluem ou retiram donos e dão ou retiram acesso de edição. Editores editam nome, seções, músicas, tom e cifra local, mas não gerenciam donos nem acessos. Só usuários ativos e não convidados podem ser donos ou editores. Com a opção **Edição pública** marcada, ou sem donos, todo usuário ativo edita a lista. Enquanto a lista tem donos, ao menos um permanece. Só coordenadores apagam uma lista sem donos. Coordenadores podem tudo o que um dono pode (RN05). |
-| RN80 | Qualquer usuário ativo renomeia um artista. O slug acompanha o novo nome, e a URL antiga redireciona (RN13). O novo nome não pode repetir outro artista (sem diferenciar maiúsculas nem acentos, RN16). |
+| RN79 | Todas as listas aparecem para todos os usuários logados, convidados inclusive. Donos e editores editam a lista. Donos também incluem ou retiram donos e dão ou retiram acesso de edição. Editores editam nome, seções, músicas, tom e cifra local, mas não gerenciam donos nem acessos. Só membros ativos e não convidados podem ser donos ou editores. Com a opção **Edição pública** marcada, ou sem donos, todo membro ativo edita a lista. Enquanto a lista tem donos, ao menos um permanece. Só coordenadores apagam uma lista sem donos. Coordenadores podem tudo o que um dono pode (RN05). |
+| RN80 | Qualquer membro ativo renomeia um artista. O slug acompanha o novo nome, e a URL antiga redireciona (RN13). O novo nome não pode repetir outro artista (sem diferenciar maiúsculas nem acentos, RN16). |
 | RN81 | Os e-mails de uma pessoa só são vistos por ela. Nas listagens, no perfil e na busca, os demais veem nome, foto e instrumentos. |
 | RN82 | O botão **Compartilhar** envia o link da página (`/<tipo>/<slug>`). Quem abre precisa estar logado e ter permissão, senão vê 404. Compartilhar o link não dá acesso a nada. |
 | RN83 | Ao apagar a própria conta, a pessoa sai de tudo: e-mails, senha, foto, instrumentos, configurações, códigos, inscrições de notificação, presenças e escalas de seção e de evento dos eventos futuros. Escalas e presenças de eventos passados ficam como "Pessoa removida", para manter o histórico. Listas em que ela era a única dona ficam públicas (RN79); nas que têm outros donos, a lista continua e ela só deixa de ser dona. Convites que ela criou são apagados. Músicas, cifras e artistas que ela cadastrou continuam. Nas versões do histórico que ela fez, o autor vira "Pessoa removida". |
@@ -335,9 +335,9 @@ Os requisitos têm identificadores estáveis: **RF** (requisito funcional), **RN
 | RN87 | O botão **Seções** da letra começa no padrão da configuração (RN91), desligado por padrão. Ele vale para a tela, para o Markdown e para o PDF da letra, e fica separado da opção de exportação. A cifra sempre mostra as seções. |
 | RN88 | O tom da exportação é, por padrão, o tom que a pessoa vê na tela, inclusive no setlist e na lista. No diálogo de exportação de uma música, a pessoa pode trocar o tom sem mudar o da tela. Em lote, o padrão é o tom tocado de cada item do setlist ou da lista; sem tom tocado, o tom original da música; sem ele, graus. O diálogo de lote pode aplicar um único tom a todas as músicas. |
 | RN89 | O lote aceita até 100 músicas por PDF. Cada música começa em página nova, depois da capa com o título, a data (se for evento) e o índice. A ordem é A–Z no artista e a ordem do setlist ou da lista nos eventos e listas. Quem exporta um evento precisa ver o evento: convidados só exportam dos seus. |
-| RN90 | Cada gravação que muda a cifra, o tom original, a lista de artistas ou o tom tocado (no setlist ou na lista) cria uma versão no histórico da música, com título obrigatório, autor e data. Título, link e o nome de um artista não geram versão: a música guarda a referência ao artista, não o nome. Qualquer usuário ativo vê o histórico e pode comparar uma versão com a atual. Voltar a uma versão cria uma nova versão com o conteúdo antigo, marcada como restaurada, e nada é apagado. Se o autor apagar a conta, a versão continua, com "Pessoa removida". |
-| RN91 | Cada pessoa tem uma configuração de visualização e de exportação, guardada na conta. Visualização: a tela abre em cifra ou em letra (padrão: cifra), com ou sem seções na letra (padrão: sem seções), e com um tamanho padrão da fonte da cifra (pequeno, médio ou grande; padrão: médio). Exportação: o arquivo sai em cifra ou em letra (padrão: cifra), com ou sem seções na letra (padrão: sem seções). Os botões da tela e do diálogo de exportação valem só naquela vez e não são gravados. Quem ainda não gravou nada tem os padrões acima. |
-| RN92 | A escala do evento é a lista das pessoas escaladas para o evento inteiro, com os instrumentos que cada uma toca. Ela não tem instrumento próprio: uma pessoa pode tocar mais de um, e pode estar na lista sem instrumento cadastrado. Qualquer usuário ativo, e os convidados dos eventos a que foram convidados, adicionam e removem pessoas dela. Convidados só podem ser escalados por coordenadores. A lista não preenche as seções. Ao escalar alguém numa seção, se a pessoa não está na lista, ela entra automaticamente. Remover alguém da lista também a tira de todas as seções do setlist. |
+| RN90 | Cada gravação que muda a cifra, o tom original, a lista de artistas ou o tom tocado (no setlist ou na lista) cria uma versão no histórico da música, com título obrigatório, autor e data. Título, link e o nome de um artista não geram versão: a música guarda a referência ao artista, não o nome. Qualquer membro ativo vê o histórico e pode comparar uma versão com a atual. Voltar a uma versão cria uma nova versão com o conteúdo antigo, marcada como restaurada, e nada é apagado. Se o autor apagar a conta, a versão continua, com "Pessoa removida". |
+| RN91 | Cada pessoa tem uma configuração de visualização e de exportação, guardada na conta. Visualização: a tela abre em cifra ou em letra (padrão: cifra), com ou sem seções na letra (padrão: sem seções), com um tamanho padrão da fonte da cifra (pequeno, médio ou grande; padrão: médio), o formato dos graus (números ou romanos; padrão: números) e se o modo Reduzido começa ligado (padrão: desligado; RF69). Exportação: o arquivo sai em cifra ou em letra (padrão: cifra), com ou sem seções na letra (padrão: sem seções). Os botões da tela e do diálogo de exportação valem só naquela vez e não são gravados. Quem ainda não gravou nada tem os padrões acima. |
+| RN92 | A escala do evento é a lista das pessoas escaladas para o evento inteiro, com os instrumentos que cada uma toca. Ela não tem instrumento próprio: uma pessoa pode tocar mais de um, e pode estar na lista sem instrumento cadastrado. Qualquer membro ativo, e os convidados dos eventos a que foram convidados, adicionam e removem pessoas dela. Convidados só podem ser escalados por coordenadores. A lista não preenche as seções. Ao escalar alguém numa seção, se a pessoa não está na lista, ela entra automaticamente. Remover alguém da lista também a tira de todas as seções do setlist. |
 | RN93 | Quando uma conta é desativada, pela própria pessoa ou por um coordenador, todos os coordenadores recebem um push com o nome da pessoa. Reativar a conta não notifica. |
 | RN94 | Os botões **Escalar todos** e **Escalar todos os <instrumento>** (por exemplo, todas as vozes ou todos os violões) são da lista do evento. **Escalar todos** adiciona todos os membros ativos do ministério; o botão de instrumento adiciona só quem toca aquele instrumento. Quem já está na lista não é duplicado. Os botões não escalam ninguém em seções. |
 
@@ -346,10 +346,10 @@ Os requisitos têm identificadores estáveis: **RF** (requisito funcional), **RN
 | Papel | O que pode |
 |---|---|
 | **Coordenador** | Convida pessoas (inclusive convidados de evento), altera o cargo de qualquer usuário, cria e cancela eventos, desativa e reativa contas. Não apaga contas, não vê e-mails e não altera nome, foto ou instrumentos de outras pessoas (RN05). |
-| **Ministeriado** | Usa o app como músico, dentro das permissões de qualquer usuário ativo (abaixo). |
+| **Ministeriado** | Usa o app como músico, dentro das permissões de qualquer membro ativo (abaixo). |
 | **Convidado** | Vê tudo o que um membro vê, mas não edita nada (veja [Convidados de evento](#convidados-de-evento)). |
 
-**Qualquer usuário ativo** pode:
+**Qualquer membro ativo** pode:
 
 - cadastrar e editar músicas e cifras, e definir o tom de uma música no setlist;
 - marcar e desmarcar músicas para revisão;
@@ -458,7 +458,7 @@ O formulário tem título, artistas, **tom original** (opcional, só informativo
 
 ### Edição e versões
 
-Qualquer usuário ativo edita uma música. Cada música tem um número de versão: a gravação só é aceita se a versão que a pessoa leu ainda for a atual. Se outra pessoa alterou antes, a API responde `409 CONFLITO_VERSAO` e o app mostra o aviso.
+Qualquer membro ativo edita uma música. Cada música tem um número de versão: a gravação só é aceita se a versão que a pessoa leu ainda for a atual. Se outra pessoa alterou antes, a API responde `409 CONFLITO_VERSAO` e o app mostra o aviso.
 
 Cada gravação que muda a cifra, o tom original, os artistas ou o tom tocado pede um título. A versão fica no **histórico** da música, com autor e data: a tela mostra cada versão, permite compará-la com a atual e voltar a ela. Voltar também cria um ponto novo no histórico (RN90). Título, link e nome de artista podem ser alterados sem gerar versão.
 
@@ -468,7 +468,7 @@ Uma música que aparece em algum setlist ou lista não pode ser apagada (o banco
 
 ### Revisão
 
-Qualquer usuário ativo pode **marcar e desmarcar** uma música para revisão. É só uma marca, sem campo de motivo. O dashboard mostra quantas músicas estão marcadas.
+Qualquer membro ativo pode **marcar e desmarcar** uma música para revisão. É só uma marca, sem campo de motivo. O dashboard mostra quantas músicas estão marcadas.
 
 ### Status de escuta
 
@@ -568,6 +568,283 @@ Na tela de uma música com cifra:
 - **Seções:** aparece só no modo Letra. Liga e desliga a exibição dos marcadores de seção (`[Refrão]`, `[Intro]`, `[Solo]`…). **Padrão: desativado**, ou o que a configuração indicar (RN91).
 - A velocidade da rolagem fica salva no próprio aparelho, sem passar pelo servidor. Os botões de fonte, letra e seções não são gravados.
 
+### Tutorial de escrita
+
+Este é o conteúdo da página `/ajuda/acordes` (RF68). Ele explica como a cifra é gravada, como o app padroniza o que você digita e quais grafias são aceitas (RN95, RN96, RN97, RN98, RN99, RN100, RN101).
+
+Este é o conteúdo da página `/ajuda/acordes` (RF68). Ele explica como a cifra é gravada, como o app padroniza o que você digita e quais grafias são aceitas (RN95).
+
+#### Como a cifra é guardada
+
+O app grava a cifra em **graus do campo harmônico**, com algarismos de 1 a 7. O grau **1** é a tônica, e o **5** é a dominante, por exemplo. Como o grau não depende da tonalidade, a mesma música aparece em qualquer tom. Você escreve uma vez e a tela mostra em letras no tom que quiser.
+
+A escrita dos acordes segue **um padrão fixo**: letras para as notas, `m` para menor, `7M` para sétima maior, `+` e `-` nas alterações. Tudo que é gravado segue esse padrão.
+
+#### Processo de padronização
+
+Quando você salva a cifra, o app faz estes passos:
+
+1. **Separa** cada linha em partes: acordes, letra, marcador de seção (`[Refrão]`) e linhas vazias.
+2. **Reconhece** cada acorde pela tabela de formas (Tabela do padrão). Variações conhecidas são convertidas para o padrão (Variações que você pode digitar).
+3. **Converte** as letras para graus, usando o tom que você escolheu como tom da escrita. Se você escreveu em graus, nada muda.
+4. **Grava** só os graus, com as posições dos acordes na letra.
+5. **Avisa** sobre o que não reconheceu. Uma linha com um item que o app não entende é tratada como letra, e o aviso mostra o item. Nada é recusado.
+
+O texto original que você digitou não fica guardado. O que fica é o padrão em graus.
+
+#### Tabela do padrão
+
+##### Maiores e menores
+
+| Em letras (padrão) | Em graus (gravado) | Significado |
+|---|---|---|
+| `C` | `1` | Maior, sobre o primeiro grau. |
+| `Dm`, `Em`, `Am` | `2m`, `3m`, `6m` | Menor. |
+| `Eb`, `Bb`, `F#` | `3b`, `7b`, `4#` | Grau alterado: o `b` ou o `#` vem depois do grau. |
+| `Cm` em tom menor | `1m` | Em tom menor, o grau 1 é a tônica. |
+
+##### Sétimas
+
+| Em letras (padrão) | Em graus (gravado) | Significado |
+|---|---|---|
+| `C7` | `17` | Dominante: maior com sétima menor. |
+| `C7M` | `17M` | Sétima maior. |
+| `Cm7` | `1m7` | Menor com sétima. |
+
+##### Sextas e nonas
+
+| Em letras (padrão) | Em graus (gravado) | Significado |
+|---|---|---|
+| `C6` | `16` | Sexta. |
+| `C6(9)` | `16(9)` | Sexta com nona. |
+| `C9` | `19` | Nona adicionada (`add9`), **sem sétima**. |
+| `C7(9)` | `17(9)` | Nona dominante, **com sétima**. |
+| `C7M(9)` | `17M(9)` | Nona com sétima maior. |
+
+Atenção: no padrão do app, `C9` é nona adicionada. A nona dominante é sempre `C7(9)`. Em algumas bibliotecas americanas, `C9` quer dizer nona dominante. Aqui não.
+
+##### Suspensas
+
+| Em letras (padrão) | Em graus (gravado) | Significado |
+|---|---|---|
+| `C2` | `12` | Suspensa de segunda (`sus2`). |
+| `C4` | `14` | Suspensa de quarta (`sus4`). |
+| `C7(4)` | `17(4)` | Suspensa de quarta com sétima. |
+
+##### Quarta adicionada
+
+| Em letras (padrão) | Em graus (gravado) | Significado |
+|---|---|---|
+| `C11` | `111` | Quarta adicionada (`add4`), **sem sétima**. |
+
+Atenção: aqui `C11` quer dizer quarta adicionada, não a undécima dominante. Se o acorde tiver sétima, use `C7(11)`.
+
+##### Alterações (dentro dos parênteses)
+
+| Em letras (padrão) | Em graus (gravado) | Significado |
+|---|---|---|
+| `C7(9-)` | `17(9-)` | Nona bemol. |
+| `C7(9+)` | `17(9+)` | Nona sustenido. |
+| `C7(5+)` | `17(5+)` | Quinta aumentada. |
+| `C7(5-)` | `17(5-)` | Quinta diminuta. |
+| `C7(9-/11+/13-)` | `17(9-/11+/13-)` | Várias alterações, em ordem crescente, separadas por `/`. |
+
+Dentro dos parênteses, o número vem **antes** do sinal, e o sinal é `+` (aumentado) ou `-` (diminuto ou bemol). Você também pode digitar `b` e `#` ali (Variações que você pode digitar).
+
+##### Aumentado, diminuto e meio-diminuto
+
+| Em letras (padrão) | Em graus (gravado) | Significado |
+|---|---|---|
+| `C5+` | `15+` | Tríade aumentada. |
+| `Cm5-` | `1m5-` | Tríade diminuta. |
+| `Cº` | `1º` | Sétima diminuta (quatro notas). |
+| `Cm7(5-)` | `1m7(5-)` | Meio-diminuto (sétima menor com quinta diminuta). |
+
+Para a tríade, escreva sempre `5+` ou `m5-`. Para a sétima diminuta, use `º`.
+
+##### Baixo
+
+| Em letras (padrão) | Em graus (gravado) | Significado |
+|---|---|---|
+| `C/E` | `1/3` | Baixo na terça. |
+| `Am7/G` | `6m7/5` | Baixo no quinto grau, em tom de C. |
+| `Dm6/B` | `2m6/7` | Baixo no sétimo grau, em tom de C. |
+| `D9/C#` | `19/7` | Em tom de D, o `C#` é o sétimo grau. |
+
+Obs.: o baixo também é escrito em grau. O acidente vem depois do grau, como no acorde.
+
+#### Variações que você pode digitar
+
+Ao digitar, o app aceita estas variações e converte para o padrão. A coluna da direita é o que fica gravado e o que aparece na tela.
+
+##### Alterações entre parênteses
+
+| Você digita | Gravado | Observação |
+|---|---|---|
+| `C7(b9)` | `C7(9-)` | `b` no lugar de `-`. |
+| `C7(-9)` | `C7(9-)` | Padrão. |
+| `C7(9b)` | `C7(9-)` | Sinal depois do número, como o padrão. |
+| `C7(#5)` | `C7(5+)` | `#` no lugar de `+`. |
+| `C7(+5)` | `C7(5+)` | Padrão. |
+| `C7(b9,#11,b13)` | `C7(9-/11+/13-)` | Vírgula ou espaço viram `/`. Misturar `b` e `-` na mesma extensão também funciona. |
+
+##### Sétimas, sus e add
+
+| Você digita | Gravado |
+|---|---|
+| `Cmaj7`, `CM7`, `CΔ`, `C^7` | `C7M` |
+| `Cmaj9` | `C7M(9)` |
+| `Csus`, `Csus4` | `C4` |
+| `Csus2` | `C2` |
+| `C7sus4` | `C7(4)` |
+| `Cadd9`, `Cadd2` | `C9` |
+| `Cadd4` | `C11` |
+
+##### Menor, sétima diminuta e meio-diminuto
+
+| Você digita | Gravado |
+|---|---|
+| `C-7`, `Cmin7` | `Cm7` |
+| `Cº`, `C°` | `Cº` |
+| `Cm7b5`, `Cø` | `Cm7(5-)` |
+
+##### Outros
+
+| Você digita | Gravado |
+|---|---|
+| `C+` | `C5+` |
+| `C6/9`, `C69` | `C6(9)` |
+| `C13` | `C7(13)` |
+
+##### Formas que não são aceitas
+
+Estas formas não são aceitas, porque não dizem se o acorde é tríade ou sétima. Use a forma da coluna da direita.
+
+| Não use | Use | Motivo |
+|---|---|---|
+| `Cdim`, `Cdim7` | `Cm5-` (tríade) ou `Cº` (sétima) | `dim` não diz qual dos dois é. |
+| `Caug` | `C5+` | `aug` não diz se é tríade. Use `5+`. |
+| `dim`, `dim7`, `aug` sozinhos | a forma com a raiz, como acima | Sem raiz, não há acorde. |
+
+##### Graus em romanos
+
+Quem escreve em graus pode digitar em algarismos ou em romanos. Na configuração de visualização e no campo de escrita, o botão **Números** ou **Romanos** escolhe a forma. O que fica gravado é sempre em algarismos.
+
+| Em romanos (digitado ou mostrado) | Em algarismos (gravado) | Observação |
+|---|---|---|
+| `I` | `1` | Maiúsculo é maior. |
+| `ii`, `IIm` | `2m` | Minúsculo é menor. `m` também é aceito, mas a tela, em romanos, mostra só `ii`. |
+| `bVII`, `VIIb` | `7b` | `b` e `#` valem antes ou depois do numeral. |
+| `#IV` | `4#` | |
+| `V7M` | `57M` | Sufixos iguais aos de algarismos. |
+| `viiº` | `7º` | Sétima diminuta. |
+| `vii5-` | `7m5-` | Tríade diminuta. |
+
+Na tela, em romanos, o `b` e o `#` ficam antes do numeral (`bVII`), como é comum. Em algarismos, ficam depois (`7b`).
+
+##### Como o app reconhece uma linha de acordes
+
+Não é preciso marcar nada. O app olha a posição da linha e o que ela contém.
+
+- Uma linha é de **acordes** quando todos os seus itens são acordes válidos, e ela vem logo depois de uma seção (`[Refrão]`), de uma linha de letra ou de outra linha de acordes.
+- A linha que traz um marcador de seção e acordes na mesma linha (`[Intro] D Em A`) também é de acordes.
+- Uma linha de letra que não tem acordes continua sendo de letra, mesmo depois de outra letra. É o caso de um verso repetido sem cifra.
+- Uma linha com um só item que também é palavra (`A`, `E`, `vi`, `I`) só é de acordes quando a linha seguinte é de letra. Assim, `vi`, que pode ser "eu vi", não vira acorde no meio de uma frase.
+- Qualquer outra linha é de letra.
+
+Exemplo:
+
+```
+[Refrão]
+D      Bm      G       A7       ← acordes: vem depois da seção
+Senhor, tu és fiel             ← letra: vem depois dos acordes
+Em     A                       ← acordes: vem depois da letra
+Tu és o meu Deus               ← letra
+Eu vi a tua glória             ← letra: "vi" não é acorde, a linha tem palavras
+```
+
+#### O que não é reconhecido
+
+Se o app não entender um acorde, ele não grava um acorde errado. A linha em que o item aparece é tratada como letra, e o editor mostra um aviso com o item. Exemplos:
+
+- `C7alt`, `Cx`, símbolos que não estão nas tabelas;
+- uma linha com acordes e uma palavra no meio, como `C Am Senhor G`.
+
+Corrija o item no editor. O aviso some quando a linha vira acordes válidos.
+
+#### Seções e repetições
+
+**Seção.** Uma linha só com um nome entre colchetes: `[Intro]`, `[Verso 1]`, `[Refrão]`, `[Ponte]`, `[Solo]`. Use o nome que o grupo usa. O app não confere o nome.
+
+**Repetição com `{x2}`.** Não escreva `(2x)`, `x2` nem `bis`. Use `{x2}` (ou `{x3}`, `{x4}`…). Onde você escreve o marcador define o que se repete:
+
+- **No fim de uma linha:** repete essa linha.
+- **Sozinho numa linha, depois de uma estrofe** (um bloco de linhas, separado por uma linha em branco): repete a estrofe.
+- **Depois do nome da seção:** repete a seção inteira, com a tag.
+
+Exemplo, com o Refrão repetido duas vezes:
+
+```
+[Refrão] {x2}
+D      Bm      G       A7
+Senhor, tu és fiel
+```
+
+**O que o app faz com isso.**
+- Ao salvar, ele junta em `{xN}` as estrofes e os trechos iguais e seguidos.
+- Na tela completa e na exportação completa, mostra tudo expandido.
+- No modo Reduzido, mostra só os acordes de cada seção, com `(2x)` quando a linha se repete.
+- No editor, o modo Reduzido vem ligado por padrão e mostra as repetições em `{xN}`. Desligado, mostra a letra por completo.
+
+#### Perguntas frequentes
+
+**Por que graus e não letras?** Porque uma cifra em graus serve para qualquer tom. Você escreve uma vez e a música aparece em D, Eb ou qualquer outro tom.
+
+**Posso digitar em letras?** Sim, em um tom que você informa como tom da escrita. O app converte para graus. Sempre se grava em graus.
+
+**Por que `C9` não é nona dominante?** No padrão do app, `9` é nona adicionada. A nona dominante é `C7(9)`. Isso é o que a maioria dos músicos brasileiros escreve.
+
+**Por que `b` e `#` às vezes não funcionam?** Fora dos parênteses, `b` e `#` são acidentes da nota (`Bb`, `C#m7`). Dentro dos parênteses, eles viram alteração: `(b9)` é o mesmo que `(-9)`.
+
+**O app mostra o que eu digitei?** Não. Ele mostra o padrão, em letras, no tom que você escolher.
+
+**Quem vê a cifra em outro tom?** Qualquer pessoa. A escolha de tom vale só para quem está vendo e não é gravada.
+
+#### Experimente
+
+Um campo onde você digita um acorde e vê:
+- se o app reconhece;
+- como fica gravado (em graus);
+- como aparece no tom que você escolher.
+
+Nada é gravado.
+
+#### Exemplo completo
+
+Digitado em letras, no tom de **D**:
+
+```
+D      Bm      G       A7
+Senhor, tu és fiel
+```
+
+Gravado em graus:
+
+```
+1      6m      4       57
+Senhor, tu és fiel
+```
+
+Na tela, no tom de **E**:
+
+```
+E      C#m     A       B7
+Senhor, tu és fiel
+```
+
+A letra não muda. Só os acordes são convertidos.
+
+
 ## Eventos, setlists e listas
 
 ### Eventos
@@ -616,7 +893,7 @@ A escala existe **só nos setlists de eventos**, em dois níveis: por seção, n
 
 **Por seção:** na seção, a pessoa escolhe o instrumento e depois uma pessoa que toque aquele instrumento (RF30, RN46). Se a seção já tem músicos, aparecem **Sobrescrever** e **Completar** (RF31, RN47). Escalar numa seção também inclui a pessoa na lista do evento, se ela ainda não estiver nela (RN92).
 
-**Escala do evento:** a lista das pessoas escaladas para o evento, com os instrumentos que cada uma toca, aparece em `/eventos/[slug]`. Qualquer usuário ativo, e os convidados dos eventos a que foram convidados, adiciona e remove pessoas dela (RF66, RN92). Os botões **Escalar todos** e **Escalar todos os <instrumento>** adicionam membros a ela (RF67, RN94). A lista não preenche as seções.
+**Escala do evento:** a lista das pessoas escaladas para o evento, com os instrumentos que cada uma toca, aparece em `/eventos/[slug]`. Qualquer membro ativo, e os convidados dos eventos a que foram convidados, adiciona e remove pessoas dela (RF66, RN92). Os botões **Escalar todos** e **Escalar todos os <instrumento>** adicionam membros a ela (RF67, RN94). A lista não preenche as seções.
 
 Uma pessoa pode ser escalada em mais de um evento na mesma data e hora, sem aviso (RF36, RN51).
 
@@ -821,7 +1098,7 @@ O banco não cobre estas:
 - Apenas coordenadores convidam, alteram cargos, criam eventos e desativam e reativam contas. Ninguém além da própria pessoa apaga a conta, vê e-mails ou altera nome, foto e instrumentos dela (RN05, RN77).
 - Conta desativada não edita nada: só visualiza e confirma presença.
 - O convidado só lê (exceto conta, instrumentos e presença) e só tem acesso enquanto está em ao menos um evento de `eventos_convidados`.
-- Uma lista é editada pelos donos e pelos editores (`listas_acessos`). Só os donos apagam a lista e gerenciam donos e acessos. Com **Edição pública** marcada, ou sem donos, todo usuário ativo a edita; só coordenadores apagam uma lista sem donos (RN79). Só usuários ativos e não convidados recebem qualquer papel nela. Todas as listas aparecem para todos os usuários logados (RN79).
+- Uma lista é editada pelos donos e pelos editores (`listas_acessos`). Só os donos apagam a lista e gerenciam donos e acessos. Com **Edição pública** marcada, ou sem donos, todo membro ativo a edita; só coordenadores apagam uma lista sem donos (RN79). Só membros ativos e não convidados recebem qualquer papel nela. Todas as listas aparecem para todos os usuários logados (RN79).
 - Os e-mails de uma pessoa só são devolvidos para ela.
 - O login aceita qualquer e-mail confirmado da conta; os códigos de recuperação e de troca são enviados ao e-mail informado, que precisa ser confirmado.
 - A gravação só é aceita se a `versao` enviada ainda for a atual.
