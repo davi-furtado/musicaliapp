@@ -1,5 +1,5 @@
 -- =====================================================================
--- MusicaliAPP - DDL (PostgreSQL 13 ou superior)
+-- musicaliapp - DDL (PostgreSQL 13 ou superior)
 --
 -- PARTE 1: tabelas, chaves primárias, estrangeiras e únicas.
 --          É a parte mais simples e a mais segura para visualizadores.
@@ -44,11 +44,12 @@
 -- e não tem o campo "ativo" (NULL). O acesso do convidado dura enquanto ele
 -- estiver em ao menos um evento de eventos_convidados. Nos demais papéis,
 -- ativo = false impede a pessoa de editar (feito pela aplicação).
--- Todo usuário logado acessa a documentação da API (Swagger). Coordenadores
+-- A documentação da API (Swagger) é pública, sem login. Coordenadores
 -- têm os poderes de coordenação, exceto apagar contas, ver e-mails e mudar nome,
 -- foto ou instrumentos de outras pessoas (regras da aplicação).
 -- token_versao entra no JWT da sessão: trocar ou redefinir a senha o
 -- incrementa e invalida as sessões anteriores.
+-- Lembrar de mim: o JWT tem exp de 30 dias, renovado a cada acesso (sem tabela de sessões).
 CREATE TABLE usuarios (
     id           UUID         NOT NULL DEFAULT gen_random_uuid(),
     nome         TEXT         NOT NULL,                -- nome completo
@@ -74,20 +75,28 @@ CREATE TABLE preferencias_usuario (
     fonte_cifra            VARCHAR(8)   NOT NULL DEFAULT 'MEDIA',   -- PEQUENA | MEDIA | GRANDE
     exportacao_padrao      VARCHAR(6)   NOT NULL DEFAULT 'CIFRA',   -- CIFRA | LETRA
     exportacao_com_secoes  BOOLEAN      NOT NULL DEFAULT FALSE,     -- só vale na letra
+    graus_formato          VARCHAR(8)   NOT NULL DEFAULT 'NUMEROS', -- NUMEROS | ROMANOS
+    modo_reduzido          BOOLEAN      NOT NULL DEFAULT FALSE,     -- modo Reduzido ligado por padrão
+    tema                   VARCHAR(10)  NOT NULL DEFAULT 'AUTOMATICO', -- CLARO | ESCURO | AUTOMATICO
+    avisar_nao_vou         BOOLEAN      NOT NULL DEFAULT TRUE,      -- só coordenadores recebem o aviso
     CONSTRAINT pk_preferencias_usuario PRIMARY KEY (usuario_id),
     CONSTRAINT fk_pref_usuario FOREIGN KEY (usuario_id)
         REFERENCES usuarios (id) ON DELETE CASCADE
 );
 
--- E-mails de cada pessoa: de um a três por conta, únicos no sistema e
--- confirmados por código antes de entrar aqui. A aplicação limita a três
--- e garante que sempre há ao menos um.
+-- E-mails de cada pessoa: um principal (obrigatório), onde ela recebe e-mails
+-- e códigos, e um de recuperação (opcional), usado se perder o principal.
+-- Os dois são únicos no sistema e confirmados por código antes de entrar aqui.
+-- Um de cada tipo por conta (uq_emails_usuario_tipo). A aplicação garante que
+-- o principal sempre existe, e a integração testa isso.
 CREATE TABLE emails_usuario (
     id          UUID     NOT NULL DEFAULT gen_random_uuid(),
     usuario_id  UUID     NOT NULL,
     email       TEXT     NOT NULL,
+    tipo        VARCHAR(12) NOT NULL,
     CONSTRAINT pk_emails_usuario PRIMARY KEY (id),
     CONSTRAINT uq_emails_email UNIQUE (email),
+    CONSTRAINT uq_emails_usuario_tipo UNIQUE (usuario_id, tipo),
     CONSTRAINT fk_emails_usuario FOREIGN KEY (usuario_id)
         REFERENCES usuarios (id) ON DELETE CASCADE
 );
@@ -118,7 +127,7 @@ CREATE TABLE fotos_perfil (
 -- CADASTRO: antes de a conta existir (usuario_id NULL).
 -- REDEFINICAO: "esqueci a senha".
 -- TROCA_EMAIL: a própria pessoa troca o e-mail (o código vai ao novo endereço).
--- Valem 30 minutos e têm contador de tentativas. Servem uma única vez: a
+-- Valem 15 minutos, contados a partir do envio, e têm contador de tentativas. Servem uma única vez: a
 -- linha é apagada ao usar, e a rotina diária apaga as expiradas.
 CREATE TABLE codigos_email (
     id           UUID         NOT NULL DEFAULT gen_random_uuid(),
@@ -126,7 +135,7 @@ CREATE TABLE codigos_email (
     email        TEXT         NOT NULL,
     finalidade   VARCHAR(12)  NOT NULL,
     codigo_hash  TEXT         NOT NULL,
-    expira_em    TIMESTAMPTZ  NOT NULL DEFAULT (CURRENT_TIMESTAMP + INTERVAL '30 minutes'),
+    expira_em    TIMESTAMPTZ  NOT NULL DEFAULT (CURRENT_TIMESTAMP + INTERVAL '15 minutes'),
     tentativas   INTEGER      NOT NULL DEFAULT 0,
     CONSTRAINT pk_codigos_email PRIMARY KEY (id),
     CONSTRAINT fk_codigos_email_usuario FOREIGN KEY (usuario_id)
@@ -253,7 +262,7 @@ CREATE TABLE eventos_convidados (
         REFERENCES usuarios (id) ON DELETE CASCADE
 );
 
--- Convites de uso único, válidos por 30 minutos (valor fixo, não
+-- Convites de uso único, válidos por 7 dias (valor fixo, não
 -- personalizável). O papel é o cargo que a pessoa terá ao entrar.
 -- Convite de papel CONVIDADO é sempre de um evento (evento_id).
 -- Não há e-mail do convidado: o convite é um link.
@@ -265,7 +274,7 @@ CREATE TABLE convites_acesso (
     criado_por_id  UUID         NOT NULL,
     papel          VARCHAR(20)  NOT NULL DEFAULT 'MINISTERIADO',
     evento_id      UUID,
-    expira_em      TIMESTAMPTZ  NOT NULL DEFAULT (CURRENT_TIMESTAMP + INTERVAL '30 minutes'),
+    expira_em      TIMESTAMPTZ  NOT NULL DEFAULT (CURRENT_TIMESTAMP + INTERVAL '7 days'),
     CONSTRAINT pk_convites_acesso PRIMARY KEY (id),
     CONSTRAINT uq_convites_token UNIQUE (token),
     CONSTRAINT fk_convites_criado_por FOREIGN KEY (criado_por_id)
@@ -476,8 +485,9 @@ CREATE TABLE device_tokens (
 
 -- Contador do limite de tentativas (login, convite, códigos). A Vercel não
 -- guarda memória entre as requisições, então o contador fica no banco.
--- chave: tipo e hash do IP ou do e-mail, ex. 'login:ip:9f86d081...' ou
--- 'codigo:email:60303ae2...'. Nunca o IP ou o e-mail puros.
+-- chave: tipo e HMAC-SHA-256 do IP ou do e-mail, com um segredo do servidor
+-- (RATE_LIMIT_SECRET), ex. 'login:ip:9f86d081...' ou 'codigo:email:60303ae2...'.
+-- Nunca o IP ou o e-mail puros, nem um hash simples.
 -- Se janela_fim já passou, a API recomeça a contagem. A rotina diária apaga
 -- as linhas vencidas.
 CREATE TABLE limites_tentativas (
@@ -528,6 +538,18 @@ ALTER TABLE preferencias_usuario ADD CONSTRAINT ck_pref_exportacao
     CHECK (exportacao_padrao IN ('CIFRA', 'LETRA'));
 ALTER TABLE preferencias_usuario ADD CONSTRAINT ck_pref_fonte
     CHECK (fonte_cifra IN ('PEQUENA', 'MEDIA', 'GRANDE'));
+ALTER TABLE preferencias_usuario ADD CONSTRAINT ck_pref_graus_formato
+    CHECK (graus_formato IN ('NUMEROS', 'ROMANOS'));
+ALTER TABLE preferencias_usuario ADD CONSTRAINT ck_pref_tema
+    CHECK (tema IN ('CLARO', 'ESCURO', 'AUTOMATICO'));
+
+-- Tamanho máximo da cifra: 20.000 caracteres (RN102).
+ALTER TABLE musicas ADD CONSTRAINT ck_musicas_cifra_tamanho
+    CHECK (cifra IS NULL OR char_length(cifra) <= 20000);
+ALTER TABLE colecao_musicas ADD CONSTRAINT ck_cm_cifra_tamanho
+    CHECK (cifra IS NULL OR char_length(cifra) <= 20000);
+ALTER TABLE musica_versoes ADD CONSTRAINT ck_mv_cifra_tamanho
+    CHECK (cifra IS NULL OR char_length(cifra) <= 20000);
 
 -- atualizado_em sempre é a data da última gravação.
 CREATE FUNCTION set_atualizado_em() RETURNS trigger LANGUAGE plpgsql AS $$
@@ -557,6 +579,62 @@ CREATE TRIGGER trg_artistas_atualizado BEFORE UPDATE ON artistas FOR EACH ROW EX
 CREATE TRIGGER trg_musicas_atualizado BEFORE UPDATE ON musicas FOR EACH ROW EXECUTE FUNCTION set_atualizado_em();
 CREATE TRIGGER trg_eventos_atualizado BEFORE UPDATE ON eventos FOR EACH ROW EXECUTE FUNCTION set_atualizado_em();
 CREATE TRIGGER trg_colecoes_atualizado BEFORE UPDATE ON colecoes FOR EACH ROW EXECUTE FUNCTION set_atualizado_em();
+
+-- Música repetida (RN34): mesmo título, sem diferenciar maiúsculas nem acentos,
+-- e mesmo conjunto de artistas. Conferida no fim da transação, porque os
+-- artistas são gravados depois da música.
+CREATE FUNCTION fn_checar_musica_duplicada() RETURNS trigger
+    LANGUAGE plpgsql AS $$
+DECLARE
+    v_musica UUID;
+BEGIN
+    IF TG_TABLE_NAME = 'musicas' THEN
+        v_musica := NEW.id;
+    ELSIF TG_OP = 'DELETE' THEN
+        v_musica := OLD.musica_id;
+    ELSE
+        v_musica := NEW.musica_id;
+    END IF;
+    IF EXISTS (
+        SELECT 1
+          FROM musicas a
+          JOIN musicas b ON b.id <> a.id AND busca_norm(b.titulo) = busca_norm(a.titulo)
+         WHERE a.id = v_musica
+           AND ARRAY(SELECT artista_id FROM musica_artistas WHERE musica_id = a.id ORDER BY artista_id)
+             = ARRAY(SELECT artista_id FROM musica_artistas WHERE musica_id = b.id ORDER BY artista_id)
+    ) THEN
+        RAISE EXCEPTION 'Já existe uma música com este título e estes artistas'
+            USING ERRCODE = 'unique_violation';
+    END IF;
+    RETURN NULL;
+END;
+$$;
+CREATE CONSTRAINT TRIGGER trg_musicas_duplicada
+    AFTER INSERT OR UPDATE OF titulo ON musicas
+    DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION fn_checar_musica_duplicada();
+CREATE CONSTRAINT TRIGGER trg_musica_artistas_duplicada
+    AFTER INSERT OR UPDATE OR DELETE ON musica_artistas
+    DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION fn_checar_musica_duplicada();
+
+-- Uma lista com donos não perde o último dono por exclusão direta (RN79).
+-- A exclusão em cascata (conta apagada ou lista apagada) é permitida: a lista
+-- sem donos passa a ser pública (RN85). pg_trigger_depth() = 1 identifica a
+-- exclusão direta.
+CREATE FUNCTION fn_manter_um_dono() RETURNS trigger
+    LANGUAGE plpgsql AS $$
+BEGIN
+    IF pg_trigger_depth() = 1
+       AND EXISTS (SELECT 1 FROM colecoes WHERE id = OLD.colecao_id)
+       AND NOT EXISTS (SELECT 1 FROM listas_donos
+                        WHERE colecao_id = OLD.colecao_id AND usuario_id <> OLD.usuario_id) THEN
+        RAISE EXCEPTION 'A lista precisa manter ao menos um dono'
+            USING ERRCODE = 'check_violation';
+    END IF;
+    RETURN OLD;
+END;
+$$;
+CREATE TRIGGER trg_listas_donos_ultimo BEFORE DELETE ON listas_donos
+    FOR EACH ROW EXECUTE FUNCTION fn_manter_um_dono();
 
 -- Valores permitidos (no lugar de enums).
 ALTER TABLE usuarios ADD CONSTRAINT ck_usuarios_papel
@@ -591,7 +669,8 @@ ALTER TABLE slugs_antigos ADD CONSTRAINT ck_slugs_antigos_entidade CHECK (
 -- E-mail em minúsculas e com formato mínimo (algo@algo).
 ALTER TABLE emails_usuario ADD CONSTRAINT ck_emails_formato
     CHECK (email = lower(email) AND email LIKE '%_@_%');
-CREATE INDEX ix_emails_usuario ON emails_usuario (usuario_id);
+ALTER TABLE emails_usuario ADD CONSTRAINT ck_emails_tipo
+    CHECK (tipo IN ('PRINCIPAL', 'RECUPERACAO'));
 ALTER TABLE fotos_perfil ADD CONSTRAINT ck_fotos_tipo
     CHECK (tipo_mime IN ('image/webp', 'image/jpeg'));
 ALTER TABLE codigos_email ADD CONSTRAINT ck_codigos_email_formato
