@@ -45,7 +45,7 @@ PWA para organizar a biblioteca de músicas, os eventos e os setlists de um mini
 - Funciona offline **somente para leitura**, com cache do que já foi carregado.
 - Avisa por notificação push quando um setlist é **publicado** e lembra de confirmar presença na véspera.
 - Cada usuário, artista, instrumento, evento, música e lista tem uma página própria, acessada por um `slug` amigável, com um botão **Compartilhar**.
-- Cada conta tem de um a três e-mails, confirmados por código. A pessoa pode também entrar com Google e apagar a própria conta. A senha pode ser recuperada por código enviado ao e-mail ou por códigos de recuperação guardados pela própria pessoa.
+- Cada conta tem um e-mail principal, onde recebe e-mails e códigos, e pode ter um e-mail de recuperação para o caso de perder o principal. Os dois são confirmados por código. A pessoa pode também entrar com Google e apagar a própria conta. A senha pode ser recuperada por código enviado ao e-mail ou por códigos de recuperação guardados pela própria pessoa.
 
 ### Como ler este documento
 
@@ -54,7 +54,7 @@ Os requisitos têm identificadores estáveis: **RF** (requisito funcional), **RN
 ### Glossário
 
 | Termo | Significado |
-| --- | --- |
+|---|---|
 | Cifra | A música escrita com acordes sobre a letra. Fica guardada em graus. |
 | Grau | O acorde pela posição no campo harmônico (`1`, `4`, `5`, `6m`…). Não depende do tom. |
 | Tom original | O tom em que a música costuma ser tocada ou foi escrita. Opcional e só informativo. |
@@ -77,12 +77,12 @@ Os requisitos têm identificadores estáveis: **RF** (requisito funcional), **RN
 ### Requisitos funcionais
 
 | ID | Requisito |
-| --- | --- |
+|---|---|
 | **Acesso e contas** | |
-| RF01 | Coordenadores geram links de convite com o cargo que a pessoa terá. O link vale 30 minutos e serve uma única vez. Ao gerar o link, quem o criou vê quanto tempo falta para ele expirar. |
+| RF01 | Coordenadores geram links de convite com o cargo que a pessoa terá. O link vale 7 dias e serve uma única vez. Qualquer coordenador pode cancelar um convite pendente, e o link deixa de funcionar. Ao gerar o link, quem o criou vê quanto tempo falta para ele expirar. |
 | RF02 | Quem recebe o convite informa nome completo, e-mail e senha, aceita os Termos de Uso e a Política de Privacidade (RF58) pela frase "Ao se registrar você concorda com nossos termos e condições de uso", com links para os documentos e exibida abaixo do botão de cadastro, confirma o código enviado ao e-mail e entra logado. A conta só é criada depois da confirmação. |
 | RF03 | Coordenadores geram o link de convite de **um evento** para uma pessoa de fora (convidado). |
-| RF04 | Os usuários fazem login e logout. O botão **Lembrar de mim** vem marcado por padrão: marcado, o login fica salvo no aparelho e é renovado a cada acesso, sem prazo para expirar; desmarcado, vale só enquanto a sessão do navegador estiver aberta. |
+| RF04 | Os usuários fazem login e logout. O botão **Lembrar de mim** vem marcado por padrão: marcado, o login fica salvo no aparelho e é renovado a cada acesso. Se a pessoa não acessar o app por 30 dias, a sessão se encerra e o login é apagado do aparelho; desmarcado, vale só enquanto a sessão do navegador estiver aberta. |
 | RF05 | Cada pessoa tem uma área de conta, onde altera nome, **foto de perfil** e instrumentos, e uma página de configurações com a segurança (senha, e-mails, apagar a própria conta) e os padrões de visualização e exportação (RF57, RF65). |
 | RF06 | Cada pessoa escolhe e altera os instrumentos que toca (zero ou mais). |
 | RF07 | Coordenadores alteram o cargo de qualquer pessoa, inclusive tornando um convidado ministeriado. Nome, foto e instrumentos só são alterados pela própria pessoa (RN05). |
@@ -127,12 +127,12 @@ Os requisitos têm identificadores estáveis: **RF** (requisito funcional), **RN
 | **API** | |
 | RF42 | Qualquer pessoa consulta a documentação da API (Swagger) em `/api/docs`, sem precisar de login. |
 | **Conta e segurança** | |
-| RF43 | Esqueci a senha: a pessoa informa o e-mail da conta, recebe um código de 6 dígitos e o usa para definir a senha nova. Pode usar um código de recuperação no lugar do e-mail. |
-| RF44 | Cada conta tem de um a três e-mails, todos únicos no sistema. Cada e-mail é confirmado por código de 6 dígitos enviado a ele ao ser adicionado. Quando um código precisa ser enviado, a pessoa escolhe para qual dos seus e-mails. A pessoa entra com qualquer e-mail confirmado ou com o Google, se vinculado (RF60). |
+| RF43 | Esqueci a senha: a pessoa informa o e-mail principal ou o de recuperação, recebe um código de 6 dígitos no endereço escolhido e o usa para definir a senha nova. Pode usar um código de recuperação no lugar do e-mail. |
+| RF44 | Cada conta tem um **e-mail principal**, obrigatório, onde a pessoa recebe e-mails e códigos. Pode ter também um **e-mail de recuperação**, opcional, usado se ela perder o principal. Os dois são únicos no sistema e confirmados por código de 6 dígitos enviado ao endereço ao ser adicionado. A pessoa entra com o principal, com o de recuperação ou com o Google, se vinculado (RF60). Enquanto a conta não tem e-mail de recuperação, a tela de segurança mostra um lembrete para cadastrar um. |
 | RF45 | Trocar a senha em `/configuracoes/seguranca`, informando a senha atual. |
 | RF46 | Desativar a própria conta em `/configuracoes/seguranca`, com confirmação pela senha. Quem a reativa é um coordenador. |
-| RF47 | Coordenadores não veem os e-mails de ninguém, não apagam contas e não alteram nome, foto ou instrumentos de outra pessoa. Ninguém define senha por outra pessoa: a pessoa redefine a própria pelo código enviado a um dos seus e-mails. |
-| RF48 | A pessoa gera 10 códigos de recuperação em `/configuracoes/seguranca`. Eles são mostrados uma única vez, cada um serve uma vez, e gerar de novo invalida os anteriores. |
+| RF47 | Coordenadores não veem os e-mails de ninguém, não apagam contas e não alteram nome, foto ou instrumentos de outra pessoa. Ninguém define senha por outra pessoa: a pessoa redefine a própria pelo código enviado ao seu e-mail principal ou ao de recuperação. |
+| RF48 | A pessoa gera 10 códigos de recuperação em `/configuracoes/seguranca`. Eles são mostrados uma única vez, com o aviso para guardá-los fora do aparelho, cada um serve uma vez, e gerar de novo invalida os anteriores. Na primeira entrada, o app oferece gerá-los. |
 | RF49 | A página de instrumentos lista todos, 30 por página, sem busca e sem filtro, com ordem A–Z ou Z–A. Cada item leva à página do instrumento. |
 | RF50 | A página de listas tem busca pelo nome e ordem A–Z ou Z–A, 30 por página. Mostra todas as listas (RN79). |
 | RF51 | A página de eventos tem busca pelo nome, filtro por data e ordem A–Z ou Z–A ou por data (mais recente ou mais antiga), 30 por página. |
@@ -149,18 +149,23 @@ Os requisitos têm identificadores estáveis: **RF** (requisito funcional), **RN
 | RF62 | Um artista, um evento ou uma lista pode ser exportado de uma vez em PDF: cada música em sua página, com a capa e o índice. Vale para cifra ou letra, com ou sem seções e com ou sem o link do YouTube. O tom padrão é o tocado de cada item; sem tom tocado, o tom original da música; sem ele, graus. O diálogo pode aplicar um único tom a todas (RN88, RN89). |
 | RF63 | Cada alteração da cifra, do tom original, dos artistas ou do tom tocado de uma música fica no histórico, com título obrigatório, autor e data. Qualquer membro ativo vê o histórico, compara versões e volta a uma delas. Voltar cria um novo ponto no histórico, e nada se perde (RN90). |
 | RF64 | Todas as páginas e listagens mostram a data de criação e a de atualização de cada item (RNF12). |
-| RF65 | Cada pessoa tem uma página de configurações (`/configuracoes`), com quatro partes: **segurança** (as funções de RF45 a RF48, RF57 e RF60), **termos e condições** (data do aceite, que é a data do cadastro, e links para os documentos), **visualização** (a tela abre em cifra ou em letra, com ou sem seções na letra, com o tamanho padrão da fonte da cifra, o formato dos graus, em números ou romanos, e se o modo Reduzido começa ligado) e **exportação** (o arquivo sai em cifra ou em letra, com ou sem seções). Os padrões valem em qualquer aparelho (RN91). |
+| RF65 | Cada pessoa tem uma página de configurações (`/configuracoes`), com cinco partes: **segurança** (as funções de RF45 a RF48, RF57 e RF60), **termos e condições** (data do aceite, que é a data do cadastro, e links para os documentos), **visualização** (a tela abre em cifra ou em letra, com ou sem seções na letra, com o tamanho padrão da fonte da cifra, o formato dos graus, em números ou romanos, se o modo Reduzido começa ligado e o tema, claro, escuro ou automático) **exportação** (o arquivo sai em cifra ou em letra, com ou sem seções) e **notificações** (para coordenadores, o aviso de quem responde Não vou, ligado por padrão; RF73). Os padrões valem em qualquer aparelho (RN91). |
 | RF66 | Ver a lista de escalados do evento, com os instrumentos que cada pessoa toca, e adicionar ou remover pessoas dela, sem preencher as seções (RN92). |
 | RF67 | Botões **Escalar todos** e **Escalar todos os <instrumento>** na lista do evento, que adicionam os membros ativos ou só os que tocam aquele instrumento (RN94). |
 | RF68 | Uma página de tutorial (`/ajuda/acordes`) ensina o padrão de escrita dos acordes, com a tabela de formas, as regras que mais confundem, a tabela de variações aceitas com o que é gravado, um exemplo completo, explicações sobre seções e repetições, e um campo para testar um acorde. O editor de cifra tem o link para ela (RN95). |
 | RF69 | Modo **Reduzido** na tela da cifra, ativado por um botão: mostra só os acordes de todas as seções, sem a letra, na ordem da música, com o nome de cada seção. Não há escolha de seção. Pode começar ligado por padrão na configuração da pessoa (RF65). Nesse modo a rolagem automática fica desativada (RN98). |
 | RF70 | A exportação da cifra (Markdown ou PDF) tem o modo Reduzido, com os acordes de todas as seções, no mesmo padrão da tela (RF69, RN98). |
 | RF71 | Modo **Reduzido** no editor da cifra, ativado por padrão. Mostra as repetições em `{xN}` e, desativado, mostra a letra por completo (RN101). |
+| RF72 | Ao salvar um setlist já publicado, quem salva pode marcar **Avisar alteração** (desligado por padrão). Marcado, as pessoas que receberam o push da publicação recebem um novo push (RN62). |
+| RF73 | Os coordenadores recebem push quando alguém responde **Não vou** a um evento. Cada coordenador pode desligar esse aviso em `/configuracoes` (padrão: ligado; RN91). |
+| RF74 | Com internet, o app guarda no aparelho o setlist e as cifras do próximo evento publicado, para consulta sem conexão (RF40). |
+| RF75 | O app tem tema claro, escuro e automático (que segue o aparelho), escolhido em `/configuracoes` (RN91). |
+
 
 ### Requisitos não funcionais
 
 | ID | Requisito |
-| --- | --- |
+|---|---|
 | RNF01 | O app é um PWA instalável e atualiza os dados ao ser aberto ou recarregado. |
 | RNF02 | O uso offline é somente leitura. |
 | RNF03 | A biblioteca comporta pelo menos 500 músicas, e as listagens, a busca e a ordenação continuam fluidas. |
@@ -187,9 +192,9 @@ Os requisitos têm identificadores estáveis: **RF** (requisito funcional), **RN
 ### Contas e cargos
 
 | ID | Regra |
-| --- | --- |
+|---|---|
 | RN01 | O acesso é só por convite. A única exceção é a conta inicial, criada direto no banco. |
-| RN02 | Um convite é de uso único, vale **30 minutos** (valor fixo, que quem convida não altera) e carrega o cargo da pessoa. Não tem e-mail: é um link. Quem gera o convite vê o tempo restante até a expiração. O convite usado é apagado. |
+| RN02 | Um convite é de uso único, vale **7 dias** (valor fixo, que quem convida não altera) e carrega o cargo da pessoa. Não tem e-mail: é um link. Quem gera o convite vê o tempo restante até a expiração. O convite usado é apagado. Qualquer coordenador pode cancelar um convite pendente, e o link deixa de funcionar. |
 | RN03 | Cada e-mail é único no sistema e gravado em minúsculas. O `slug` de usuário, artista, instrumento, evento, música e lista também é único. Os formatos são: pessoa, artista e instrumento, o nome em minúsculas com hífens; música, `artista-titulo`, com o primeiro artista da ordem; lista, `primeiro-dono-nome`, com o primeiro dono; evento, `data-nome` no formato ISO (`2026-10-12-missa-de-domingo`). Se o slug já existir, um sufixo numérico é acrescentado. O slug é recalculado quando o nome (ou, em música e lista, o primeiro artista ou dono) muda. A chave interna continua sendo o id (UUID). |
 | RN04 | O cargo é `COORDENADOR`, `MINISTERIADO` ou `CONVIDADO`. Não há outro cargo de administração. A documentação da API é pública (RN66). |
 | RN05 | Coordenadores convidam, alteram cargos, criam eventos e desativam e reativam contas. Não apagam contas de outras pessoas, não veem e-mails de ninguém e não alteram nome, foto ou instrumentos de outra pessoa (RN77). |
@@ -203,7 +208,7 @@ Os requisitos têm identificadores estáveis: **RF** (requisito funcional), **RN
 ### Slugs
 
 | ID | Regra |
-| --- | --- |
+|---|---|
 | RN12 | O `slug` usa minúsculas, números e hífens no lugar de espaços e acentos (`Violão` vira `violao`). |
 | RN13 | Quando o slug muda, o anterior vai para a tabela `slugs_antigos` e a URL antiga responde com redirecionamento permanente (308) para a página atual. Se outro item já passou a usar o slug antigo, a URL aponta para esse outro item. |
 | RN14 | O slug de evento é a data ISO mais o nome (`2026-10-12-missa-de-domingo`). Muda quando a data ou o nome muda, com redirecionamento (RN13), e recebe sufixo numérico em caso de repetição. |
@@ -212,7 +217,7 @@ Os requisitos têm identificadores estáveis: **RF** (requisito funcional), **RN
 ### Instrumentos
 
 | ID | Regra |
-| --- | --- |
+|---|---|
 | RN16 | Não existem dois instrumentos com o mesmo nome, nem com caixa ou acento diferente ("Violão", "violão" e "violao" são o mesmo). O mesmo vale para artistas. |
 | RN17 | Um instrumento novo fica disponível na hora, sem aprovação. |
 | RN18 | Um instrumento que alguém toca, ou em que alguém está escalado, não pode ser apagado. |
@@ -221,7 +226,7 @@ Os requisitos têm identificadores estáveis: **RF** (requisito funcional), **RN
 ### Dashboard e listagens
 
 | ID | Regra |
-| --- | --- |
+|---|---|
 | RN20 | Todo usuário logado vê o dashboard, inclusive com a conta desativada e os convidados. |
 | RN21 | O **número de músicos** é a quantidade de contas ativas. Convidados não entram. |
 | RN22 | O **número de músicas** é a quantidade de músicas cadastradas. |
@@ -236,7 +241,7 @@ Os requisitos têm identificadores estáveis: **RF** (requisito funcional), **RN
 ### Músicas e cifras
 
 | ID | Regra |
-| --- | --- |
+|---|---|
 | RN30 | A música pode ter um tom original, opcional, informado no cadastro ou depois na edição. Ele é só informativo: não altera a cifra, que é sempre guardada em graus, e não é o tom tocado (RN32). A pessoa pode escrever a cifra no tom original ou em graus; isso não muda o tom original. A música não tem músicos. |
 | RN31 | Quem escreve a cifra pode usar graus ou um tom qualquer. O front converte para graus antes de enviar. Em qualquer dos dois casos, os acordes seguem o padrão de escrita (RN95). |
 | RN32 | O tom só é salvo em uma música de **setlist ou lista**, e é opcional. Esse tom nunca altera a música. |
@@ -254,11 +259,12 @@ Os requisitos têm identificadores estáveis: **RF** (requisito funcional), **RN
 | RN99 | Repetições: a pessoa escreve a repetição com `{xN}` (RN100). Não se usam `(2x)`, `x2`, `bis` nem marcações parecidas. O resumo `(2x)` do modo Reduzido é feito pelo app (RN98). |
 | RN100 | O marcador `{xN}` (N maior ou igual a 2) repete, conforme a posição em que é escrito: (a) no fim de uma linha de acordes ou de letra, repete essa linha; (b) sozinho numa linha, logo depois de uma estrofe (bloco de linhas separado por linha em branco), repete a estrofe; (c) depois do nome na linha de seção, como `[Refrão] {x2}`, repete a seção inteira, com a tag. O marcador não conta como acorde nem como letra. Na tela completa e na exportação completa, o app expande o `{xN}`. Ao salvar, o app junta em `{xN}` as estrofes e os trechos instrumentais iguais e seguidos. Dois trechos são iguais quando têm as mesmas linhas, na mesma ordem, com acordes e letra. |
 | RN101 | No editor da cifra, o modo Reduzido vem ativado por padrão e mostra a cifra com as repetições em `{xN}`, como ficou salva. Desativado, o editor mostra a letra por completo, com todas as repetições escritas. Editar um trecho em `{xN}` altera todas as suas repetições. Se a pessoa edita uma cópia no modo completo, as cópias ficam diferentes e não são comprimidas ao salvar. |
+| RN102 | A cifra de uma música, a cifra local de um item do setlist e a de cada versão do histórico têm no máximo 20.000 caracteres. O banco recusa o que passar disso. |
 
 ### Eventos, setlists e listas
 
 | ID | Regra |
-| --- | --- |
+|---|---|
 | RN40 | Cada evento tem no máximo um setlist. Uma lista genérica tem nome e pertence a um ou mais donos (RN79). |
 | RN41 | Um evento cancelado fica no histórico, não aparece nos próximos eventos e não conta nas execuções. |
 | RN42 | Uma coleção (setlist ou lista) pode ter seções opcionais, nomeadas livremente e ordenadas. Cada seção pertence a uma única coleção. |
@@ -275,7 +281,7 @@ Os requisitos têm identificadores estáveis: **RF** (requisito funcional), **RN
 ### Convidados
 
 | ID | Regra |
-| --- | --- |
+|---|---|
 | RN52 | O convite de convidado é sempre de **um evento** e é gerado por coordenador. |
 | RN53 | O convidado cria conta (nome completo, e-mail, senha, aceite dos termos), tem área de conta e escolhe seus instrumentos nas configurações de perfil, como qualquer usuário. |
 | RN54 | O convidado vê tudo o que um membro vê: dashboard, biblioteca, listagens, busca, usuários, eventos, setlists com cifra e link, escala e presença. |
@@ -288,17 +294,17 @@ Os requisitos têm identificadores estáveis: **RF** (requisito funcional), **RN
 ### Presença e notificações
 
 | ID | Regra |
-| --- | --- |
+|---|---|
 | RN60 | Se o evento exige presença, ao publicar o setlist todos os membros e os convidados do evento recebem o pedido de confirmação, inclusive os desativados. |
 | RN61 | A resposta é **Vou** ou **Não vou**, pode ser trocada a qualquer momento e quem não respondeu aparece como pendente. Todos os que veem o evento veem a resposta de cada pessoa. |
-| RN62 | O push é enviado quando o setlist é publicado. Alterações posteriores não notificam. |
+| RN62 | O push é enviado quando o setlist é publicado. Alterações posteriores não notificam, a menos que quem salva marque **Avisar alteração** (RF72). |
 | RN63 | Uma vez por dia, quem ainda não respondeu a um evento publicado que exige presença e acontece no dia seguinte recebe um lembrete. |
 | RN64 | Não há histórico de notificações. |
 
 ### Uso offline e API
 
 | ID | Regra |
-| --- | --- |
+|---|---|
 | RN65 | Offline só há leitura. Qualquer edição exige conexão. |
 | RN66 | O Swagger e a especificação OpenAPI são públicos, sem login. A validação de sessão e de permissão fica nos endpoints descritos por ela. |
 | RN67 | Toda rota decide o acesso por uma função central que considera o cargo, o estado `ativo`, o convidado somente leitura e, nas listas, o dono, o acesso concedido ou a condição de lista pública. |
@@ -306,24 +312,24 @@ Os requisitos têm identificadores estáveis: **RF** (requisito funcional), **RN
 ### Conta, e-mail e desativação
 
 | ID | Regra |
-| --- | --- |
-| RN68 | Cada conta tem de um a três e-mails, em minúsculas e únicos no sistema (RN03). Só entra por e-mail quem confirmou o endereço por código. |
+|---|---|
+| RN68 | Cada conta tem um e-mail principal, obrigatório, e pode ter um de recuperação, opcional. Os dois são únicos no sistema e em minúsculas (RN03). Só entra por e-mail quem confirmou o endereço por código. |
 | RN69 | A conta só é criada depois que o código enviado ao e-mail é confirmado. O convite só é consumido nesse momento. O convite e o código usados são apagados. |
-| RN70 | Adicionar ou remover um e-mail exige a senha atual (RN73) e, ao adicionar, a confirmação por código enviado ao novo endereço. A conta sempre tem ao menos um e-mail. |
-| RN71 | O pedido de "esqueci a senha" responde da mesma forma exista ou não a conta, para não revelar quais e-mails estão cadastrados. |
-| RN72 | Os códigos enviados por e-mail (cadastro, redefinição e troca de e-mail) valem 30 minutos, servem uma única vez (são apagados ao serem usados) e são invalidados após o limite de tentativas. Os expirados são apagados pela rotina diária. Quando a conta tem mais de um e-mail, a pessoa escolhe para qual deles o código vai. |
+| RN70 | Adicionar ou trocar o e-mail de recuperação, e trocar o principal, exigem a senha atual (RN73) e a confirmação por código enviado ao endereço novo. Trocar o principal também envia um aviso ao endereço antigo. O principal não é removido: para mudá-lo, troca-se por outro. O de recuperação pode ser removido com a senha atual. |
+| RN71 | O pedido de "esqueci a senha" e o pedido de código do cadastro respondem da mesma forma exista ou não a conta, para não revelar quais e-mails estão cadastrados. No cadastro com um e-mail que já tem conta, o dono da conta recebe um aviso no lugar do código (veja [Convites e primeiro acesso](#convites-e-primeiro-acesso)). |
+| RN72 | Os códigos enviados por e-mail (cadastro, redefinição e troca de e-mail) valem 15 minutos, contados a partir do envio, servem uma única vez (são apagados ao serem usados) e são invalidados após o limite de tentativas. Os expirados são apagados pela rotina diária. No pedido de redefinição, a pessoa escolhe o e-mail principal ou o de recuperação, se tiver um. A resposta é a mesma exista ou não o e-mail escolhido (RN71). No cadastro e na troca de e-mail, o envio acontece na própria requisição: a tela só mostra "código enviado" se o provedor de e-mail aceitar a mensagem. No pedido de "esqueci a senha", a resposta não espera o envio, para que o tempo de resposta não revele se a conta existe, e uma falha de envio fica só no registro do servidor. Pedir um novo código invalida o anterior, e um novo pedido para o mesmo e-mail só é aceito 60 segundos depois do anterior (contado em `limites_tentativas`). |
 | RN73 | Trocar a senha exige a senha atual. Trocar ou redefinir a senha encerra as outras sessões da pessoa (incrementa `token_versao`). |
 | RN74 | A própria pessoa pode desativar a própria conta, em `/configuracoes/seguranca`, com confirmação pela senha. Valem as mesmas regras de RN06 e RN07: ela sai da lista do evento e de todas as escalas dos eventos futuros e continua vendo os dados e confirmando presença. |
 | RN75 | Só um coordenador reativa uma conta desativada pela própria pessoa. Reativar não a recoloca na escala (RN07). |
 | RN76 | Contas só são apagadas pela própria pessoa (RN83). O histórico de eventos e execuções sempre permanece. |
-| RN77 | Só a própria pessoa vê, troca ou apaga os seus e-mails. Coordenadores não veem e-mails de ninguém e não alteram e-mail, senha, nome, foto ou instrumentos de outras pessoas. Ninguém define senha por outra pessoa: a redefinição é sempre pelo código enviado a um dos e-mails confirmados da própria conta (RN72). Quem tem acesso direto ao banco deve ser restrito a pessoas de confiança. |
-| RN78 | Os códigos de recuperação não dependem de e-mail. Usar um deles redefine a senha e o código fica gasto. |
+| RN77 | Só a própria pessoa vê, troca ou apaga os seus e-mails. Coordenadores não veem e-mails de ninguém e não alteram e-mail, senha, nome, foto ou instrumentos de outras pessoas. Ninguém define senha por outra pessoa: a redefinição é sempre pelo código enviado ao e-mail principal ou ao de recuperação da própria conta (RN72). Quem tem acesso direto ao banco deve ser restrito a pessoas de confiança. |
+| RN78 | Os códigos de recuperação não dependem de e-mail. Usar um deles redefine a senha e o código fica gasto. Eles são o único caminho de volta para quem perde os dois e-mails e não tem o Google vinculado. |
 
 ### Listas, artistas e compartilhamento
 
 | ID | Regra |
-| --- | --- |
-| RN79 | Todas as listas aparecem para todos os usuários logados, convidados inclusive. Donos e editores editam a lista. Donos também incluem ou retiram donos e dão ou retiram acesso de edição. Editores editam nome, seções, músicas, tom e cifra local, mas não gerenciam donos nem acessos. Só membros ativos e não convidados podem ser donos ou editores. Com a opção **Edição pública** marcada, ou sem donos, todo membro ativo edita a lista. Enquanto a lista tem donos, ao menos um permanece. Só coordenadores apagam uma lista sem donos. Coordenadores podem tudo o que um dono pode (RN05). |
+|---|---|
+| RN79 | Todas as listas aparecem para todos os usuários logados, convidados inclusive. Donos e editores editam a lista. Donos também incluem ou retiram donos e dão ou retiram acesso de edição. Editores editam nome, seções, músicas, tom e cifra local, mas não gerenciam donos nem acessos. Só membros ativos e não convidados podem ser donos ou editores. Com a opção **Edição pública** marcada, ou sem donos, todo membro ativo edita a lista; os donos ligam e desligam essa opção quando quiserem. Enquanto a lista tem donos, ao menos um permanece, e um dono com a conta desativada continua dono. Só coordenadores apagam uma lista sem donos. Coordenadores podem tudo o que um dono pode (RN05). |
 | RN80 | Qualquer membro ativo renomeia um artista. O slug acompanha o novo nome, e a URL antiga redireciona (RN13). O novo nome não pode repetir outro artista (sem diferenciar maiúsculas nem acentos, RN16). |
 | RN81 | Os e-mails de uma pessoa só são vistos por ela. Nas listagens, no perfil e na busca, os demais veem nome, foto e instrumentos. |
 | RN82 | O botão **Compartilhar** envia o link da página (`/<tipo>/<slug>`). Quem abre precisa estar logado e ter permissão, senão vê 404. Compartilhar o link não dá acesso a nada. |
@@ -335,7 +341,7 @@ Os requisitos têm identificadores estáveis: **RF** (requisito funcional), **RN
 | RN88 | O tom da exportação é, por padrão, o tom que a pessoa vê na tela, inclusive no setlist e na lista. No diálogo de exportação de uma música, a pessoa pode trocar o tom sem mudar o da tela. Em lote, o padrão é o tom tocado de cada item do setlist ou da lista; sem tom tocado, o tom original da música; sem ele, graus. O diálogo de lote pode aplicar um único tom a todas as músicas. |
 | RN89 | O lote aceita até 100 músicas por PDF. Cada música começa em página nova, depois da capa com o título, a data (se for evento) e o índice. A ordem é A–Z no artista e a ordem do setlist ou da lista nos eventos e listas. Quem exporta um evento precisa ver o evento: convidados só exportam dos seus. |
 | RN90 | Cada gravação que muda a cifra, o tom original, a lista de artistas ou o tom tocado (no setlist ou na lista) cria uma versão no histórico da música, com título obrigatório, autor e data. Título, link e o nome de um artista não geram versão: a música guarda a referência ao artista, não o nome. Qualquer membro ativo vê o histórico e pode comparar uma versão com a atual. Voltar a uma versão cria uma nova versão com o conteúdo antigo, marcada como restaurada, e nada é apagado. Se o autor apagar a conta, a versão continua, com "Pessoa removida". |
-| RN91 | Cada pessoa tem uma configuração de visualização e de exportação, guardada na conta. Visualização: a tela abre em cifra ou em letra (padrão: cifra), com ou sem seções na letra (padrão: sem seções), com um tamanho padrão da fonte da cifra (pequeno, médio ou grande; padrão: médio), o formato dos graus (números ou romanos; padrão: números) e se o modo Reduzido começa ligado (padrão: desligado; RF69). Exportação: o arquivo sai em cifra ou em letra (padrão: cifra), com ou sem seções na letra (padrão: sem seções). Os botões da tela e do diálogo de exportação valem só naquela vez e não são gravados. Quem ainda não gravou nada tem os padrões acima. |
+| RN91 | Cada pessoa tem uma configuração de visualização e de exportação, guardada na conta. Visualização: a tela abre em cifra ou em letra (padrão: cifra), com ou sem seções na letra (padrão: sem seções), com um tamanho padrão da fonte da cifra (pequeno, médio ou grande; padrão: médio), o formato dos graus (números ou romanos; padrão: números), se o modo Reduzido começa ligado (padrão: desligado; RF69) e o tema (claro, escuro ou automático; padrão: automático). Exportação: o arquivo sai em cifra ou em letra (padrão: cifra), com ou sem seções na letra (padrão: sem seções). Notificações, só para coordenadores: avisar quando alguém responde Não vou (padrão: ligado; RF73). Os botões da tela e do diálogo de exportação valem só naquela vez e não são gravados. Quem ainda não gravou nada tem os padrões acima. |
 | RN92 | A escala do evento é a lista das pessoas escaladas para o evento inteiro, com os instrumentos que cada uma toca. Ela não tem instrumento próprio: uma pessoa pode tocar mais de um, e pode estar na lista sem instrumento cadastrado. Qualquer membro ativo, e os convidados dos eventos a que foram convidados, adicionam e removem pessoas dela. Convidados só podem ser escalados por coordenadores. A lista não preenche as seções. Ao escalar alguém numa seção, se a pessoa não está na lista, ela entra automaticamente. Remover alguém da lista também a tira de todas as seções do setlist. |
 | RN93 | Quando uma conta é desativada, pela própria pessoa ou por um coordenador, todos os coordenadores recebem um push com o nome da pessoa. Reativar a conta não notifica. |
 | RN94 | Os botões **Escalar todos** e **Escalar todos os <instrumento>** (por exemplo, todas as vozes ou todos os violões) são da lista do evento. **Escalar todos** adiciona todos os membros ativos do ministério; o botão de instrumento adiciona só quem toca aquele instrumento. Quem já está na lista não é duplicado. Os botões não escalam ninguém em seções. |
@@ -343,7 +349,7 @@ Os requisitos têm identificadores estáveis: **RF** (requisito funcional), **RN
 ## Usuários, papéis e permissões
 
 | Papel | O que pode |
-| --- | --- |
+|---|---|
 | **Coordenador** | Convida pessoas (inclusive convidados de evento), altera o cargo de qualquer usuário, cria e cancela eventos, desativa e reativa contas. Não apaga contas, não vê e-mails e não altera nome, foto ou instrumentos de outras pessoas (RN05). |
 | **Ministeriado** | Usa o app como músico, dentro das permissões de qualquer membro ativo (abaixo). |
 | **Convidado** | Vê tudo o que um membro vê, mas não edita nada (veja [Convidados de evento](#convidados-de-evento)). |
@@ -362,10 +368,10 @@ Os requisitos têm identificadores estáveis: **RF** (requisito funcional), **RN
 
 ## Convites e primeiro acesso
 
-Coordenadores geram um **link de convite** e o enviam à pessoa. O link tem o cargo que a pessoa terá (ministeriado ou coordenador), é de uso único e vale 30 minutos. Não há e-mail do convidado, e quem convida só escolhe o cargo. Logo após gerar o link, quem o criou vê a contagem do tempo restante até a expiração.
+Coordenadores geram um **link de convite** e o enviam à pessoa. O link tem o cargo que a pessoa terá (ministeriado ou coordenador), é de uso único e vale 7 dias. Não há e-mail do convidado, e quem convida só escolhe o cargo. Logo após gerar o link, quem o criou vê a contagem do tempo restante até a expiração.
 
 1. A pessoa abre o link, informa nome completo, e-mail e senha e pede o código. O código de 6 dígitos chega ao e-mail; ela o digita e a conta é criada com o cargo do convite, já logada. O convite só é consumido nesse momento.
-2. Se o e-mail já tem conta, a API responde `409 CONTA_EXISTENTE` e o app orienta a fazer login e abrir o link de novo.
+2. Se o e-mail já tem conta, a resposta é a mesma de um pedido novo ("código enviado"), para não revelar quais e-mails estão cadastrados (RN71). No lugar do código, o dono da conta recebe um aviso de que alguém tentou usar o e-mail, com a orientação de entrar e abrir o link de novo, se foi ele.
 3. No primeiro login, a pessoa escolhe os instrumentos que toca (zero ou mais) e pode alterá-los depois.
 
 A conta inicial (coordenador) é criada direto no banco, porque ainda não há quem convide. Veja [Rodando localmente](#rodando-localmente).
@@ -374,12 +380,12 @@ A conta inicial (coordenador) é criada direto no banco, porque ainda não há q
 
 Permite que alguém de fora do ministério participe de um evento.
 
-1. Um coordenador gera o **link de convite do evento**. Ele vale 30 minutos e é de uso único.
+1. Um coordenador gera o **link de convite do evento**. Ele vale 7 dias e é de uso único.
 2. A pessoa abre o link e cria a conta (ou, se já é convidada, entra e abre o link). Ela é registrada como convidada do evento, em `eventos_convidados`.
 3. A conta tem papel `CONVIDADO` e fica depois do evento. Pode ser convidada para outros eventos e, se virar ministeriada, passa ao papel de ministeriado.
 
 | O convidado | |
-| --- | --- |
+|---|---|
 | Vê | Tudo o que um membro vê: dashboard, biblioteca, listagens, busca, usuários, eventos, setlists, cifras e presença. |
 | Faz | Cuida da própria conta, escolhe seus instrumentos nas configurações de perfil, confirma a própria presença nos eventos a que foi convidado e ativa as notificações. |
 | Não faz | **Editar qualquer coisa**: músicas, cifras, tons, listas, eventos, artistas e instrumentos, marcar revisão e criar listas. |
@@ -393,7 +399,7 @@ Página inicial do app para **todos os usuários logados**, inclusive convidados
 ### Indicadores
 
 | Indicador | O que mostra |
-| --- | --- |
+|---|---|
 | **Músicos** | Contas ativas. |
 | **Músicas** | Todas as músicas cadastradas. |
 | **Para revisão** | Músicas marcadas para revisão. |
@@ -409,7 +415,7 @@ Os números em destaque aparecem como cartões, os músicos por instrumento como
 Cada tipo de item tem uma página de listagem, com **30 itens por página** e paginação. Os destaques do dashboard levam a essas listagens, já com a ordenação aplicada.
 
 | Página | Busca | Filtros e ordenação |
-| --- | --- | --- |
+|---|---|---|
 | **Músicas** (`/musicas`) | Título e artista | Colunas: título, artistas, tom original e última execução. Filtro por artista. Ordem A–Z ou Z–A. Ordem por **mais** ou **menos tocada**, com seletor de período. |
 | **Artistas** (`/artistas`) | Nome | Ordem A–Z ou Z–A. Ordem por **mais** ou **menos tocado**, com seletor de período. |
 | **Instrumentos** (`/instrumentos`) | — | Ordem A–Z ou Z–A. |
@@ -490,7 +496,7 @@ A cifra é guardada **em graus do campo harmônico**, no estilo do Nashville Num
 O grau toma o lugar da letra da nota, e o resto do acorde segue as regras de sufixo, alteração e baixo desta seção.
 
 | Em letras (padrão) | Em graus | Significado |
-| --- | --- | --- |
+|---|---|---|
 | `C` | `1` | Acorde maior sobre o primeiro grau. |
 | `Dm`, `Em`, `Am` | `2m`, `3m`, `6m` | Acordes menores. |
 | `Eb`, `Bb`, `F#` | `3b`, `7b`, `4#` | Graus alterados: o `b` ou o `#` vem depois do grau. |
@@ -521,8 +527,8 @@ A página `/ajuda/acordes` ensina o padrão de escrita para quem digita a cifra.
 
 1. **Como o app guarda a cifra:** em graus, e por que isso permite ver a música em qualquer tom.
 2. **A tabela do padrão**, com a escrita em letras, a escrita em graus e o significado, agrupada por tipo (maiores e menores, sétimas, suspensas, nona e extensões, alterações, diminutos, baixo).
-3. **As regras que mais confundem:** `9` é nona adicionada e a nona dominante é `7(9)`; `b` e `#` valem na raiz e no baixo; dentro dos parênteses o padrão é `+` e `-`, e `b` e `#` também são aceitos ao digitar, mas o app grava `+` e `-`; `7M` e não `maj7`.
-   + A página mostra uma tabela de equivalências: `C7(b9)` e `C7(-9)` viram `C7(9-)`; `C7(#5)` e `C7(+5)` viram `C7(5+)`.
+3. **As regras que mais confundem:** `9` é nona adicionada e a nona dominante é `7(9)`; `b` e `#` valem na raiz e no baixo, e a raiz com acidente tem prioridade (`Cb9` é Dó bemol com nona; para a nona bemol, escreva `C7(b9)`); dentro dos parênteses o padrão é `+` e `-`, e `b` e `#` também são aceitos ao digitar, mas o app grava `+` e `-`; a sétima maior é gravada como `7M`, e `maj7` e `M7` também são aceitos.
+   - A página mostra uma tabela de equivalências: `C7(b9)` e `C7(-9)` viram `C7(9-)`; `C7(#5)` e `C7(+5)` viram `C7(5+)`.
 4. **Um exemplo completo:** uma estrofe com acordes sobre a letra, escrita em graus e mostrada em letras.
 5. **Experimente:** um campo onde a pessoa digita um acorde e vê na hora se o app o reconhece, como ele é gravado (no padrão) e como aparece em um tom escolhido. Nada é gravado.
 6. **Variações aceitas:** a tabela de RN95, com a grafia digitada, a gravada e a exibida, e uma nota de que o app sempre grava e mostra no padrão, mesmo que a pessoa digite de outro jeito.
@@ -596,7 +602,7 @@ O texto original que você digitou não fica guardado. O que fica é o padrão e
 ##### Maiores e menores
 
 | Em letras (padrão) | Em graus (gravado) | Significado |
-| --- | --- | --- |
+|---|---|---|
 | `C` | `1` | Maior, sobre o primeiro grau. |
 | `Dm`, `Em`, `Am` | `2m`, `3m`, `6m` | Menor. |
 | `Eb`, `Bb`, `F#` | `3b`, `7b`, `4#` | Grau alterado: o `b` ou o `#` vem depois do grau. |
@@ -605,7 +611,7 @@ O texto original que você digitou não fica guardado. O que fica é o padrão e
 ##### Sétimas
 
 | Em letras (padrão) | Em graus (gravado) | Significado |
-| --- | --- | --- |
+|---|---|---|
 | `C7` | `17` | Dominante: maior com sétima menor. |
 | `C7M` | `17M` | Sétima maior. |
 | `Cm7` | `1m7` | Menor com sétima. |
@@ -613,7 +619,7 @@ O texto original que você digitou não fica guardado. O que fica é o padrão e
 ##### Sextas e nonas
 
 | Em letras (padrão) | Em graus (gravado) | Significado |
-| --- | --- | --- |
+|---|---|---|
 | `C6` | `16` | Sexta. |
 | `C6(9)` | `16(9)` | Sexta com nona. |
 | `C9` | `19` | Nona adicionada (`add9`), **sem sétima**. |
@@ -625,7 +631,7 @@ Atenção: no padrão do app, `C9` é nona adicionada. A nona dominante é sempr
 ##### Suspensas
 
 | Em letras (padrão) | Em graus (gravado) | Significado |
-| --- | --- | --- |
+|---|---|---|
 | `C2` | `12` | Suspensa de segunda (`sus2`). |
 | `C4` | `14` | Suspensa de quarta (`sus4`). |
 | `C7(4)` | `17(4)` | Suspensa de quarta com sétima. |
@@ -633,7 +639,7 @@ Atenção: no padrão do app, `C9` é nona adicionada. A nona dominante é sempr
 ##### Quarta adicionada
 
 | Em letras (padrão) | Em graus (gravado) | Significado |
-| --- | --- | --- |
+|---|---|---|
 | `C11` | `111` | Quarta adicionada (`add4`), **sem sétima**. |
 
 Atenção: aqui `C11` quer dizer quarta adicionada, não a undécima dominante. Se o acorde tiver sétima, use `C7(11)`.
@@ -641,7 +647,7 @@ Atenção: aqui `C11` quer dizer quarta adicionada, não a undécima dominante. 
 ##### Alterações (dentro dos parênteses)
 
 | Em letras (padrão) | Em graus (gravado) | Significado |
-| --- | --- | --- |
+|---|---|---|
 | `C7(9-)` | `17(9-)` | Nona bemol. |
 | `C7(9+)` | `17(9+)` | Nona sustenido. |
 | `C7(5+)` | `17(5+)` | Quinta aumentada. |
@@ -653,7 +659,7 @@ Dentro dos parênteses, o número vem **antes** do sinal, e o sinal é `+` (aume
 ##### Aumentado, diminuto e meio-diminuto
 
 | Em letras (padrão) | Em graus (gravado) | Significado |
-| --- | --- | --- |
+|---|---|---|
 | `C5+` | `15+` | Tríade aumentada. |
 | `Cm5-` | `1m5-` | Tríade diminuta. |
 | `Cº` | `1º` | Sétima diminuta (quatro notas). |
@@ -664,7 +670,7 @@ Para a tríade, escreva sempre `5+` ou `m5-`. Para a sétima diminuta, use `º`.
 ##### Baixo
 
 | Em letras (padrão) | Em graus (gravado) | Significado |
-| --- | --- | --- |
+|---|---|---|
 | `C/E` | `1/3` | Baixo na terça. |
 | `Am7/G` | `6m7/5` | Baixo no quinto grau, em tom de C. |
 | `Dm6/B` | `2m6/7` | Baixo no sétimo grau, em tom de C. |
@@ -679,7 +685,7 @@ Ao digitar, o app aceita estas variações e converte para o padrão. A coluna d
 ##### Alterações entre parênteses
 
 | Você digita | Gravado | Observação |
-| --- | --- | --- |
+|---|---|---|
 | `C7(b9)` | `C7(9-)` | `b` no lugar de `-`. |
 | `C7(-9)` | `C7(9-)` | Padrão. |
 | `C7(9b)` | `C7(9-)` | Sinal depois do número, como o padrão. |
@@ -690,7 +696,7 @@ Ao digitar, o app aceita estas variações e converte para o padrão. A coluna d
 ##### Sétimas, sus e add
 
 | Você digita | Gravado |
-| --- | --- |
+|---|---|
 | `Cmaj7`, `CM7`, `CΔ`, `C^7` | `C7M` |
 | `Cmaj9` | `C7M(9)` |
 | `Csus`, `Csus4` | `C4` |
@@ -702,7 +708,7 @@ Ao digitar, o app aceita estas variações e converte para o padrão. A coluna d
 ##### Menor, sétima diminuta e meio-diminuto
 
 | Você digita | Gravado |
-| --- | --- |
+|---|---|
 | `C-7`, `Cmin7` | `Cm7` |
 | `Cº`, `C°` | `Cº` |
 | `Cm7b5`, `Cø` | `Cm7(5-)` |
@@ -710,7 +716,7 @@ Ao digitar, o app aceita estas variações e converte para o padrão. A coluna d
 ##### Outros
 
 | Você digita | Gravado |
-| --- | --- |
+|---|---|
 | `C+` | `C5+` |
 | `C6/9`, `C69` | `C6(9)` |
 | `C13` | `C7(13)` |
@@ -720,7 +726,7 @@ Ao digitar, o app aceita estas variações e converte para o padrão. A coluna d
 Estas formas não são aceitas, porque não dizem se o acorde é tríade ou sétima. Use a forma da coluna da direita.
 
 | Não use | Use | Motivo |
-| --- | --- | --- |
+|---|---|---|
 | `Cdim`, `Cdim7` | `Cm5-` (tríade) ou `Cº` (sétima) | `dim` não diz qual dos dois é. |
 | `Caug` | `C5+` | `aug` não diz se é tríade. Use `5+`. |
 | `dim`, `dim7`, `aug` sozinhos | a forma com a raiz, como acima | Sem raiz, não há acorde. |
@@ -730,7 +736,7 @@ Estas formas não são aceitas, porque não dizem se o acorde é tríade ou sét
 Quem escreve em graus pode digitar em algarismos ou em romanos. Na configuração de visualização e no campo de escrita, o botão **Números** ou **Romanos** escolhe a forma. O que fica gravado é sempre em algarismos.
 
 | Em romanos (digitado ou mostrado) | Em algarismos (gravado) | Observação |
-| --- | --- | --- |
+|---|---|---|
 | `I` | `1` | Maiúsculo é maior. |
 | `ii`, `IIm` | `2m` | Minúsculo é menor. `m` também é aceito, mas a tela, em romanos, mostra só `ii`. |
 | `bVII`, `VIIb` | `7b` | `b` e `#` valem antes ou depois do numeral. |
@@ -790,7 +796,6 @@ Senhor, tu és fiel
 ```
 
 **O que o app faz com isso.**
-
 - Ao salvar, ele junta em `{xN}` as estrofes e os trechos iguais e seguidos.
 - Na tela completa e na exportação completa, mostra tudo expandido.
 - No modo Reduzido, mostra só os acordes de cada seção, com `(2x)` quando a linha se repete.
@@ -804,6 +809,10 @@ Senhor, tu és fiel
 
 **Por que `C9` não é nona dominante?** No padrão do app, `9` é nona adicionada. A nona dominante é `C7(9)`. Isso é o que a maioria dos músicos brasileiros escreve.
 
+**Como escrevo uma nona bemol?** Dentro dos parênteses: `C7(b9)` ou `C7(9-)`. `Cb9` é Dó bemol com nona, porque a raiz com acidente tem prioridade.
+
+**Posso usar uma cifra de outro site?** Sim. Copie o texto, cole no editor e escolha o tom da escrita: as letras são convertidas para graus, e o app avisa o que não reconhecer, para você corrigir na hora.
+
 **Por que `b` e `#` às vezes não funcionam?** Fora dos parênteses, `b` e `#` são acidentes da nota (`Bb`, `C#m7`). Dentro dos parênteses, eles viram alteração: `(b9)` é o mesmo que `(-9)`.
 
 **O app mostra o que eu digitei?** Não. Ele mostra o padrão, em letras, no tom que você escolher.
@@ -813,7 +822,6 @@ Senhor, tu és fiel
 #### Experimente
 
 Um campo onde você digita um acorde e vê:
-
 - se o app reconhece;
 - como fica gravado (em graus);
 - como aparece no tom que você escolher.
@@ -845,6 +853,7 @@ Senhor, tu és fiel
 
 A letra não muda. Só os acordes são convertidos.
 
+
 ## Eventos, setlists e listas
 
 ### Eventos
@@ -856,7 +865,7 @@ Um **evento** tem nome, data e hora, `slug` e a opção `requerir_presenca`. Coo
 Setlist e lista genérica compartilham a estrutura da **coleção**, diferenciada por `tipo`:
 
 | | SETLIST | LISTA |
-| --- | --- | --- |
+|---|---|---|
 | Vinculada a | um evento (`evento_id`) | um ou mais donos (`listas_donos`) |
 | Nome | o do evento | `nome` próprio |
 | Publicação | `publicado` | não se aplica |
@@ -872,9 +881,9 @@ Uma coleção pode ter **seções** opcionais (por exemplo "Animação" e "Adora
 
 1. A pessoa entra na música e edita o tom tocado e a cifra.
 2. Clica em **Salvar** e escolhe: **[Salvar na música]**, **[Salvar só neste setlist]** ou **[Cancelar]**.
-   + *Salvar na música*: a cifra editada passa a valer para a música, para todos.
-   + *Salvar só neste setlist*: a cifra editada vale só neste setlist/lista.
-   + O **tom tocado** fica sempre só no setlist ou na lista.
+   - *Salvar na música*: a cifra editada passa a valer para a música, para todos.
+   - *Salvar só neste setlist*: a cifra editada vale só neste setlist/lista.
+   - O **tom tocado** fica sempre só no setlist ou na lista.
 3. Se sair sem salvar, as mudanças são perdidas.
 
 ### Reordenar por arrastar e soltar
@@ -945,12 +954,12 @@ A pessoa apaga a própria conta em `/configuracoes/seguranca`, com confirmação
 
 ### Conta e segurança
 
-Em `/configuracoes/seguranca`, a pessoa vê, adiciona e remove os próprios e-mails, troca a senha, gera os códigos de recuperação, desativa e apaga a própria conta. A recuperação de senha ("esqueci a senha") fica na tela de login.
+Em `/configuracoes/seguranca`, a pessoa vê e troca o e-mail principal, adiciona, troca ou remove o de recuperação, troca a senha, gera os códigos de recuperação, desativa e apaga a própria conta. A recuperação de senha ("esqueci a senha") fica na tela de login.
 
 ## Stack técnica
 
 | Camada | Escolha |
-| --- | --- |
+|---|---|
 | Frontend e backend | **Next.js 15** (App Router) + **React 19**, tudo em **TypeScript** (`strict`) |
 | API | Route Handlers do Next (`src/app/api/**/route.ts`) |
 | Banco | **PostgreSQL padrão** (Supabase em produção, usado só como banco; Postgres em Docker em desenvolvimento) |
@@ -973,14 +982,14 @@ Tudo num único projeto TypeScript (front e back), sem plataformas além de Verc
 ### Decisões de arquitetura
 
 | Decisão | Motivo |
-| --- | --- |
-| Autenticação própria (JWT em cookie `httpOnly`) | Atende a vários e-mails por conta, convites de 30 minutos e códigos de recuperação, que exigem fluxos próprios. O Supabase entra só como banco. |
+|---|---|
+| Autenticação própria (JWT em cookie `httpOnly`) | Atende convites de 7 dias e códigos de recuperação, que exigem fluxos próprios. O Supabase entra só como banco. |
 | Cifra guardada em graus | Uma única fonte serve qualquer tom. O tom original e o tocado são informações à parte. |
 | PDF gerado no código, com `pdf-lib` | Mantém o texto selecionável, com fontes embutidas, e roda na Vercel sem navegador. |
 | Busca com `pg_trgm` e `unaccent` | Os títulos são curtos e a busca é por trecho. Trigramas atendem sem depender de raízes de palavras. |
 | Fotos no Postgres | Mantém menos peças (RNF08), e a foto é pequena (256 px). |
 | Resend atrás de `src/lib/email.ts` | O plano gratuito basta, e a camada própria permite trocar de provedor. |
-| Prisma com `db pull` e `$queryRaw` | O `DDL.SQL` é a fonte da verdade, e a busca usa funções que o Prisma não expressa. |
+| Prisma com `db pull` e `$queryRaw` | O `DDL.sql` é a fonte da verdade, e a busca usa funções que o Prisma não expressa. |
 | `ordem` decimal (média dos vizinhos) | Reordenar atualiza uma única linha (RNF04). |
 | Contador `versao` | Detecta edição simultânea sem travar ninguém (RNF13). |
 | Limite de tentativas no banco | A Vercel não guarda memória entre requisições, e a hospedagem fica restrita às plataformas da RNF08 (RNF15). |
@@ -989,18 +998,18 @@ Tudo num único projeto TypeScript (front e back), sem plataformas além de Verc
 
 ## Modelo de dados
 
-29 tabelas e 2 views, definidas em **`DDL.SQL`** (PostgreSQL 13 ou superior). O arquivo tem quatro partes: a **parte 1** (tabelas, chaves e únicas) é a mais segura para visualizadores como o Esquema 3D; a **parte 2** (CHECKs e índices), a **parte 3** (views) e a **parte 4** (instrumentos iniciais) podem ser apagadas se o visualizador não as reconhecer.
+29 tabelas e 2 views, definidas em **`DDL.sql`** (PostgreSQL 13 ou superior). O arquivo tem quatro partes: a **parte 1** (tabelas, chaves e únicas) é a mais segura para visualizadores como o Esquema 3D; a **parte 2** (CHECKs e índices), a **parte 3** (views) e a **parte 4** (instrumentos iniciais) podem ser apagadas se o visualizador não as reconhecer.
 
 Os itens principais (usuários, instrumentos, artistas, músicas, eventos e coleções) têm `criado_em` e `atualizado_em`, e o banco mantém `atualizado_em` por trigger. Também têm data o histórico (`musica_versoes.criado_em`), `eventos.data_evento`, `convites_acesso.expira_em`, `codigos_email.expira_em` e `limites_tentativas.janela_fim`, todas com fuso (`TIMESTAMPTZ`). A parte 2 cria as extensões `pg_trgm` e `unaccent` e a função `busca_norm`, usadas na busca (veja [Busca e ordenação](#busca-e-ordenação)).
 
 | Tabela | Propósito |
-| --- | --- |
+|---|---|
 | `usuarios` | Pessoas. `papel` (`COORDENADOR`, `MINISTERIADO` ou `CONVIDADO`), `ativo` (vazio para convidados), `slug`, hash da senha, `token_versao` (invalida as sessões antigas quando a senha muda) `criado_em` é também a data do aceite dos termos. |
-| `preferencias_usuario` | A configuração de visualização e de exportação de cada pessoa (RN91): padrão da tela (cifra ou letra), seções na letra, tamanho da fonte e padrão do arquivo exportado. Uma linha por pessoa, guardada na conta. |
-| `emails_usuario` | Os e-mails de cada pessoa: de um a três por conta, únicos no sistema e em minúsculas. Só entram os confirmados por código. |
+| `preferencias_usuario` | A configuração de visualização e de exportação de cada pessoa (RN91): padrão da tela (cifra ou letra), seções na letra, tamanho da fonte, formato dos graus, modo Reduzido, tema, aviso de "Não vou" e padrão do arquivo exportado. Uma linha por pessoa, guardada na conta. |
+| `emails_usuario` | Os e-mails de cada pessoa: o principal (obrigatório) e o de recuperação (opcional), únicos no sistema e em minúsculas. Só entram os confirmados por código. `tipo` é `PRINCIPAL` ou `RECUPERACAO`. |
 | `contas_google` | O vínculo com uma conta Google, para o login com Google (um por conta). |
 | `fotos_perfil` | A foto de perfil de cada pessoa, em bytes (`BYTEA`), já redimensionada, com o tipo MIME. Uma por usuário, no máximo. |
-| `codigos_email` | Códigos de 6 dígitos enviados por e-mail, só o hash. `finalidade` é `CADASTRO` (antes da conta existir), `REDEFINICAO` ou `TROCA_EMAIL`. Tem expiração de 30 minutos e contador de `tentativas`; a linha é apagada ao usar o código. |
+| `codigos_email` | Códigos de 6 dígitos enviados por e-mail, só o hash. `finalidade` é `CADASTRO` (antes da conta existir), `REDEFINICAO` ou `TROCA_EMAIL`. Tem expiração de 15 minutos a partir do envio e contador de `tentativas`; a linha é apagada ao usar o código. |
 | `codigos_recuperacao` | Os 10 códigos de recuperação de cada pessoa, só o hash, e se cada um já foi usado. |
 | `instrumentos` | Catálogo de instrumentos, com `nome` e `slug`. |
 | `usuarios_instrumentos` | Quais instrumentos cada pessoa toca. |
@@ -1012,7 +1021,7 @@ Os itens principais (usuários, instrumentos, artistas, músicas, eventos e cole
 | `status_escuta` | Status pessoal por usuário × música. |
 | `eventos` | Missas, ensaios, retiros: nome, `slug`, data e hora, `requerir_presenca` e `cancelado`. |
 | `eventos_convidados` | Quais eventos cada convidado pode acessar. |
-| `convites_acesso` | Convites de uso único: token, cargo, quem criou, evento (só para convidados) e `expira_em` (30 minutos). A linha é apagada ao usar o convite. |
+| `convites_acesso` | Convites de uso único: token, cargo, quem criou, evento (só para convidados) e `expira_em` (7 dias). A linha é apagada ao usar o convite. |
 | `secao_musicos` | **A escala de cada seção**: quem toca cada seção do setlist. Sem usuário (vazio) em eventos passados quando a conta é apagada. |
 | `colecao_musicos` | **A escala do evento**: as pessoas escaladas para o evento inteiro. Sem usuário (vazio) em eventos passados quando a conta é apagada. |
 | `confirmacoes_presenca` | Presença por evento × usuário (vazio, vai ou não vai). Fica sem usuário (vazio) quando a conta é apagada. |
@@ -1026,11 +1035,11 @@ Os itens principais (usuários, instrumentos, artistas, músicas, eventos e cole
 | `limites_tentativas` | Contador do limite de tentativas (login, convites, códigos), no banco por causa da Vercel. |
 
 | View | Propósito |
-| --- | --- |
+|---|---|
 | `vw_execucoes` | Uma linha por música tocada em cada evento. Base das contagens. |
 | `vw_ultima_execucao` | Última vez que cada música foi tocada. |
 
-Os ids são `UUID` gerados pelo banco (`gen_random_uuid()`), então um `INSERT` direto no `psql` funciona sem informar o id. A parte 4 do `DDL.SQL` cadastra os instrumentos iniciais: Voz, Violão, Guitarra, Baixo, Teclado, Bateria e Cajón.
+Os ids são `UUID` gerados pelo banco (`gen_random_uuid()`), então um `INSERT` direto no `psql` funciona sem informar o id. A parte 4 do `DDL.sql` cadastra os instrumentos iniciais: Voz, Violão, Guitarra, Baixo, Teclado, Bateria e Cajón.
 
 ### Diagrama
 
@@ -1072,21 +1081,24 @@ erDiagram
 
 ### Regras garantidas no banco
 
-Estão na parte 2 do `DDL.SQL` e foram testadas tentando violá-las:
+Estão na parte 2 do `DDL.sql` e foram testadas tentando violá-las:
 
 - `papel` só aceita `COORDENADOR`, `MINISTERIADO` ou `CONVIDADO`; convidado tem `ativo` vazio, e os demais têm `ativo` preenchido.
 - Convite de convidado exige evento; os outros convites não têm evento.
 - O `slug` só aceita minúsculas, números e hífens.
 - Nome de instrumento e de artista **únicos sem diferenciar maiúsculas nem acentos** (pela função `busca_norm`).
-- Cada e-mail existe uma única vez no sistema, em minúsculas e com formato mínimo. Cada conta tem de um a três e-mails.
-- A posição dos artistas de uma música é única, e a música tem pelo menos um. O conjunto de artistas e o título não se repetem, mas isso é validado pela API, não pelo banco.
+- Cada e-mail existe uma única vez no sistema, em minúsculas e com formato mínimo. Cada conta tem um e-mail principal e, no máximo, um de recuperação.
+- A posição dos artistas de uma música é única, e a música tem pelo menos um.
+- O título (sem diferenciar maiúsculas nem acentos) e o conjunto de artistas não se repetem. Um gatilho do banco confere isso no fim da transação (RN34).
+- Uma lista com donos não perde o último dono por exclusão direta (gatilho no banco, RN79). Apagar a conta de um dono remove o vínculo em cascata e deixa a lista sem donos, portanto pública (RN85).
 - Tom tocado e tom original no formato `D`, `F#m` ou `Bb`.
 - Nomes e títulos não vazios, e link do YouTube começando com `http://` ou `https://`.
 - Cada versão tem número único por música e título não vazio. Uma versão `MUSICA` não tem setlist; uma `TOM_TOCADO` tem setlist e não tem cifra. Tons válidos em todas. Data de criação e atualização são mantidas pelo banco.
-- A configuração aceita só `CIFRA` ou `LETRA` para visualização e exportação, e só `PEQUENA`, `MEDIA` ou `GRANDE` para a fonte.
+- A configuração aceita só `CIFRA` ou `LETRA` para visualização e exportação, só `PEQUENA`, `MEDIA` ou `GRANDE` para a fonte, só `NUMEROS` ou `ROMANOS` para o formato dos graus e só `CLARO`, `ESCURO` ou `AUTOMATICO` para o tema.
+- A cifra tem no máximo 20.000 caracteres em `musicas`, `colecao_musicas` e `musica_versoes` (RN102).
 - Em `colecoes`: SETLIST exige evento e não tem nome; LISTA exige nome, não tem evento e não é publicada. Os donos de uma lista ficam em `listas_donos`; uma lista sem donos é pública.
 - Instrumento em uso e música usada em setlist ou lista não podem ser apagados (`RESTRICT`).
-- O convite expira 30 minutos depois de criado, por padrão do banco.
+- O convite expira 7 dias depois de criado, por padrão do banco.
 - A finalidade de `codigos_email` é `CADASTRO` (sem usuário), `REDEFINICAO` ou `TROCA_EMAIL` (com usuário).
 - `token_versao` começa em 1.
 
@@ -1100,18 +1112,18 @@ O banco não cobre estas:
 - O convidado só lê (exceto conta, instrumentos e presença) e só tem acesso enquanto está em ao menos um evento de `eventos_convidados`.
 - Uma lista é editada pelos donos e pelos editores (`listas_acessos`). Só os donos apagam a lista e gerenciam donos e acessos. Com **Edição pública** marcada, ou sem donos, todo membro ativo a edita; só coordenadores apagam uma lista sem donos (RN79). Só membros ativos e não convidados recebem qualquer papel nela. Todas as listas aparecem para todos os usuários logados (RN79).
 - Os e-mails de uma pessoa só são devolvidos para ela.
-- O login aceita qualquer e-mail confirmado da conta; os códigos de recuperação e de troca são enviados ao e-mail informado, que precisa ser confirmado.
+- O login aceita o e-mail principal ou o de recuperação, ambos confirmados; os códigos de redefinição e de troca vão ao endereço escolhido.
 - A gravação só é aceita se a `versao` enviada ainda for a atual.
 - Nomes reservados pelas rotas não são aceitos como `slug`.
 - Um código de e-mail ou de recuperação serve uma única vez. O código de e-mail é invalidado após o limite de tentativas.
 
 ### Evolução do esquema
 
-- O `DDL.SQL` descreve o esquema completo e atual. Serve para criar um banco novo (desenvolvimento, testes e o primeiro deploy).
-- Depois do primeiro deploy, cada mudança no banco é um script numerado em `db/migracoes/` (`0001_descricao.sql`, `0002_…`), aplicado em ordem em todos os ambientes. O mesmo commit atualiza o `DDL.SQL`, para que ele continue igual ao resultado de todas as migrações.
+- O `DDL.sql` descreve o esquema completo e atual. Serve para criar um banco novo (desenvolvimento, testes e o primeiro deploy).
+- Depois do primeiro deploy, cada mudança no banco é um script numerado em `db/migracoes/` (`0001_descricao.sql`, `0002_…`), aplicado em ordem em todos os ambientes. O mesmo commit atualiza o `DDL.sql`, para que ele continue igual ao resultado de todas as migrações.
 - Cada script roda em uma transação e é revisado como código. Uma mudança destrutiva (apagar coluna ou tabela) acontece em dois lançamentos: primeiro o código deixa de usar, depois o script remove.
 - Depois de uma migração, rode `npx prisma db pull` e inclua o `schema.prisma` atualizado no mesmo commit.
-- Antes de aplicar em produção, faça um backup (veja [Deploy](#deploy)) e teste o script em um banco criado com o `DDL.SQL` anterior.
+- Antes de aplicar em produção, faça um backup (veja [Deploy](#deploy)) e teste o script em um banco criado com o `DDL.sql` anterior.
 
 ## Esquema de URLs
 
@@ -1129,7 +1141,7 @@ O banco não cobre estas:
 ### Páginas
 
 | Rota | Quem acessa | O que mostra |
-| --- | --- | --- |
+|---|---|---|
 | `/` | todos | Só redireciona (veja acima). |
 | `/auth/login` | sem sessão | Login, com "Lembrar de mim", o botão **Entrar com Google** e o link "esqueci a senha". |
 | `/auth/esqueci-senha` | sem sessão | Pedido do código por e-mail (ou uso de um código de recuperação) e definição da senha nova. |
@@ -1183,7 +1195,7 @@ Toda página de música, artista, instrumento, usuário, lista e evento (e de m�
 As listagens guardam o estado na URL (a pessoa pode compartilhar o link e o botão voltar funciona). Ao mudar a busca ou um filtro, `pagina` volta a 1.
 
 | Parâmetro | Valores | Onde |
-| --- | --- | --- |
+|---|---|---|
 | `busca` | texto (até 100 caracteres) | músicas, artistas, usuários, listas e eventos |
 | `ordem` | `az` (padrão) ou `za` | todas |
 | `ordem` | `mais` ou `menos` | músicas e artistas |
@@ -1212,12 +1224,11 @@ Exemplos: `/musicas?ordem=mais&periodo=mes`, `/musicas?busca=coracao&artista=pad
 - Os erros devolvem `{ "erro": { "codigo": "VALIDACAO", "mensagem": "...", "campos": [{ "campo": "titulo", "mensagem": "..." }] } }`, com `campos` só nos erros de validação. A `mensagem` é em português e pode ser mostrada à pessoa. Nenhum erro revela detalhes internos (consulta, caminho de arquivo ou pilha de chamadas).
 
 | Status | `codigo` | Quando |
-| --- | --- | --- |
+|---|---|---|
 | 401 | `NAO_AUTENTICADO` | Sem sessão, ou com sessão inválida ou encerrada (`token_versao`). |
 | 403 | `PROIBIDO` | A pessoa vê o item, mas não pode fazer a ação (por exemplo, um convidado gravando). |
 | 404 | `NAO_ENCONTRADO` | O item não existe ou a pessoa não pode vê-lo (RN82). |
 | 409 | `CONFLITO_VERSAO` | A `versao` enviada não é mais a atual (RN38). |
-| 409 | `CONTA_EXISTENTE` | O e-mail do cadastro já tem conta. |
 | 409 | `DUPLICADO` | Outra unicidade violada: nome de artista ou instrumento, título com os mesmos artistas, e-mail em outra conta. |
 | 422 | `VALIDACAO` | O corpo ou os parâmetros não passam pelo schema Zod. |
 | 429 | `LIMITE_TENTATIVAS` | Passou do limite de tentativas (RNF15), com `Retry-After` em segundos. |
@@ -1230,7 +1241,7 @@ A API é usada só pelo front do próprio app, por isso as rotas não têm núme
 ### Onde há busca
 
 | Onde | O que a busca compara |
-| --- | --- |
+|---|---|
 | Listagem de **músicas** | Título e nome dos artistas. |
 | Listagem de **artistas**, **usuários**, **listas** e **eventos** | O nome. |
 | Listagem de **instrumentos** | A listagem não tem caixa de busca (RF49), mas os instrumentos aparecem na busca geral. |
@@ -1246,7 +1257,7 @@ A API é usada só pelo front do próprio app, por isso as rotas não têm núme
 4. **Entrada segura.** O termo é aparado nas pontas, limitado a 100 caracteres e enviado como parâmetro da consulta, nunca concatenado. Os caracteres `%`, `_` e `\` são escapados, para que valham como letras. Busca vazia significa sem filtro.
 5. **Ordem A–Z e Z–A.** Ordena por `busca_norm(nome)` e desempata pelo `id`. Assim a ordem ignora acentos e caixa ("Álvaro" fica entre "Alice" e "Bruno"), não depende do idioma configurado no banco e o desempate mantém as páginas estáveis. Em `mais` e `menos` tocadas, ordena pelas execuções e depois pelo nome (RN27).
 6. **Paginação.** `LIMIT 30 OFFSET (pagina - 1) * 30`, com o total para montar os números das páginas.
-7. **Música parecida.** Usa `similarity()` do `pg_trgm` entre os títulos normalizados, com limite de **0,4** (ajustável), mostrando as 5 mais parecidas em ordem decrescente. A pontuação não conta ("Segura na mão de Deus!" é igual a "Segura na mao de Deus"). É um aviso: quem bloqueia é só a duplicata exata de título e conjunto de artistas (RN34), validada pela API.
+7. **Música parecida.** Usa `similarity()` do `pg_trgm` entre os títulos normalizados, com limite de **0,4** (ajustável), mostrando as 5 mais parecidas em ordem decrescente. A pontuação não conta ("Segura na mão de Deus!" é igual a "Segura na mao de Deus"). É um aviso: quem bloqueia é só a duplicata exata de título e conjunto de artistas (RN34), validada pela API e garantida pelo banco.
 8. **No front.** A caixa de busca espera cerca de 300 ms sem digitação antes de consultar, cancela a consulta anterior se uma nova começa e grava o termo na URL (`?busca=`). O autocompletar de artista começa com 2 caracteres e mostra até 8 resultados.
 9. **Offline.** As listagens já abertas continuam disponíveis; uma busca nova precisa de conexão (RNF02).
 10. **Busca geral.** Usa as mesmas regras de normalização, palavras e escape. Com `tipo=todos`, a página roda uma consulta por tipo, em paralelo, e mostra cada tipo em um bloco com **até 5 resultados**, o total encontrado e o link "ver todos", que leva à listagem do tipo já com `busca=` aplicada. Em cada bloco, quem começa com o termo vem primeiro, depois a ordem A–Z. Os filtros de tipo mostram a contagem ("Músicas (12)"). Com um `tipo` específico, a página mostra a própria listagem daquele tipo (30 por página, com `ordem` e `pagina`), sem lógica duplicada. O termo precisa de pelo menos 2 caracteres. Usuários convidados só aparecem para quem a RN59 permite. O campo no topo do app abre `/busca?busca=termo` ao enviar.
@@ -1277,7 +1288,7 @@ A especificação é gerada a partir dos **schemas Zod** que já validam as requ
 ### Endpoints
 
 | Recurso | Endpoints |
-| --- | --- |
+|---|---|
 | Autenticação | `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me`, `GET /api/auth/google` (inicia o login com Google), `GET /api/auth/google/callback` |
 | Cadastro e senha | `GET /api/convites/{token}` (confere se o convite vale e mostra o cargo e o evento), `POST /api/auth/cadastro/codigo` (envia o código ao e-mail), `POST /api/auth/cadastro` (confirma o código, cria a conta e consome o convite), `POST /api/auth/esqueci-senha` (envia o código), `POST /api/auth/redefinir-senha` (código do e-mail ou de recuperação, mais a senha nova) |
 | Conta | `GET, PATCH /api/conta` (nome), `PUT /api/conta/senha`, `PUT /api/conta/instrumentos`, `GET, POST /api/conta/emails` (lista; envia o código ao novo e-mail), `PUT /api/conta/emails/{id}` (confirma o código), `DELETE /api/conta/emails/{id}`, `DELETE /api/conta` (apaga a própria conta, com a senha), `GET /api/conta/google` (inicia o vínculo), `DELETE /api/conta/google` (desvincula, com a senha), `POST /api/conta/codigos-recuperacao`, `POST /api/conta/desativar`, `PUT, DELETE /api/conta/foto`, `GET, PUT /api/conta/preferencias` (padrões de visualização e de exportação, RN91) |
@@ -1338,7 +1349,7 @@ Resposta de `GET /api/dashboard?periodo=mes`:
 
 ```
 .
-├─ DDL.SQL                   # modelo de dados em SQL (PostgreSQL)
+├─ DDL.sql                   # modelo de dados em SQL (PostgreSQL)
 ├─ db/
 │  └─ migracoes/             # scripts numerados, aplicados depois do primeiro deploy
 ├─ .github/
@@ -1411,7 +1422,7 @@ Resposta de `GET /api/dashboard?periodo=mes`:
 │  └─ hooks/
 ├─ tests/
 │  ├─ unit/                  # cifra, slugs, busca, autorizar
-│  ├─ integration/           # rotas com PostgreSQL real, criado do DDL.SQL
+│  ├─ integration/           # rotas com PostgreSQL real, criado do DDL.sql
 │  └─ e2e/                   # Playwright
 └─ .env.example
 ```
@@ -1441,7 +1452,7 @@ cp .env.example .env.local
 #   APP_URL="http://localhost:3000"
 
 # 5. Banco: aplicar o DDL e gerar o schema do Prisma a partir dele
-psql "postgresql://postgres:dev@localhost:5432/musicaliapp" -f DDL.SQL
+psql "postgresql://postgres:dev@localhost:5432/musicaliapp" -f DDL.sql
 npx prisma init --datasource-provider postgresql
 npx prisma db pull
 npx prisma generate
@@ -1461,13 +1472,13 @@ psql "postgresql://postgres:dev@localhost:5432/musicaliapp" -c \
      INSERT INTO usuarios (nome, slug, senha_hash, papel)
      VALUES ('Seu Nome Completo', 'seu-nome', '$HASH', 'COORDENADOR')
      RETURNING id)
-   INSERT INTO emails_usuario (usuario_id, email) SELECT id, 'voce@exemplo.com' FROM u;"
+   INSERT INTO emails_usuario (usuario_id, email, tipo) SELECT id, 'voce@exemplo.com', 'PRINCIPAL' FROM u;"
 ```
 
 ### Comandos úteis
 
 | Comando | Para quê |
-| --- | --- |
+|---|---|
 | `npm run dev` | Servidor de desenvolvimento. |
 | `npm run typecheck` | `tsc --noEmit`: checa os tipos. |
 | `npm run lint` | ESLint e checagem do Prettier. |
@@ -1480,7 +1491,7 @@ psql "postgresql://postgres:dev@localhost:5432/musicaliapp" -c \
 ## Variáveis de ambiente
 
 | Variável | Para quê |
-| --- | --- |
+|---|---|
 | `DATABASE_URL` | Conexão do Prisma. Em produção, a string do pooler do Supabase. |
 | `DIRECT_URL` | Conexão direta, sem pooler, usada pelo `prisma db pull`, pelas migrações e pelo backup. No schema: `directUrl = env("DIRECT_URL")`. |
 | `APP_URL` | Endereço público do app. Serve para conferir o cabeçalho `Origin` das gravações e para montar links. Ex.: `https://musicaliapp.exemplo.com`. |
@@ -1489,6 +1500,7 @@ psql "postgresql://postgres:dev@localhost:5432/musicaliapp" -c \
 | `VAPID_PRIVATE_KEY` | Chave privada VAPID. **Só no servidor.** |
 | `VAPID_SUBJECT` | `mailto:` de contato exigido pelo VAPID. |
 | `CRON_SECRET` | Segredo que o Vercel Cron envia à rota da rotina diária. |
+| `RATE_LIMIT_SECRET` | Segredo do HMAC que protege o IP e o e-mail guardados em `limites_tentativas`. Longo e aleatório, **só no servidor**. |
 | `RESEND_API_KEY` | Chave da API do Resend, para enviar os códigos. Sem ela, em desenvolvimento, o código é impresso no terminal. |
 | `EMAIL_FROM` | Remetente dos e-mails, em um domínio verificado no Resend (ex.: `musicaliapp <nao-responda@seudominio.com>`). |
 | `GOOGLE_CLIENT_ID` | Identificador do cliente OAuth no Google Cloud. |
@@ -1509,12 +1521,12 @@ psql "postgresql://postgres:dev@localhost:5432/musicaliapp" -c \
 ### Testes
 
 | Nível | Ferramenta | O que cobre |
-| --- | --- | --- |
+|---|---|---|
 | Unitário | Vitest | Conversão de graus e tons e gramática de acordes; quebra da cifra em pares; slugs (RN03, RN13, RN15); filtro de busca e escape; datas em `America/Sao_Paulo`; `autorizar` (papel × ação). |
-| Integração | Vitest, com PostgreSQL 16 real (Docker local e *service container* na CI) | Cada rota por papel (coordenador, ministeriado, convidado, conta desativada e sem sessão); `versao` e `409 CONFLITO_VERSAO`; histórico (gravar e restaurar); convite consumido uma só vez em requisições simultâneas; exclusão de conta (RN83); limite de tentativas; as regras do `DDL.SQL`. |
+| Integração | Vitest, com PostgreSQL 16 real (Docker local e *service container* na CI) | Cada rota por papel (coordenador, ministeriado, convidado, conta desativada e sem sessão); `versao` e `409 CONFLITO_VERSAO`; histórico (gravar e restaurar); convite consumido uma só vez em requisições simultâneas; exclusão de conta (RN83); limite de tentativas; as regras do `DDL.sql`. |
 | Ponta a ponta | Playwright (Chromium, em tela de celular e de computador) | Convite, cadastro com código e login; montar o setlist, reordenar e escalar; confirmar presença; exportar PDF; abrir offline. |
 
-Os testes de integração usam um banco criado a partir do `DDL.SQL`, o que também valida o próprio DDL. Neles, a camada de e-mail é trocada por um *stub* que guarda o código enviado.
+Os testes de integração usam um banco criado a partir do `DDL.sql`, o que também valida o próprio DDL. Neles, a camada de e-mail é trocada por um *stub* que guarda o código enviado.
 
 ### Critério de pronto
 
@@ -1524,12 +1536,12 @@ Um requisito está pronto quando:
 2. a autorização foi testada para cada papel;
 3. `typecheck`, `lint` e os testes passam na CI;
 4. a tela funciona no celular e pelo teclado;
-5. o `DDL.SQL`, a migração e este README foram atualizados, quando mudaram;
+5. o `DDL.sql`, a migração e este README foram atualizados, quando mudaram;
 6. não há segredo, e-mail real nem dado pessoal no código, nos testes ou nos logs.
 
 ### Integração contínua
 
-Um workflow do GitHub Actions (`.github/workflows/ci.yml`) roda a cada push e pull request: `npm ci`, `tsc --noEmit`, lint, `prisma validate`, criação de um PostgreSQL 16 limpo com o `DDL.SQL` e os testes unitários e de integração. Os testes ponta a ponta rodam nos pull requests para a `main`. O Dependabot (`.github/dependabot.yml`) abre atualizações toda semana, e o `npm audit` reprova a CI diante de vulnerabilidade alta ou crítica.
+Um workflow do GitHub Actions (`.github/workflows/ci.yml`) roda a cada push e pull request: `npm ci`, `tsc --noEmit`, lint, `prisma validate`, criação de um PostgreSQL 16 limpo com o `DDL.sql` e os testes unitários e de integração. Os testes ponta a ponta rodam nos pull requests para a `main`. O Dependabot (`.github/dependabot.yml`) abre atualizações toda semana, e o `npm audit` reprova a CI diante de vulnerabilidade alta ou crítica.
 
 ### Acessibilidade e idioma
 
@@ -1537,11 +1549,12 @@ O app segue o nível AA do WCAG 2.1: contraste suficiente, tudo operável pelo t
 
 ## Deploy
 
-- **Supabase:** crie o projeto na região de São Paulo e execute o `DDL.SQL` no *SQL Editor* (as extensões `pg_trgm` e `unaccent` estão disponíveis).
-- **Vercel:** projeto único, com deploy automático a cada push no GitHub. Cadastre as variáveis acima em *Settings → Environment Variables*. O `vercel.json` agenda a rota `/api/cron/diario` uma vez por dia.
+- **Supabase:** crie o projeto na região de São Paulo e execute o `DDL.sql` no *SQL Editor* (as extensões `pg_trgm` e `unaccent` estão disponíveis).
+- **Pausa do plano gratuito:** o Supabase pausa projetos gratuitos com pouca atividade em uma semana. A rotina diária do Vercel Cron faz pedidos ao banco, o que normalmente basta, mas não é garantia. Se o ministério passar a depender do app, use o plano Pro, que não pausa.
+- **Vercel:** projeto único, com deploy automático a cada push no GitHub. O plano Hobby é para uso não comercial, o caso de um ministério, mas confira os termos antes de publicar. Cadastre as variáveis acima em *Settings → Environment Variables*. O `vercel.json` agenda a rota `/api/cron/diario` uma vez por dia.
 - **Conexão serverless:** em `DATABASE_URL`, use a conexão do **pooler** do Supabase com `?pgbouncer=true`.
 - **Conta inicial:** crie-a com o mesmo `INSERT` da seção anterior, pelo SQL Editor.
-- **Termos e privacidade:** antes do deploy, escreva `/documentos/termos-de-uso` e `/documentos/politica-privacidade` e revise com um advogado. Sem o aceite, o cadastro não conclui (RN84).
+- **Termos e privacidade:** antes do deploy, escreva `/documentos/termos-de-uso` e `/documentos/politica-privacidade` e revise com um advogado. Os Termos devem dizer que o app é de uso interno do ministério e que as letras e as cifras pertencem aos autores. Sem o aceite, o cadastro não conclui (RN84).
 - **Google:** no Google Cloud, configure a tela de consentimento com os escopos `openid`, `email` e `profile` e publique o app, saindo do modo Teste. O modo Teste limita a 100 usuários e faz os tokens de atualização expirarem em 7 dias. Esses escopos não exigem verificação do Google.
 - **E-mail:** crie a conta no Resend, verifique o domínio de envio nos registros DNS e cadastre `RESEND_API_KEY` e `EMAIL_FROM`. O plano gratuito envia a qualquer destinatário, mas só a partir de um domínio verificado.
 - **Backup:** um workflow agendado do GitHub Actions (semanal) roda `pg_dump` com a conexão direta do Supabase (`DIRECT_URL`, não o pooler), cifra o arquivo (por exemplo, com `age`) e o guarda como artefato do workflow, com prazo de retenção definido. Teste a restauração em um banco vazio antes do uso real e depois de tempos em tempos: um backup que nunca foi restaurado não é garantia.
@@ -1552,17 +1565,17 @@ O app segue o nível AA do WCAG 2.1: contraste suficiente, tudo operável pelo t
 ## Segurança
 
 - Senhas guardadas com hash **bcrypt**; nunca em texto.
-- Sessão em **cookie `httpOnly`**, `sameSite=lax` e `secure` em produção, inacessível ao JavaScript da página.
-- Convites de uso único, com validade de 30 minutos, consumidos por um `DELETE ... RETURNING` atômico, que impede o uso duplo em requisições simultâneas.
+- Sessão em **cookie `httpOnly`**, `sameSite=lax` e `secure` em produção, inacessível ao JavaScript da página. Com **Lembrar de mim**, a sessão expira 30 dias depois do último acesso: cada acesso renova o cookie e o `exp` do JWT. Sem a opção, ela vale até o navegador ser fechado.
+- Convites de uso único, com validade de 7 dias, consumidos por um `DELETE ... RETURNING` atômico, que impede o uso duplo em requisições simultâneas.
 - Toda entrada validada com **Zod**.
 - **Autorização sempre no servidor**, por uma função central usada em todas as rotas: ela confere o cargo, o estado `ativo`, se o convidado só pode ler, o acesso do convidado (ao menos um evento) e, nas listas, o dono, o acesso concedido ou a condição de lista pública. O que o front esconde não conta como proteção.
 - A rota `GET /api/cron/diario` só aceita a chamada que traz o `CRON_SECRET`.
 - Fotos de perfil validadas no servidor (tipo e tamanho do arquivo enviado). Antes de gravar, são decodificadas e regravadas pelo `sharp`, o que remove metadados como localização e descarta conteúdo que não seja imagem válida.
 - O Swagger e o `openapi.json` são públicos. A validação de sessão e de permissão fica nos endpoints.
-- A chave privada VAPID, o `JWT_SECRET` e o `CRON_SECRET` nunca vão para o front nem para o repositório.
-- Login, aceitação de convite e pedidos de "esqueci a senha" têm limite de tentativas (rate limit), contado na tabela `limites_tentativas`, por IP e por e-mail, ambos guardados em hash.
+- A chave privada VAPID, o `JWT_SECRET`, o `CRON_SECRET` e o `RATE_LIMIT_SECRET` nunca vão para o front nem para o repositório.
+- Login, aceitação de convite e pedidos de "esqueci a senha" têm limite de tentativas (rate limit), contado na tabela `limites_tentativas`, por IP e por e-mail, ambos guardados como HMAC-SHA-256 com o segredo `RATE_LIMIT_SECRET`, e não como hash simples.
 - A sessão (JWT) leva o `token_versao` da pessoa. Trocar ou redefinir a senha o incrementa, e a função central recusa tokens com versão antiga, o que encerra as outras sessões.
-- O pedido de "esqueci a senha" responde igual exista ou não a conta. Os códigos de e-mail e de recuperação são guardados em hash. Os de e-mail valem 30 minutos e servem uma única vez.
+- O pedido de "esqueci a senha" e o do cadastro respondem igual exista ou não a conta (RN71). Os códigos de e-mail e de recuperação são guardados em hash. Os de e-mail valem 15 minutos e servem uma única vez.
 - **Senha:** de 8 a 72 caracteres (o bcrypt ignora o que passa de 72 bytes), com custo 10. A conferência usa `bcrypt.compare`.
 - **CSRF:** toda gravação usa `POST`, `PUT`, `PATCH` ou `DELETE`, com cookie `sameSite=lax`, e a API confere se o cabeçalho `Origin` é o de `APP_URL`. As rotas `GET` não alteram dados.
 - **Login com Google:** `openid-client` com `state`, `nonce` e PKCE. O vínculo usa o `google_sub`, não o e-mail.
@@ -1570,20 +1583,20 @@ O app segue o nível AA do WCAG 2.1: contraste suficiente, tudo operável pelo t
 - **Entrada e saída:** corpo com tamanho máximo em cada rota (2 MB só na foto), consultas sempre parametrizadas, e cifra e letra tratadas como texto puro, nunca como HTML.
 - **Logs:** estruturados e sem dados pessoais. Não registram senha, código, token, e-mail nem IP puro; usam o id da pessoa e o `codigo` do erro (RNF20).
 - **Dependências:** versões travadas no `package-lock.json`, com Dependabot e `npm audit` na CI.
-- **Rotação de segredos:** trocar o `JWT_SECRET` encerra todas as sessões. Trocar as chaves VAPID invalida as inscrições de push, e as pessoas precisam reativar as notificações.
+- **Rotação de segredos:** trocar o `JWT_SECRET` encerra todas as sessões. Trocar as chaves VAPID invalida as inscrições de push, e as pessoas precisam reativar as notificações. Trocar o `RATE_LIMIT_SECRET` zera os contadores de tentativas.
 
 ## Privacidade e LGPD
 
 O app trata dados pessoais de membros de um ministério de igreja, e participar dele pode revelar a crença religiosa, que a LGPD classifica como dado sensível. Por isso o app coleta o mínimo e pede consentimento.
 
 | Dado | Para quê | Onde fica |
-| --- | --- | --- |
-| Nome completo, e-mails (até 3) e hash da senha | Identificar a pessoa e permitir o acesso | `usuarios`, `emails_usuario` |
+|---|---|---|
+| Nome completo, e-mails (principal e de recuperação) e hash da senha | Identificar a pessoa e permitir o acesso | `usuarios`, `emails_usuario` |
 | Foto (opcional) | Reconhecer os músicos nas escalas | `fotos_perfil` |
 | Instrumentos, escalas, presenças e status de escuta | Organizar os eventos | `usuarios_instrumentos`, `secao_musicos`, `colecao_musicos`, `confirmacoes_presenca`, `status_escuta` |
 | Identificador do Google (`google_sub`, opcional) | Login com Google | `contas_google` |
 | Inscrição de push | Avisar sobre setlists | `device_tokens` |
-| Hash do IP e do e-mail, com a contagem de tentativas | Limite de tentativas | `limites_tentativas` (apagado todo dia) |
+| HMAC do IP e do e-mail, com a contagem de tentativas | Limite de tentativas | `limites_tentativas` (apagado todo dia) |
 | Data do cadastro, que é o aceite dos termos | Registro do consentimento | `usuarios.criado_em` |
 
 - **Consentimento:** o cadastro só conclui com o aceite dos Termos de Uso e da Política de Privacidade (RN84).
@@ -1601,15 +1614,21 @@ O app trata dados pessoais de membros de um ministério de igreja, e participar 
 Premissas: sprints de **2 semanas**. As datas de início e de fim serão definidas quando o desenvolvimento começar. Um milestone termina quando todos os requisitos listados nele estão implementados e testados, segundo o critério de pronto de [Qualidade e testes](#qualidade-e-testes). Cada requisito funcional (RF) pertence a um único milestone. A ordem segue as dependências: cada milestone usa o que o anterior entregou.
 
 | Sprint | Milestone | Entrega principal | Requisitos |
-| --- | --- | --- | --- |
-| S1 | **M1 Fundação** | Projeto Next com TypeScript, banco aplicado a partir do `DDL.SQL`, login com "Lembrar de mim", login com Google vinculado, convites de 30 minutos, cargos, instrumentos, conta com foto, e-mail confirmado por código (envio pelo Resend), esqueci a senha por código, troca de senha e desativação e exclusão pela própria pessoa, termos e privacidade. Limite de tentativas no banco. Páginas próprias por `slug`. PWA instalável. | RF01, RF02, RF04 a RF09, RF41, RF43 a RF47, RF57, RF58, RF60, RNF15 |
+|---|---|---|---|
+| S1 | **M1 Fundação** | Projeto Next com TypeScript, banco aplicado a partir do `DDL.sql`, login com "Lembrar de mim", login com Google vinculado, convites de 7 dias, cargos, instrumentos, conta com foto, e-mail principal e de recuperação confirmados por código (envio pelo Resend), esqueci a senha por código, códigos de recuperação, troca de senha e desativação e exclusão pela própria pessoa, termos e privacidade. Limite de tentativas no banco. Páginas próprias por `slug`. PWA instalável. | RF01, RF02, RF04 a RF09, RF41, RF43 a RF48, RF57, RF58, RF60, RNF15 |
 | S2 | **M2 Biblioteca** | Cadastro e edição de músicas e artistas (inclusive renomear). Cifra em graus, com conversão para qualquer tom. Busca por título e artista, com aviso de músicas parecidas. Controle de versão e histórico da cifra, com título, autor e data. Revisão. Tutorial de acordes. | RF17, RF18, RF20, RF21, RF23 a RF25, RF63, RF68, RF71 |
-| S3 | **M3 Leitura da cifra** | Tela da cifra com troca de tom, transpose, modo letra, aumento de fonte e rolagem automática com velocidade ajustável. Página de configurações, com os padrões de visualização e de exportação (RN91); a parte de segurança vem dos milestones M1 e M9. Exportação da cifra e da letra (Markdown ou PDF) e exportação em lote. | RF19, RF59, RF61, RF62, RF65, RF69, RF70 |
+| S3 | **M3 Leitura da cifra** | Tela da cifra com troca de tom, transpose, modo letra, aumento de fonte e rolagem automática com velocidade ajustável e modo Reduzido. Tema claro, escuro ou automático. Página de configurações, com os padrões de visualização e de exportação (RN91); a parte de segurança vem do milestone M1. Exportação da cifra e da letra (Markdown ou PDF) e exportação em lote. | RF19, RF59, RF61, RF62, RF65, RF69, RF70, RF75 |
 | S4 | **M4 Eventos e setlists** | Eventos com `slug`, cancelamento, setlists e listas com seções e vários donos. Reordenação por arrastar e soltar. Tom tocado por música. Cifra local e "Salvar na música" ou "Salvar só neste setlist". Botão Compartilhar, donos e acesso de edição às listas. Redirecionamento de slugs antigos. Listas visíveis a todos. | RF26 a RF29, RF34, RF54 a RF56 |
 | S5 | **M5 Escala, presença e convidados** | Escala por seção e do evento, com os botões Escalar todos e Escalar todos os instrumentos, e as opções sobrescrever ou completar nas seções. Presença com Vou e Não vou. Convite de convidado para um evento, com acesso somente leitura. Página de instrumento com os músicos. | RF03, RF30, RF31, RF35, RF36, RF37, RF66, RF67 |
 | S6 | **M6 Dashboard e listagens** | Dashboard com os números, instrumentos e próximos eventos. Listagens de músicas, artistas, instrumentos, usuários, listas e eventos, com busca, filtros e ordenação, 30 por página. Busca geral. Mais e menos tocados, com período mês, ano, geral ou um mês ou ano escolhido. Datas de criação e atualização nas páginas e listagens. | RF10 a RF16, RF49 a RF53, RF64 |
-| S7 | **M7 Notificações e offline** | Publicação do setlist com push, e aviso aos coordenadores quando uma conta é desativada. Lembrete diário de presença pelo Vercel Cron. Cache offline somente leitura, com atualização ao abrir o app. | RF32, RF38 a RF40 |
+| S7 | **M7 Notificações e offline** | Publicação do setlist com push, e aviso aos coordenadores quando uma conta é desativada. Lembrete diário de presença pelo Vercel Cron. Cache offline somente leitura, com atualização ao abrir o app e o próximo evento pré-carregado. Aviso opcional de alteração do setlist e aviso de "Não vou" aos coordenadores. | RF32, RF38 a RF40, RF72 a RF74 |
 | S8 | **M8 Entrega** | Swagger público. Testes de permissão para cada papel (inclusive convidado somente leitura e acesso às listas) e estado da conta. Deploy na Vercel e no Supabase. Conta inicial criada. Backup semanal do banco. | RF42, RNF10, RNF17 |
-| S9 | **M9 Complementos** | Status de escuta (Não ouvi, Ouvi, Toquei). Códigos de recuperação de senha. Copiar o setlist de outro evento. | RF22, RF33, RF48 |
+| S9 | **M9 Complementos** | Status de escuta (Não ouvi, Ouvi, Toquei). Copiar o setlist de outro evento. | RF22, RF33 |
 
 Dependências: M2 depende de M1. M3 depende de M2. M4 depende de M2. M5 depende de M4. M6 depende de M2 e M4. M7 depende de M5. M8 fecha a entrega inicial. M9 depende de M5 e pode vir depois do M8.
+
+### Ordem de entrega
+
+**MVP (primeiro uso real):** M1 sem o login com Google (RF60), M2, M3 sem a exportação em lote (RF62), M4, a escala e a presença do M5 (RF30, RF31, RF35, RF36, RF66, RF67), o push e o offline do M7 e o M8.
+
+**Depois do MVP:** login com Google (RF60), exportação em lote (RF62), mais e menos tocados (RF13, RF16), status de escuta (RF22), copiar o setlist (RF33), convidados de evento (RF03, RF37), eventos recorrentes e exportar o evento para o calendário (ICS).
