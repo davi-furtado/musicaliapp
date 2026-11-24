@@ -3,7 +3,7 @@
 ## Usuários, papéis e permissões
 
 | Papel | O que pode |
-| --- | --- |
+|---|---|
 | **Coordenador** | Convida pessoas (inclusive convidados de evento), altera o cargo de qualquer usuário, cria e cancela eventos, desativa e reativa contas. Não apaga contas, não vê e-mails e não altera nome, foto ou instrumentos de outras pessoas (RN05). |
 | **Ministeriado** | Usa o app como músico, dentro das permissões de qualquer membro ativo (abaixo). |
 | **Convidado** | Vê tudo o que um membro vê, mas não edita nada (veja [Convidados de evento](#convidados-de-evento)). |
@@ -22,32 +22,32 @@
 
 ## Convites e primeiro acesso
 
-Coordenadores geram um **link de convite** e o enviam à pessoa. O link tem o cargo que a pessoa terá (ministeriado ou coordenador), é de uso único e vale 30 minutos. Não há e-mail do convidado, e quem convida só escolhe o cargo. Logo após gerar o link, quem o criou vê a contagem do tempo restante até a expiração.
+Coordenadores geram um **link de convite** e o enviam à pessoa. O link tem o cargo que a pessoa terá (ministeriado ou coordenador), é de uso único e vale 7 dias. Não há e-mail do convidado, e quem convida só escolhe o cargo. Logo após gerar o link, quem o criou vê a contagem do tempo restante até a expiração.
 
 1. A pessoa abre o link, informa nome completo, e-mail e senha e pede o código. O código de 6 dígitos chega ao e-mail; ela o digita e a conta é criada com o cargo do convite, já logada. O convite só é consumido nesse momento.
-2. Se o e-mail já tem conta, a API responde `409 CONTA_EXISTENTE` e o app orienta a fazer login e abrir o link de novo.
+2. Se o e-mail já tem conta, a resposta é a mesma de um pedido novo ("código enviado"), para não revelar quais e-mails estão cadastrados (RN71). No lugar do código, o dono da conta recebe um aviso de que alguém tentou usar o e-mail, com a orientação de entrar e abrir o link de novo, se foi ele.
 3. No primeiro login, a pessoa escolhe os instrumentos que toca (zero ou mais) e pode alterá-los depois.
 
-O **primeiro coordenador** não vem de convite, porque ainda não há quem convide: é criado em `/primeiro-acesso`, que só existe enquanto o sistema não tem nenhuma conta e exige o `SETUP_TOKEN` do ambiente (RN105). A pessoa informa o token, nome completo, e-mail (confirmado por código), senha e o nome do ministério, e aceita os termos. Não há conta nem senha padrão, e depois da criação a rota deixa de existir.
+O **primeiro coordenador** não vem de convite, porque ainda não há quem convide: é criado em `/primeiro-acesso`, que só existe enquanto o sistema não tem nenhuma conta e exige o `SETUP_TOKEN` do ambiente (RN106). A pessoa informa o token, nome completo, e-mail (confirmado por código), senha e o nome do ministério, e aceita os termos. Não há conta nem senha padrão, e depois da criação a rota deixa de existir.
 
 ## Identidade do ministério
 
 O app leva o **nome** e a **logo** do ministério. O nome aparece na tela de login, no título das páginas, no manifesto do PWA e nos e-mails; a logo, no login e no cabeçalho.
 
 - O valor inicial vem do ambiente (`NOME_MINISTERIO` e `LOGO_MINISTERIO_PATH`) e é gravado em `configuracoes_app` na primeira subida.
-- Depois, os coordenadores alteram o nome e enviam, trocam ou removem a logo em `/coordenacao`. Valem as regras de RN104, e o ambiente não sobrescreve o que foi salvo.
+- Depois, os coordenadores alteram o nome e enviam, trocam ou removem a logo em `/coordenacao`. Valem as regras de RN105, e o ambiente não sobrescreve o que foi salvo.
 - `GET /api/publico/ministerio` devolve o nome e o endereço da logo, sem sessão, para a tela de login.
 
 ## Convidados de evento
 
 Permite que alguém de fora do ministério participe de um evento.
 
-1. Um coordenador gera o **link de convite do evento**. Ele vale 30 minutos e é de uso único.
+1. Um coordenador gera o **link de convite do evento**. Ele vale 7 dias e é de uso único.
 2. A pessoa abre o link e cria a conta (ou, se já é convidada, entra e abre o link). Ela é registrada como convidada do evento, em `eventos_convidados`.
 3. A conta tem papel `CONVIDADO` e fica depois do evento. Pode ser convidada para outros eventos e, se virar ministeriada, passa ao papel de ministeriado.
 
 | O convidado | |
-| --- | --- |
+|---|---|
 | Vê | Tudo o que um membro vê: dashboard, biblioteca, listagens, busca, usuários, eventos, setlists, cifras e presença. |
 | Faz | Cuida da própria conta, escolhe seus instrumentos nas configurações de perfil, confirma a própria presença nos eventos a que foi convidado e ativa as notificações. |
 | Não faz | **Editar qualquer coisa**: músicas, cifras, tons, listas, eventos, artistas e instrumentos, marcar revisão e criar listas. |
@@ -61,7 +61,7 @@ Página inicial do app para **todos os usuários logados**, inclusive convidados
 ### Indicadores
 
 | Indicador | O que mostra |
-| --- | --- |
+|---|---|
 | **Músicos** | Contas ativas. |
 | **Músicas** | Todas as músicas cadastradas. |
 | **Para revisão** | Músicas marcadas para revisão. |
@@ -77,7 +77,7 @@ Os números em destaque aparecem como cartões, os músicos por instrumento como
 Cada tipo de item tem uma página de listagem, com **30 itens por página** e paginação. Os destaques do dashboard levam a essas listagens, já com a ordenação aplicada.
 
 | Página | Busca | Filtros e ordenação |
-| --- | --- | --- |
+|---|---|---|
 | **Músicas** (`/musicas`) | Título e artista | Colunas: título, artistas, tom original e última execução. Filtro por artista. Ordem A–Z ou Z–A. Ordem por **mais** ou **menos tocada**, com seletor de período. |
 | **Artistas** (`/artistas`) | Nome | Ordem A–Z ou Z–A. Ordem por **mais** ou **menos tocado**, com seletor de período. |
 | **Instrumentos** (`/instrumentos`) | — | Ordem A–Z ou Z–A. |
@@ -160,7 +160,7 @@ Um **evento** tem nome, data e hora, `slug` e a opção `requerir_presenca`. Coo
 Setlist e lista genérica compartilham a estrutura da **coleção**, diferenciada por `tipo`:
 
 | | SETLIST | LISTA |
-| --- | --- | --- |
+|---|---|---|
 | Vinculada a | um evento (`evento_id`) | um ou mais donos (`listas_donos`) |
 | Nome | o do evento | `nome` próprio |
 | Publicação | `publicado` | não se aplica |
@@ -176,9 +176,9 @@ Uma coleção pode ter **seções** opcionais (por exemplo "Animação" e "Adora
 
 1. A pessoa entra na música e edita o tom tocado e a cifra.
 2. Clica em **Salvar** e escolhe: **[Salvar na música]**, **[Salvar só neste setlist]** ou **[Cancelar]**.
-   + *Salvar na música*: a cifra editada passa a valer para a música, para todos.
-   + *Salvar só neste setlist*: a cifra editada vale só neste setlist/lista.
-   + O **tom tocado** fica sempre só no setlist ou na lista.
+   - *Salvar na música*: a cifra editada passa a valer para a música, para todos.
+   - *Salvar só neste setlist*: a cifra editada vale só neste setlist/lista.
+   - O **tom tocado** fica sempre só no setlist ou na lista.
 3. Se sair sem salvar, as mudanças são perdidas.
 
 ### Reordenar por arrastar e soltar
@@ -245,19 +245,19 @@ A pessoa desativa a própria conta em `/configuracoes/seguranca`, com confirmaç
 
 ### Apagar a própria conta
 
-A pessoa apaga a própria conta em `/configuracoes/seguranca`, com um aviso do que será perdido. A pessoa confirma com a senha e com **um** código: do app autenticador, de backup ou enviado por e-mail (RN103). O app confere os impedimentos antes de gastar o código: a única conta de coordenador não pode ser apagada. A exclusão é definitiva e segue RN83. Só a própria pessoa apaga a conta; coordenadores só desativam e reativam.
+A pessoa apaga a própria conta em `/configuracoes/seguranca`, com um aviso do que será perdido. A pessoa confirma com a senha e com **um** código: do app autenticador, de backup ou enviado por e-mail (RN104). O app confere os impedimentos antes de gastar o código: a única conta de coordenador não pode ser apagada. A exclusão é definitiva e segue RN83. Só a própria pessoa apaga a conta; coordenadores só desativam e reativam.
 
 ### Conta e segurança
 
-Em `/configuracoes/seguranca`, a pessoa vê, adiciona e remove os próprios e-mails, troca a senha, liga o segundo fator, gera os códigos de recuperação, desativa e apaga a própria conta. A recuperação de senha ("esqueci a senha") fica na tela de login.
+Em `/configuracoes/seguranca`, a pessoa vê e troca o e-mail principal, adiciona, troca ou remove o de recuperação, troca a senha, liga o segundo fator, gera os códigos de recuperação, desativa e apaga a própria conta. A recuperação de senha ("esqueci a senha") fica na tela de login.
 
 ### Segundo fator (app autenticador)
 
-Opcional para todos e obrigatório para coordenadores (RN102). A pessoa pode usar qualquer app autenticador (Google Authenticator, Authy, 1Password etc.).
+Opcional para todos e obrigatório para coordenadores (RN103). A pessoa pode usar qualquer app autenticador (Google Authenticator, Authy, 1Password etc.).
 
 1. **Ligar:** `/configuracoes/seguranca` mostra o QR code e o segredo para digitar. A pessoa informa a senha e o primeiro código do app. Só então o segundo fator vale, e o app mostra uma vez os 10 códigos de backup.
-2. **Entrar:** e-mail e senha, depois o código de 6 dígitos (RN106). Um código de backup serve no lugar do app, uma única vez.
-3. **Perdi o celular:** com um código de backup a pessoa entra e liga o app de novo. Sem eles, um coordenador redefine o segundo fator dela (RF74), e ela o liga outra vez.
+2. **Entrar:** e-mail e senha, depois o código de 6 dígitos (RN107). Um código de backup serve no lugar do app, uma única vez.
+3. **Perdi o celular:** com um código de backup a pessoa entra e liga o app de novo. Sem eles, um coordenador redefine o segundo fator dela (RF78), e ela o liga outra vez.
 4. **Desligar:** exige a senha e um código. Coordenadores não desligam.
 
 Os momentos em que cada comprovação entra:

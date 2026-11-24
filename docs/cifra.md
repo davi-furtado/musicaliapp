@@ -9,7 +9,7 @@ A cifra é guardada **em graus do campo harmônico**, no estilo do Nashville Num
 O grau toma o lugar da letra da nota, e o resto do acorde segue as regras de sufixo, alteração e baixo desta seção.
 
 | Em letras (padrão) | Em graus | Significado |
-| --- | --- | --- |
+|---|---|---|
 | `C` | `1` | Acorde maior sobre o primeiro grau. |
 | `Dm`, `Em`, `Am` | `2m`, `3m`, `6m` | Acordes menores. |
 | `Eb`, `Bb`, `F#` | `3b`, `7b`, `4#` | Graus alterados: o `b` ou o `#` vem depois do grau. |
@@ -40,8 +40,8 @@ A página `/ajuda/acordes` ensina o padrão de escrita para quem digita a cifra.
 
 1. **Como o app guarda a cifra:** em graus, e por que isso permite ver a música em qualquer tom.
 2. **A tabela do padrão**, com a escrita em letras, a escrita em graus e o significado, agrupada por tipo (maiores e menores, sétimas, suspensas, nona e extensões, alterações, diminutos, baixo).
-3. **As regras que mais confundem:** `9` é nona adicionada e a nona dominante é `7(9)`; `b` e `#` valem na raiz e no baixo; dentro dos parênteses o padrão é `+` e `-`, e `b` e `#` também são aceitos ao digitar, mas o app grava `+` e `-`; `7M` e não `maj7`.
-   + A página mostra uma tabela de equivalências: `C7(b9)` e `C7(-9)` viram `C7(9-)`; `C7(#5)` e `C7(+5)` viram `C7(5+)`.
+3. **As regras que mais confundem:** `9` é nona adicionada e a nona dominante é `7(9)`; `b` e `#` valem na raiz e no baixo, e a raiz com acidente tem prioridade (`Cb9` é Dó bemol com nona; para a nona bemol, escreva `C7(b9)`); dentro dos parênteses o padrão é `+` e `-`, e `b` e `#` também são aceitos ao digitar, mas o app grava `+` e `-`; a sétima maior é gravada como `7M`, e `maj7` e `M7` também são aceitos.
+   - A página mostra uma tabela de equivalências: `C7(b9)` e `C7(-9)` viram `C7(9-)`; `C7(#5)` e `C7(+5)` viram `C7(5+)`.
 4. **Um exemplo completo:** uma estrofe com acordes sobre a letra, escrita em graus e mostrada em letras.
 5. **Experimente:** um campo onde a pessoa digita um acorde e vê na hora se o app o reconhece, como ele é gravado (no padrão) e como aparece em um tom escolhido. Nada é gravado.
 6. **Variações aceitas:** a tabela de RN95, com a grafia digitada, a gravada e a exibida, e uma nota de que o app sempre grava e mostra no padrão, mesmo que a pessoa digite de outro jeito.
@@ -115,7 +115,7 @@ O texto original que você digitou não fica guardado. O que fica é o padrão e
 ##### Maiores e menores
 
 | Em letras (padrão) | Em graus (gravado) | Significado |
-| --- | --- | --- |
+|---|---|---|
 | `C` | `1` | Maior, sobre o primeiro grau. |
 | `Dm`, `Em`, `Am` | `2m`, `3m`, `6m` | Menor. |
 | `Eb`, `Bb`, `F#` | `3b`, `7b`, `4#` | Grau alterado: o `b` ou o `#` vem depois do grau. |
@@ -124,7 +124,7 @@ O texto original que você digitou não fica guardado. O que fica é o padrão e
 ##### Sétimas
 
 | Em letras (padrão) | Em graus (gravado) | Significado |
-| --- | --- | --- |
+|---|---|---|
 | `C7` | `17` | Dominante: maior com sétima menor. |
 | `C7M` | `17M` | Sétima maior. |
 | `Cm7` | `1m7` | Menor com sétima. |
@@ -132,7 +132,7 @@ O texto original que você digitou não fica guardado. O que fica é o padrão e
 ##### Sextas e nonas
 
 | Em letras (padrão) | Em graus (gravado) | Significado |
-| --- | --- | --- |
+|---|---|---|
 | `C6` | `16` | Sexta. |
 | `C6(9)` | `16(9)` | Sexta com nona. |
 | `C9` | `19` | Nona adicionada (`add9`), **sem sétima**. |
@@ -144,7 +144,7 @@ Atenção: no padrão do app, `C9` é nona adicionada. A nona dominante é sempr
 ##### Suspensas
 
 | Em letras (padrão) | Em graus (gravado) | Significado |
-| --- | --- | --- |
+|---|---|---|
 | `C2` | `12` | Suspensa de segunda (`sus2`). |
 | `C4` | `14` | Suspensa de quarta (`sus4`). |
 | `C7(4)` | `17(4)` | Suspensa de quarta com sétima. |
@@ -152,7 +152,7 @@ Atenção: no padrão do app, `C9` é nona adicionada. A nona dominante é sempr
 ##### Quarta adicionada
 
 | Em letras (padrão) | Em graus (gravado) | Significado |
-| --- | --- | --- |
+|---|---|---|
 | `C11` | `111` | Quarta adicionada (`add4`), **sem sétima**. |
 
 Atenção: aqui `C11` quer dizer quarta adicionada, não a undécima dominante. Se o acorde tiver sétima, use `C7(11)`.
@@ -160,7 +160,7 @@ Atenção: aqui `C11` quer dizer quarta adicionada, não a undécima dominante. 
 ##### Alterações (dentro dos parênteses)
 
 | Em letras (padrão) | Em graus (gravado) | Significado |
-| --- | --- | --- |
+|---|---|---|
 | `C7(9-)` | `17(9-)` | Nona bemol. |
 | `C7(9+)` | `17(9+)` | Nona sustenido. |
 | `C7(5+)` | `17(5+)` | Quinta aumentada. |
@@ -172,7 +172,7 @@ Dentro dos parênteses, o número vem **antes** do sinal, e o sinal é `+` (aume
 ##### Aumentado, diminuto e meio-diminuto
 
 | Em letras (padrão) | Em graus (gravado) | Significado |
-| --- | --- | --- |
+|---|---|---|
 | `C5+` | `15+` | Tríade aumentada. |
 | `Cm5-` | `1m5-` | Tríade diminuta. |
 | `Cº` | `1º` | Sétima diminuta (quatro notas). |
@@ -183,7 +183,7 @@ Para a tríade, escreva sempre `5+` ou `m5-`. Para a sétima diminuta, use `º`.
 ##### Baixo
 
 | Em letras (padrão) | Em graus (gravado) | Significado |
-| --- | --- | --- |
+|---|---|---|
 | `C/E` | `1/3` | Baixo na terça. |
 | `Am7/G` | `6m7/5` | Baixo no quinto grau, em tom de C. |
 | `Dm6/B` | `2m6/7` | Baixo no sétimo grau, em tom de C. |
@@ -198,7 +198,7 @@ Ao digitar, o app aceita estas variações e converte para o padrão. A coluna d
 ##### Alterações entre parênteses
 
 | Você digita | Gravado | Observação |
-| --- | --- | --- |
+|---|---|---|
 | `C7(b9)` | `C7(9-)` | `b` no lugar de `-`. |
 | `C7(-9)` | `C7(9-)` | Padrão. |
 | `C7(9b)` | `C7(9-)` | Sinal depois do número, como o padrão. |
@@ -209,7 +209,7 @@ Ao digitar, o app aceita estas variações e converte para o padrão. A coluna d
 ##### Sétimas, sus e add
 
 | Você digita | Gravado |
-| --- | --- |
+|---|---|
 | `Cmaj7`, `CM7`, `CΔ`, `C^7` | `C7M` |
 | `Cmaj9` | `C7M(9)` |
 | `Csus`, `Csus4` | `C4` |
@@ -221,7 +221,7 @@ Ao digitar, o app aceita estas variações e converte para o padrão. A coluna d
 ##### Menor, sétima diminuta e meio-diminuto
 
 | Você digita | Gravado |
-| --- | --- |
+|---|---|
 | `C-7`, `Cmin7` | `Cm7` |
 | `Cº`, `C°` | `Cº` |
 | `Cm7b5`, `Cø` | `Cm7(5-)` |
@@ -229,7 +229,7 @@ Ao digitar, o app aceita estas variações e converte para o padrão. A coluna d
 ##### Outros
 
 | Você digita | Gravado |
-| --- | --- |
+|---|---|
 | `C+` | `C5+` |
 | `C6/9`, `C69` | `C6(9)` |
 | `C13` | `C7(13)` |
@@ -239,7 +239,7 @@ Ao digitar, o app aceita estas variações e converte para o padrão. A coluna d
 Estas formas não são aceitas, porque não dizem se o acorde é tríade ou sétima. Use a forma da coluna da direita.
 
 | Não use | Use | Motivo |
-| --- | --- | --- |
+|---|---|---|
 | `Cdim`, `Cdim7` | `Cm5-` (tríade) ou `Cº` (sétima) | `dim` não diz qual dos dois é. |
 | `Caug` | `C5+` | `aug` não diz se é tríade. Use `5+`. |
 | `dim`, `dim7`, `aug` sozinhos | a forma com a raiz, como acima | Sem raiz, não há acorde. |
@@ -249,7 +249,7 @@ Estas formas não são aceitas, porque não dizem se o acorde é tríade ou sét
 Quem escreve em graus pode digitar em algarismos ou em romanos. Na configuração de visualização e no campo de escrita, o botão **Números** ou **Romanos** escolhe a forma. O que fica gravado é sempre em algarismos.
 
 | Em romanos (digitado ou mostrado) | Em algarismos (gravado) | Observação |
-| --- | --- | --- |
+|---|---|---|
 | `I` | `1` | Maiúsculo é maior. |
 | `ii`, `IIm` | `2m` | Minúsculo é menor. `m` também é aceito, mas a tela, em romanos, mostra só `ii`. |
 | `bVII`, `VIIb` | `7b` | `b` e `#` valem antes ou depois do numeral. |
@@ -309,7 +309,6 @@ Senhor, tu és fiel
 ```
 
 **O que o app faz com isso.**
-
 - Ao salvar, ele junta em `{xN}` as estrofes e os trechos iguais e seguidos.
 - Na tela completa e na exportação completa, mostra tudo expandido.
 - No modo Reduzido, mostra só os acordes de cada seção, com `(2x)` quando a linha se repete.
@@ -323,6 +322,10 @@ Senhor, tu és fiel
 
 **Por que `C9` não é nona dominante?** No padrão do app, `9` é nona adicionada. A nona dominante é `C7(9)`. Isso é o que a maioria dos músicos brasileiros escreve.
 
+**Como escrevo uma nona bemol?** Dentro dos parênteses: `C7(b9)` ou `C7(9-)`. `Cb9` é Dó bemol com nona, porque a raiz com acidente tem prioridade.
+
+**Posso usar uma cifra de outro site?** Sim. Copie o texto, cole no editor e escolha o tom da escrita: as letras são convertidas para graus, e o app avisa o que não reconhecer, para você corrigir na hora.
+
 **Por que `b` e `#` às vezes não funcionam?** Fora dos parênteses, `b` e `#` são acidentes da nota (`Bb`, `C#m7`). Dentro dos parênteses, eles viram alteração: `(b9)` é o mesmo que `(-9)`.
 
 **O app mostra o que eu digitei?** Não. Ele mostra o padrão, em letras, no tom que você escolher.
@@ -332,7 +335,6 @@ Senhor, tu és fiel
 #### Experimente
 
 Um campo onde você digita um acorde e vê:
-
 - se o app reconhece;
 - como fica gravado (em graus);
 - como aparece no tom que você escolher.

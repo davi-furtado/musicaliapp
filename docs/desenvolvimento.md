@@ -78,7 +78,7 @@
 │  │  ├─ senha.ts            # hash scrypt e conferência em tempo constante
 │  │  ├─ totp.ts             # segundo fator: TOTP (RFC 6238), criptografia do segredo, códigos de backup
 │  │  ├─ config.ts           # lê e valida o ambiente; em produção recusa configuração insegura (RNF21)
-│  │  ├─ marca.ts            # nome e logo do ministério: valor do ambiente na primeira subida, depois o do banco (RN104)
+│  │  ├─ marca.ts            # nome e logo do ministério: valor do ambiente na primeira subida, depois o do banco (RN105)
 │  │  ├─ busca.ts            # filtros de busca e ordenação (SQL parametrizado)
 │  │  ├─ cifra/              # padrão de escrita, tabela do tutorial, conversão de tom para graus e de graus para tom
 │  │  └─ ...                 # validadores Zod, slugs, etc.
@@ -155,7 +155,7 @@ docker compose up -d --build
 docker compose logs -f app
 ```
 
-O app abre em `http://localhost:3000`. Crie o primeiro coordenador em `/primeiro-acesso` (RN105).
+O app abre em `http://localhost:3000`. Crie o primeiro coordenador em `/primeiro-acesso` (RN106).
 
 **Variáveis específicas do contêiner**
 
@@ -180,11 +180,11 @@ O fluxo da seção anterior (`docker run` do Postgres e `npm run dev` no seu com
 
 ### Primeiro acesso
 
-Como o acesso é por convite, o primeiro coordenador é criado pelo próprio app, sem conta nem senha padrão (RN105):
+Como o acesso é por convite, o primeiro coordenador é criado pelo próprio app, sem conta nem senha padrão (RN106):
 
 1. Defina `SETUP_TOKEN` (32 caracteres ou mais) no `.env.local` e suba o app.
 2. Abra `/primeiro-acesso`, informe o token, seu nome completo, e-mail, senha e o nome do ministério (já preenchido com `NOME_MINISTERIO`), e aceite os termos. Sem `RESEND_API_KEY`, o código do e-mail aparece no terminal.
-3. Depois da criação, a rota responde `404` e o token não serve mais. Em produção, o app pede para ligar o segundo fator no primeiro login (RN102).
+3. Depois da criação, a rota responde `404` e o token não serve mais. Em produção, o app pede para ligar o segundo fator no primeiro login (RN103).
 
 Sem `SETUP_TOKEN`, a rota fica desligada e a conta pode ser criada direto no banco:
 
@@ -195,13 +195,13 @@ psql "postgresql://postgres:dev@localhost:5432/musicaliapp" -c \
      INSERT INTO usuarios (nome, slug, senha_hash, papel, termos_versao)
      VALUES ('Seu Nome Completo', 'seu-nome', '$HASH', 'COORDENADOR', '1.0')
      RETURNING id)
-   INSERT INTO emails_usuario (usuario_id, email) SELECT id, 'voce@exemplo.com' FROM u;"
+   INSERT INTO emails_usuario (usuario_id, email, tipo) SELECT id, 'voce@exemplo.com', 'PRINCIPAL' FROM u;"
 ```
 
 ### Comandos úteis
 
 | Comando | Para quê |
-| --- | --- |
+|---|---|
 | `npm run dev` | Servidor de desenvolvimento. |
 | `npm run typecheck` | `tsc --noEmit`: checa os tipos. |
 | `npm run lint` | ESLint e checagem do Prettier. |
@@ -214,22 +214,23 @@ psql "postgresql://postgres:dev@localhost:5432/musicaliapp" -c \
 ## Variáveis de ambiente
 
 | Variável | Para quê |
-| --- | --- |
+|---|---|
 | `DATABASE_URL` | Conexão do Prisma. Em produção, a string do pooler do Supabase. |
 | `DIRECT_URL` | Conexão direta, sem pooler, usada pelo `prisma db pull`, pelas migrações e pelo backup. No schema: `directUrl = env("DIRECT_URL")`. |
 | `APP_URL` | Endereço público do app. Serve para conferir o cabeçalho `Origin` das gravações e para montar links. Ex.: `https://musicaliapp.exemplo.com`. |
 | `JWT_SECRET` | Segredo para assinar o token de sessão. Longo e aleatório, com 32 caracteres ou mais. Em produção, o app não sobe com o valor do exemplo nem com um segredo curto (RNF21). |
 | `TOTP_ENCRYPTION_KEY` | Chave de 32 bytes em base64 que criptografa os segredos do app autenticador (AES-256-GCM). Obrigatória em produção. **Só no servidor.** Trocá-la invalida todos os segundos fatores ligados. |
-| `EXIGIR_TOTP_COORDENADOR` | `true` ou `false`: coordenadores precisam ligar o segundo fator (RN102). Padrão: `true` em produção e `false` em desenvolvimento. |
-| `SESSAO_MINUTOS` | Duração da sessão sem "Lembrar de mim" (RN107). Padrão: 480. |
+| `EXIGIR_TOTP_COORDENADOR` | `true` ou `false`: coordenadores precisam ligar o segundo fator (RN103). Padrão: `true` em produção e `false` em desenvolvimento. |
+| `SESSAO_MINUTOS` | Duração da sessão sem "Lembrar de mim" (RN108). Padrão: 480. |
 | `SESSAO_LEMBRAR_DIAS` | Duração do cookie com "Lembrar de mim", renovado a cada acesso. Padrão: 30. |
-| `SETUP_TOKEN` | Segredo que libera `/primeiro-acesso` enquanto não há contas (RN105). Opcional; depois do primeiro coordenador, pode ser removido. |
-| `NOME_MINISTERIO` | Nome inicial do ministério. Gravado na primeira subida; depois os coordenadores o alteram no app (RN104). |
+| `SETUP_TOKEN` | Segredo que libera `/primeiro-acesso` enquanto não há contas (RN106). Opcional; depois do primeiro coordenador, pode ser removido. |
+| `NOME_MINISTERIO` | Nome inicial do ministério. Gravado na primeira subida; depois os coordenadores o alteram no app (RN105). |
 | `LOGO_MINISTERIO_PATH` | Caminho de uma imagem PNG ou JPEG (até 512 KB) usada como logo inicial. Mesma regra de `NOME_MINISTERIO`. |
 | `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | Chave pública VAPID, enviada ao navegador. |
 | `VAPID_PRIVATE_KEY` | Chave privada VAPID. **Só no servidor.** |
 | `VAPID_SUBJECT` | `mailto:` de contato exigido pelo VAPID. |
 | `CRON_SECRET` | Segredo que o Vercel Cron envia à rota da rotina diária. |
+| `RATE_LIMIT_SECRET` | Segredo do HMAC que protege o IP e o e-mail guardados em `limites_tentativas`. Longo e aleatório, **só no servidor**. |
 | `RESEND_API_KEY` | Chave da API do Resend, para enviar os códigos. Sem ela, em desenvolvimento, o código é impresso no terminal. |
 | `EMAIL_FROM` | Remetente dos e-mails, em um domínio verificado no Resend (ex.: `musicaliapp <nao-responda@seudominio.com>`). |
 | `GOOGLE_CLIENT_ID` | Identificador do cliente OAuth no Google Cloud. |
@@ -250,7 +251,7 @@ psql "postgresql://postgres:dev@localhost:5432/musicaliapp" -c \
 ### Testes
 
 | Nível | Ferramenta | O que cobre |
-| --- | --- | --- |
+|---|---|---|
 | Unitário | Vitest | Conversão de graus e tons e gramática de acordes; quebra da cifra em pares; slugs (RN03, RN13, RN15); filtro de busca e escape; datas em `America/Sao_Paulo`; `autorizar` (papel × ação). |
 | Integração | Vitest, com PostgreSQL 16 real (Docker local e *service container* na CI; o `docker compose build` também roda na CI, para o `Dockerfile` não quebrar sem aviso) | Cada rota por papel (coordenador, ministeriado, convidado, conta desativada e sem sessão); `versao` e `409 CONFLITO_VERSAO`; histórico (gravar e restaurar); convite consumido uma só vez em requisições simultâneas; exclusão de conta (RN83); limite de tentativas; as regras do `DDL.sql`. |
 | Ponta a ponta | Playwright (Chromium, em tela de celular e de computador) | Convite, cadastro com código e login; montar o setlist, reordenar e escalar; confirmar presença; exportar PDF; abrir offline. |
@@ -279,11 +280,12 @@ O app segue o nível AA do WCAG 2.1: contraste suficiente, tudo operável pelo t
 ## Deploy
 
 - **Supabase:** crie o projeto na região de São Paulo e execute o `DDL.sql` no *SQL Editor* (as extensões `pg_trgm` e `unaccent` estão disponíveis).
-- **Vercel:** projeto único, com deploy automático a cada push no GitHub. Cadastre as variáveis acima em *Settings → Environment Variables*. O `vercel.json` agenda a rota `/api/cron/diario` uma vez por dia.
+- **Pausa do plano gratuito:** o Supabase pausa projetos gratuitos com pouca atividade em uma semana. A rotina diária do Vercel Cron faz pedidos ao banco, o que normalmente basta, mas não é garantia. Se o ministério passar a depender do app, use o plano Pro, que não pausa.
+- **Vercel:** projeto único, com deploy automático a cada push no GitHub. O plano Hobby é para uso não comercial, o caso de um ministério, mas confira os termos antes de publicar. Cadastre as variáveis acima em *Settings → Environment Variables*. O `vercel.json` agenda a rota `/api/cron/diario` uma vez por dia.
 - **Contêiner (alternativa):** o mesmo app roda em uma VPS com Docker Compose ou Coolify, com proxy HTTPS, rotina diária própria e banco do compose ou externo. Veja [Rodando em contêiner](#rodando-em-contêiner-opcional).
 - **Conexão serverless:** em `DATABASE_URL`, use a conexão do **pooler** do Supabase com `?pgbouncer=true`.
-- **Primeiro acesso:** cadastre `SETUP_TOKEN` no ambiente, abra `/primeiro-acesso` logo depois do primeiro deploy e crie o coordenador (RN105). Não deixe o sistema sem contas e sem o token à vista: quem o tiver pode criar o primeiro coordenador. Ligue o segundo fator em seguida.
-- **Termos e privacidade:** antes do deploy, escreva `/documentos/termos-de-uso` e `/documentos/politica-privacidade` e revise com um advogado. Sem o aceite, o cadastro não conclui (RN84).
+- **Primeiro acesso:** cadastre `SETUP_TOKEN` no ambiente, abra `/primeiro-acesso` logo depois do primeiro deploy e crie o coordenador (RN106). Não deixe o sistema sem contas e com o token à vista: quem o tiver pode criar o primeiro coordenador. Ligue o segundo fator em seguida.
+- **Termos e privacidade:** antes do deploy, escreva `/documentos/termos-de-uso` e `/documentos/politica-privacidade` e revise com um advogado. Os Termos devem dizer que o app é de uso interno do ministério e que as letras e as cifras pertencem aos autores. Sem o aceite, o cadastro não conclui (RN84).
 - **Google:** no Google Cloud, configure a tela de consentimento com os escopos `openid`, `email` e `profile` e publique o app, saindo do modo Teste. O modo Teste limita a 100 usuários e faz os tokens de atualização expirarem em 7 dias. Esses escopos não exigem verificação do Google.
 - **E-mail:** crie a conta no Resend, verifique o domínio de envio nos registros DNS e cadastre `RESEND_API_KEY` e `EMAIL_FROM`. O plano gratuito envia a qualquer destinatário, mas só a partir de um domínio verificado.
 - **Backup:** um workflow agendado do GitHub Actions (semanal) roda `pg_dump` com a conexão direta do Supabase (`DIRECT_URL`, não o pooler), cifra o arquivo (por exemplo, com `age`) e o guarda como artefato do workflow, com prazo de retenção definido. Teste a restauração em um banco vazio antes do uso real e depois de tempos em tempos: um backup que nunca foi restaurado não é garantia.

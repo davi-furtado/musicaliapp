@@ -3,7 +3,7 @@
 ## Stack técnica
 
 | Camada | Escolha |
-| --- | --- |
+|---|---|
 | Frontend e backend | **Next.js 15** (App Router) + **React 19**, tudo em **TypeScript** (`strict`) |
 | API | Route Handlers do Next (`src/app/api/**/route.ts`) |
 | Banco | **PostgreSQL padrão** (Supabase em produção, usado só como banco; Postgres em Docker em desenvolvimento; também em contêiner, se o app rodar fora da Vercel) |
@@ -26,8 +26,8 @@ Tudo num único projeto TypeScript (front e back), sem plataformas além de Verc
 ### Decisões de arquitetura
 
 | Decisão | Motivo |
-| --- | --- |
-| Autenticação própria (JWT em cookie `httpOnly`) | Atende a vários e-mails por conta, convites de 30 minutos e códigos de recuperação, que exigem fluxos próprios. O Supabase entra só como banco. |
+|---|---|
+| Autenticação própria (JWT em cookie `httpOnly`) | Atende convites de 7 dias e códigos de recuperação, que exigem fluxos próprios. O Supabase entra só como banco. |
 | Cifra guardada em graus | Uma única fonte serve qualquer tom. O tom original e o tocado são informações à parte. |
 | PDF gerado no código, com `pdf-lib` | Mantém o texto selecionável, com fontes embutidas, e roda na Vercel sem navegador. |
 | Busca com `pg_trgm` e `unaccent` | Os títulos são curtos e a busca é por trecho. Trigramas atendem sem depender de raízes de palavras. |
@@ -48,16 +48,16 @@ Tudo num único projeto TypeScript (front e back), sem plataformas além de Verc
 Os itens principais (usuários, instrumentos, artistas, músicas, eventos e coleções) têm `criado_em` e `atualizado_em`, e o banco mantém `atualizado_em` por trigger. Também têm data o histórico (`musica_versoes.criado_em`), `eventos.data_evento`, `convites_acesso.expira_em`, `codigos_email.expira_em` e `limites_tentativas.janela_fim`, todas com fuso (`TIMESTAMPTZ`). A parte 2 cria as extensões `pg_trgm` e `unaccent` e a função `busca_norm`, usadas na busca (veja [Busca e ordenação](api.md#busca-e-ordenação)).
 
 | Tabela | Propósito |
-| --- | --- |
+|---|---|
 | `usuarios` | Pessoas. `papel` (`COORDENADOR`, `MINISTERIADO` ou `CONVIDADO`), `ativo` (vazio para convidados), `slug`, hash da senha, `token_versao` (invalida as sessões antigas quando a senha muda) versão e data do aceite dos termos (`termos_versao`, `termos_aceitos_em`) e o segundo fator (`totp_segredo` criptografado, `totp_ativo`, `totp_ultimo_passo`). |
-| `preferencias_usuario` | A configuração de visualização e de exportação de cada pessoa (RN91): padrão da tela (cifra ou letra), seções na letra, tamanho da fonte, formato dos graus (números ou romanos), modo Reduzido ligado ou não e padrão do arquivo exportado. Uma linha por pessoa, guardada na conta. |
-| `emails_usuario` | Os e-mails de cada pessoa: de um a três por conta, únicos no sistema e em minúsculas. Só entram os confirmados por código. |
+| `preferencias_usuario` | A configuração de visualização e de exportação de cada pessoa (RN91): padrão da tela (cifra ou letra), seções na letra, tamanho da fonte, formato dos graus, modo Reduzido, tema, aviso de "Não vou" e padrão do arquivo exportado. Uma linha por pessoa, guardada na conta. |
+| `emails_usuario` | Os e-mails de cada pessoa: o principal (obrigatório) e o de recuperação (opcional), únicos no sistema e em minúsculas. Só entram os confirmados por código. `tipo` é `PRINCIPAL` ou `RECUPERACAO`. |
 | `contas_google` | O vínculo com uma conta Google, para o login com Google (um por conta). |
 | `fotos_perfil` | A foto de perfil de cada pessoa, em bytes (`BYTEA`), já redimensionada, com o tipo MIME. Uma por usuário, no máximo. |
-| `codigos_email` | Códigos de 6 dígitos enviados por e-mail, só o hash. `finalidade` é `CADASTRO` (antes da conta existir), `REDEFINICAO`, `TROCA_EMAIL` ou `EXCLUSAO_CONTA`. Tem expiração de 30 minutos e contador de `tentativas`; a linha é apagada ao usar o código. |
+| `codigos_email` | Códigos de 6 dígitos enviados por e-mail, só o hash. `finalidade` é `CADASTRO` (antes da conta existir), `REDEFINICAO`, `TROCA_EMAIL` ou `EXCLUSAO_CONTA`. Tem expiração de 15 minutos a partir do envio e contador de `tentativas`; a linha é apagada ao usar o código. |
 | `codigos_recuperacao` | Os 10 códigos de recuperação de cada pessoa, só o hash, e se cada um já foi usado. |
 | `codigos_backup_totp` | Os 10 códigos de backup do segundo fator de cada pessoa, só o hash, e se cada um já foi usado. |
-| `configuracoes_app` | Configurações editáveis em tempo de execução (chave e valor): nome e logo do ministério (RN104). |
+| `configuracoes_app` | Configurações editáveis em tempo de execução (chave e valor): nome e logo do ministério (RN105). |
 | `instrumentos` | Catálogo de instrumentos, com `nome` e `slug`. |
 | `usuarios_instrumentos` | Quais instrumentos cada pessoa toca. |
 | `artistas` | Compositores e intérpretes, com `nome` e `slug`, e página própria. |
@@ -68,7 +68,7 @@ Os itens principais (usuários, instrumentos, artistas, músicas, eventos e cole
 | `status_escuta` | Status pessoal por usuário × música. |
 | `eventos` | Missas, ensaios, retiros: nome, `slug`, data e hora, `requerir_presenca` e `cancelado`. |
 | `eventos_convidados` | Quais eventos cada convidado pode acessar. |
-| `convites_acesso` | Convites de uso único: token, cargo, quem criou, evento (só para convidados) e `expira_em` (30 minutos). A linha é apagada ao usar o convite. |
+| `convites_acesso` | Convites de uso único: token, cargo, quem criou, evento (só para convidados) e `expira_em` (7 dias). A linha é apagada ao usar o convite. |
 | `secao_musicos` | **A escala de cada seção**: quem toca cada seção do setlist. Sem usuário (vazio) em eventos passados quando a conta é apagada. |
 | `colecao_musicos` | **A escala do evento**: as pessoas escaladas para o evento inteiro. Sem usuário (vazio) em eventos passados quando a conta é apagada. |
 | `confirmacoes_presenca` | Presença por evento × usuário (vazio, vai ou não vai). Fica sem usuário (vazio) quando a conta é apagada. |
@@ -82,7 +82,7 @@ Os itens principais (usuários, instrumentos, artistas, músicas, eventos e cole
 | `limites_tentativas` | Contador do limite de tentativas (login, convites, códigos), no banco por causa da Vercel. |
 
 | View | Propósito |
-| --- | --- |
+|---|---|
 | `vw_execucoes` | Uma linha por música tocada em cada evento. Base das contagens. |
 | `vw_ultima_execucao` | Última vez que cada música foi tocada. |
 
@@ -134,15 +134,18 @@ Estão na parte 2 do `DDL.sql` e foram testadas tentando violá-las:
 - Convite de convidado exige evento; os outros convites não têm evento.
 - O `slug` só aceita minúsculas, números e hífens.
 - Nome de instrumento e de artista **únicos sem diferenciar maiúsculas nem acentos** (pela função `busca_norm`).
-- Cada e-mail existe uma única vez no sistema, em minúsculas e com formato mínimo. Cada conta tem de um a três e-mails.
-- A posição dos artistas de uma música é única, e a música tem pelo menos um. O conjunto de artistas e o título não se repetem, mas isso é validado pela API, não pelo banco.
+- Cada e-mail existe uma única vez no sistema, em minúsculas e com formato mínimo. Cada conta tem um e-mail principal e, no máximo, um de recuperação.
+- A posição dos artistas de uma música é única, e a música tem pelo menos um.
+- O título (sem diferenciar maiúsculas nem acentos) e o conjunto de artistas não se repetem. Um gatilho do banco confere isso no fim da transação (RN34).
+- Uma lista com donos não perde o último dono por exclusão direta (gatilho no banco, RN79). Apagar a conta de um dono remove o vínculo em cascata e deixa a lista sem donos, portanto pública (RN85).
 - Tom tocado e tom original no formato `D`, `F#m` ou `Bb`.
 - Nomes e títulos não vazios, e link do YouTube começando com `http://` ou `https://`.
 - Cada versão tem número único por música e título não vazio. Uma versão `MUSICA` não tem setlist; uma `TOM_TOCADO` tem setlist e não tem cifra. Tons válidos em todas. Data de criação e atualização são mantidas pelo banco.
-- A configuração aceita só `CIFRA` ou `LETRA` para visualização e exportação, só `PEQUENA`, `MEDIA` ou `GRANDE` para a fonte e só `NUMEROS` ou `ROMANOS` para o formato dos graus.
+- A configuração aceita só `CIFRA` ou `LETRA` para visualização e exportação, só `PEQUENA`, `MEDIA` ou `GRANDE` para a fonte, só `NUMEROS` ou `ROMANOS` para o formato dos graus e só `CLARO`, `ESCURO` ou `AUTOMATICO` para o tema.
+- A cifra tem no máximo 20.000 caracteres em `musicas`, `colecao_musicas` e `musica_versoes` (RN102).
 - Em `colecoes`: SETLIST exige evento e não tem nome; LISTA exige nome, não tem evento e não é publicada. Os donos de uma lista ficam em `listas_donos`; uma lista sem donos é pública.
 - Instrumento em uso e música usada em setlist ou lista não podem ser apagados (`RESTRICT`).
-- O convite expira 30 minutos depois de criado, por padrão do banco.
+- O convite expira 7 dias depois de criado, por padrão do banco.
 - A finalidade de `codigos_email` é `CADASTRO` (sem usuário), `REDEFINICAO`, `TROCA_EMAIL` ou `EXCLUSAO_CONTA` (com usuário).
 - `token_versao` começa em 1.
 
@@ -156,7 +159,7 @@ O banco não cobre estas:
 - O convidado só lê (exceto conta, instrumentos e presença) e só tem acesso enquanto está em ao menos um evento de `eventos_convidados`.
 - Uma lista é editada pelos donos e pelos editores (`listas_acessos`). Só os donos apagam a lista e gerenciam donos e acessos. Com **Edição pública** marcada, ou sem donos, todo membro ativo a edita; só coordenadores apagam uma lista sem donos (RN79). Só membros ativos e não convidados recebem qualquer papel nela. Todas as listas aparecem para todos os usuários logados (RN79).
 - Os e-mails de uma pessoa só são devolvidos para ela.
-- O login aceita qualquer e-mail confirmado da conta; os códigos de recuperação e de troca são enviados ao e-mail informado, que precisa ser confirmado.
+- O login aceita o e-mail principal ou o de recuperação, ambos confirmados; os códigos de redefinição e de troca vão ao endereço escolhido.
 - A gravação só é aceita se a `versao` enviada ainda for a atual.
 - Nomes reservados pelas rotas não são aceitos como `slug`.
 - Um código de e-mail ou de recuperação serve uma única vez. O código de e-mail é invalidado após o limite de tentativas.

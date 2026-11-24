@@ -16,10 +16,10 @@
 ### Páginas
 
 | Rota | Quem acessa | O que mostra |
-| --- | --- | --- |
+|---|---|---|
 | `/` | todos | Só redireciona (veja acima). |
 | `/auth/login` | sem sessão | Login, com "Lembrar de mim", o botão **Entrar com Google** e o link "esqueci a senha". Com o segundo fator ligado, abre a segunda etapa (código do app ou de backup). |
-| `/primeiro-acesso` | sem sessão, só se não há contas | Cria o primeiro coordenador com o `SETUP_TOKEN` (RN105). Com qualquer conta existente, responde `404`. |
+| `/primeiro-acesso` | sem sessão, só se não há contas | Cria o primeiro coordenador com o `SETUP_TOKEN` (RN106). Com qualquer conta existente, responde `404`. |
 | `/auth/esqueci-senha` | sem sessão | Pedido do código por e-mail (ou uso de um código de recuperação) e definição da senha nova. |
 | `/auth/convite/[token]` | sem sessão, ou convidado logado | Cadastro pelo convite (de ministério ou de evento): dados, código do e-mail e entrada logado. Abaixo do botão de cadastro, a frase "Ao se registrar você concorda com nossos termos e condições de uso", com links para os documentos. |
 | `/inicio` | todos logados | Dashboard. |
@@ -71,7 +71,7 @@ Toda página de música, artista, instrumento, usuário, lista e evento (e de m�
 As listagens guardam o estado na URL (a pessoa pode compartilhar o link e o botão voltar funciona). Ao mudar a busca ou um filtro, `pagina` volta a 1.
 
 | Parâmetro | Valores | Onde |
-| --- | --- | --- |
+|---|---|---|
 | `busca` | texto (até 100 caracteres) | músicas, artistas, usuários, listas e eventos |
 | `ordem` | `az` (padrão) ou `za` | todas |
 | `ordem` | `mais` ou `menos` | músicas e artistas |
@@ -100,12 +100,11 @@ Exemplos: `/musicas?ordem=mais&periodo=mes`, `/musicas?busca=coracao&artista=pad
 - Os erros devolvem `{ "erro": { "codigo": "VALIDACAO", "mensagem": "...", "campos": [{ "campo": "titulo", "mensagem": "..." }] } }`, com `campos` só nos erros de validação. A `mensagem` é em português e pode ser mostrada à pessoa. Nenhum erro revela detalhes internos (consulta, caminho de arquivo ou pilha de chamadas).
 
 | Status | `codigo` | Quando |
-| --- | --- | --- |
+|---|---|---|
 | 401 | `NAO_AUTENTICADO` | Sem sessão, ou com sessão inválida ou encerrada (`token_versao`). |
 | 403 | `PROIBIDO` | A pessoa vê o item, mas não pode fazer a ação (por exemplo, um convidado gravando). |
 | 404 | `NAO_ENCONTRADO` | O item não existe ou a pessoa não pode vê-lo (RN82). |
 | 409 | `CONFLITO_VERSAO` | A `versao` enviada não é mais a atual (RN38). |
-| 409 | `CONTA_EXISTENTE` | O e-mail do cadastro já tem conta. |
 | 409 | `DUPLICADO` | Outra unicidade violada: nome de artista ou instrumento, título com os mesmos artistas, e-mail em outra conta. |
 | 422 | `VALIDACAO` | O corpo ou os parâmetros não passam pelo schema Zod. |
 | 429 | `LIMITE_TENTATIVAS` | Passou do limite de tentativas (RNF15), com `Retry-After` em segundos. |
@@ -118,7 +117,7 @@ A API é usada só pelo front do próprio app, por isso as rotas não têm núme
 ### Onde há busca
 
 | Onde | O que a busca compara |
-| --- | --- |
+|---|---|
 | Listagem de **músicas** | Título e nome dos artistas. |
 | Listagem de **artistas**, **usuários**, **listas** e **eventos** | O nome. |
 | Listagem de **instrumentos** | A listagem não tem caixa de busca (RF49), mas os instrumentos aparecem na busca geral. |
@@ -134,7 +133,7 @@ A API é usada só pelo front do próprio app, por isso as rotas não têm núme
 4. **Entrada segura.** O termo é aparado nas pontas, limitado a 100 caracteres e enviado como parâmetro da consulta, nunca concatenado. Os caracteres `%`, `_` e `\` são escapados, para que valham como letras. Busca vazia significa sem filtro.
 5. **Ordem A–Z e Z–A.** Ordena por `busca_norm(nome)` e desempata pelo `id`. Assim a ordem ignora acentos e caixa ("Álvaro" fica entre "Alice" e "Bruno"), não depende do idioma configurado no banco e o desempate mantém as páginas estáveis. Em `mais` e `menos` tocadas, ordena pelas execuções e depois pelo nome (RN27).
 6. **Paginação.** `LIMIT 30 OFFSET (pagina - 1) * 30`, com o total para montar os números das páginas.
-7. **Música parecida.** Usa `similarity()` do `pg_trgm` entre os títulos normalizados, com limite de **0,4** (ajustável), mostrando as 5 mais parecidas em ordem decrescente. A pontuação não conta ("Segura na mão de Deus!" é igual a "Segura na mao de Deus"). É um aviso: quem bloqueia é só a duplicata exata de título e conjunto de artistas (RN34), validada pela API.
+7. **Música parecida.** Usa `similarity()` do `pg_trgm` entre os títulos normalizados, com limite de **0,4** (ajustável), mostrando as 5 mais parecidas em ordem decrescente. A pontuação não conta ("Segura na mão de Deus!" é igual a "Segura na mao de Deus"). É um aviso: quem bloqueia é só a duplicata exata de título e conjunto de artistas (RN34), validada pela API e garantida pelo banco.
 8. **No front.** A caixa de busca espera cerca de 300 ms sem digitação antes de consultar, cancela a consulta anterior se uma nova começa e grava o termo na URL (`?busca=`). O autocompletar de artista começa com 2 caracteres e mostra até 8 resultados.
 9. **Offline.** As listagens já abertas continuam disponíveis; uma busca nova precisa de conexão (RNF02).
 10. **Busca geral.** Usa as mesmas regras de normalização, palavras e escape. Com `tipo=todos`, a página roda uma consulta por tipo, em paralelo, e mostra cada tipo em um bloco com **até 5 resultados**, o total encontrado e o link "ver todos", que leva à listagem do tipo já com `busca=` aplicada. Em cada bloco, quem começa com o termo vem primeiro, depois a ordem A–Z. Os filtros de tipo mostram a contagem ("Músicas (12)"). Com um `tipo` específico, a página mostra a própria listagem daquele tipo (30 por página, com `ordem` e `pagina`), sem lógica duplicada. O termo precisa de pelo menos 2 caracteres. Usuários convidados só aparecem para quem a RN59 permite. O campo no topo do app abre `/busca?busca=termo` ao enviar.
@@ -165,7 +164,7 @@ A especificação é gerada a partir dos **schemas Zod** que já validam as requ
 ### Endpoints
 
 | Recurso | Endpoints |
-| --- | --- |
+|---|---|
 | Autenticação | `POST /api/auth/login` (com o segundo fator ligado, devolve `mfa_required` e o token temporário), `POST /api/auth/login/totp` (segunda etapa), `POST /api/auth/logout`, `GET /api/auth/me` (renova o cookie de "lembrar de mim"), `GET /api/auth/google` (inicia o login com Google), `GET /api/auth/google/callback` |
 | Saúde | `GET /api/saude` (público; `200` quando o app e o banco respondem, usado pelo `HEALTHCHECK` do contêiner) |
 | Primeiro acesso e ministério | `POST /api/primeiro-acesso/codigo` (envia o código ao e-mail), `POST /api/primeiro-acesso` (cria o primeiro coordenador; `404` se já há contas), `GET /api/publico/ministerio` (nome e logo, sem sessão), `GET, PUT /api/ministerio` (nome; coordenadores gravam), `GET /api/ministerio/logo` (público), `PUT, DELETE /api/ministerio/logo` (coordenadores) |
