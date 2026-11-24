@@ -14,6 +14,7 @@
 --  * Datas: criado_em e atualizado_em nos itens principais (usuários,
 --    instrumentos, artistas, músicas, eventos e coleções); atualizado_em é
 --    mantido por trigger. Também há eventos.data_evento,
+--    usuarios.termos_aceitos_em (aceite dos termos),
 --    musica_versoes.criado_em (autor e data de cada versão), convites_acesso.expira_em,
 --    codigos_email.expira_em e limites_tentativas.janela_fim.
 --    Todas são TIMESTAMPTZ (com fuso); a aplicação calcula dia, mês e ano
@@ -47,8 +48,9 @@
 -- Todo usuário logado acessa a documentação da API (Swagger). Coordenadores
 -- têm os poderes de coordenação, exceto apagar contas, ver e-mails e mudar nome,
 -- foto ou instrumentos de outras pessoas (regras da aplicação).
--- token_versao entra no JWT da sessão: trocar ou redefinir a senha o
--- incrementa e invalida as sessões anteriores.
+-- token_versao entra no JWT da sessão: trocar ou redefinir a senha, ou o reset
+-- do segundo fator por um coordenador, o incrementa e invalida as sessões
+-- anteriores. A senha é guardada como hash scrypt (RN73).
 CREATE TABLE usuarios (
     id           UUID         NOT NULL DEFAULT gen_random_uuid(),
     nome         TEXT         NOT NULL,                -- nome completo
@@ -57,8 +59,13 @@ CREATE TABLE usuarios (
     token_versao INTEGER      NOT NULL DEFAULT 1,
     papel        VARCHAR(20)  NOT NULL DEFAULT 'MINISTERIADO',
     ativo        BOOLEAN      DEFAULT TRUE,            -- NULL só para CONVIDADO
-    criado_em     TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,  -- data do cadastro, que é o aceite dos termos (RN84)
+    criado_em     TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
     atualizado_em TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    termos_versao     TEXT         NOT NULL,                -- versão dos Termos e da Política aceita no cadastro (RN84)
+    termos_aceitos_em TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    totp_segredo      TEXT,                                 -- segredo do app autenticador, criptografado (RN102)
+    totp_ativo        BOOLEAN      NOT NULL DEFAULT FALSE,  -- segundo fator ligado
+    totp_ultimo_passo BIGINT,                               -- último passo de 30 s aceito: um código vale uma vez
     CONSTRAINT pk_usuarios PRIMARY KEY (id),
     CONSTRAINT uq_usuarios_slug UNIQUE (slug)
 );
@@ -72,6 +79,8 @@ CREATE TABLE preferencias_usuario (
     visualizacao_padrao    VARCHAR(6)   NOT NULL DEFAULT 'CIFRA',   -- CIFRA | LETRA
     letra_com_secoes       BOOLEAN      NOT NULL DEFAULT FALSE,     -- só vale na letra
     fonte_cifra            VARCHAR(8)   NOT NULL DEFAULT 'MEDIA',   -- PEQUENA | MEDIA | GRANDE
+    formato_graus          VARCHAR(8)   NOT NULL DEFAULT 'NUMEROS', -- NUMEROS | ROMANOS (RN91)
+    reduzido_padrao        BOOLEAN      NOT NULL DEFAULT FALSE,     -- modo Reduzido começa ligado (RF69)
     exportacao_padrao      VARCHAR(6)   NOT NULL DEFAULT 'CIFRA',   -- CIFRA | LETRA
     exportacao_com_secoes  BOOLEAN      NOT NULL DEFAULT FALSE,     -- só vale na letra
     CONSTRAINT pk_preferencias_usuario PRIMARY KEY (usuario_id),
@@ -115,16 +124,18 @@ CREATE TABLE fotos_perfil (
 );
 
 -- Códigos de 6 dígitos enviados por e-mail. Só o hash é guardado.
--- CADASTRO: antes de a conta existir (usuario_id NULL).
+-- CADASTRO: antes de a conta existir (usuario_id NULL); vale também para o
+--   primeiro acesso do sistema (RN105).
 -- REDEFINICAO: "esqueci a senha".
 -- TROCA_EMAIL: a própria pessoa troca o e-mail (o código vai ao novo endereço).
+-- EXCLUSAO_CONTA: confirma a exclusão da própria conta (RN103).
 -- Valem 30 minutos e têm contador de tentativas. Servem uma única vez: a
 -- linha é apagada ao usar, e a rotina diária apaga as expiradas.
 CREATE TABLE codigos_email (
     id           UUID         NOT NULL DEFAULT gen_random_uuid(),
     usuario_id   UUID,
     email        TEXT         NOT NULL,
-    finalidade   VARCHAR(12)  NOT NULL,
+    finalidade   VARCHAR(16)  NOT NULL,
     codigo_hash  TEXT         NOT NULL,
     expira_em    TIMESTAMPTZ  NOT NULL DEFAULT (CURRENT_TIMESTAMP + INTERVAL '30 minutes'),
     tentativas   INTEGER      NOT NULL DEFAULT 0,
@@ -143,6 +154,28 @@ CREATE TABLE codigos_recuperacao (
     CONSTRAINT pk_codigos_recuperacao PRIMARY KEY (id),
     CONSTRAINT fk_codigos_rec_usuario FOREIGN KEY (usuario_id)
         REFERENCES usuarios (id) ON DELETE CASCADE
+);
+
+-- Códigos de backup do segundo fator (app autenticador): 10 por pessoa,
+-- mostrados uma vez, só o hash é guardado, cada um serve uma única vez (RN102).
+CREATE TABLE codigos_backup_totp (
+    id           UUID     NOT NULL DEFAULT gen_random_uuid(),
+    usuario_id   UUID     NOT NULL,
+    codigo_hash  TEXT     NOT NULL,
+    usado        BOOLEAN  NOT NULL DEFAULT FALSE,
+    CONSTRAINT pk_codigos_backup_totp PRIMARY KEY (id),
+    CONSTRAINT fk_cbt_usuario FOREIGN KEY (usuario_id)
+        REFERENCES usuarios (id) ON DELETE CASCADE
+);
+
+-- Configurações editáveis em tempo de execução (chave e valor). Hoje guarda a
+-- identidade do ministério: ministerio_nome, ministerio_logo (imagem em base64)
+-- e ministerio_logo_mime. Na primeira subida, o app grava NOME_MINISTERIO e
+-- LOGO_MINISTERIO_PATH do ambiente; depois vale o que os coordenadores salvarem (RN104).
+CREATE TABLE configuracoes_app (
+    chave  VARCHAR(60)  NOT NULL,
+    valor  TEXT         NOT NULL,
+    CONSTRAINT pk_configuracoes_app PRIMARY KEY (chave)
 );
 
 -- Catálogo de instrumentos. Cada instrumento tem uma tela própria
@@ -528,6 +561,8 @@ ALTER TABLE preferencias_usuario ADD CONSTRAINT ck_pref_exportacao
     CHECK (exportacao_padrao IN ('CIFRA', 'LETRA'));
 ALTER TABLE preferencias_usuario ADD CONSTRAINT ck_pref_fonte
     CHECK (fonte_cifra IN ('PEQUENA', 'MEDIA', 'GRANDE'));
+ALTER TABLE preferencias_usuario ADD CONSTRAINT ck_pref_formato_graus
+    CHECK (formato_graus IN ('NUMEROS', 'ROMANOS'));
 
 -- atualizado_em sempre é a data da última gravação.
 CREATE FUNCTION set_atualizado_em() RETURNS trigger LANGUAGE plpgsql AS $$
@@ -599,9 +634,14 @@ ALTER TABLE codigos_email ADD CONSTRAINT ck_codigos_email_formato
 ALTER TABLE codigos_email ADD CONSTRAINT ck_codigos_finalidade CHECK (
     (finalidade = 'CADASTRO' AND usuario_id IS NULL)
     OR
-    (finalidade IN ('REDEFINICAO', 'TROCA_EMAIL') AND usuario_id IS NOT NULL)
+    (finalidade IN ('REDEFINICAO', 'TROCA_EMAIL', 'EXCLUSAO_CONTA') AND usuario_id IS NOT NULL)
 );
 ALTER TABLE usuarios ADD CONSTRAINT ck_usuarios_token_versao CHECK (token_versao >= 1);
+-- Segundo fator ligado exige segredo; os termos têm versão preenchida.
+ALTER TABLE usuarios ADD CONSTRAINT ck_usuarios_totp CHECK (NOT totp_ativo OR totp_segredo IS NOT NULL);
+ALTER TABLE usuarios ADD CONSTRAINT ck_usuarios_termos_versao CHECK (length(trim(termos_versao)) > 0);
+ALTER TABLE configuracoes_app ADD CONSTRAINT ck_configuracoes_chave CHECK (chave ~ '^[a-z0-9_]+$');
+CREATE INDEX ix_cbt_usuario ON codigos_backup_totp (usuario_id);
 
 -- Slugs: minúsculas, números e hífens.
 ALTER TABLE usuarios ADD CONSTRAINT ck_usuarios_slug
