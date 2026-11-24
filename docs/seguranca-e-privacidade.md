@@ -22,7 +22,7 @@
 - **Contêiner:** a imagem roda com usuário sem privilégios, não leva `.env*` nem `.git` (`.dockerignore`) e não carrega segredos no build: as variáveis entram só na execução. A porta do banco do compose não é publicada fora da rede interna.
 - **CSRF:** toda gravação usa `POST`, `PUT`, `PATCH` ou `DELETE`, com cookie `sameSite=lax`, e a API confere se o cabeçalho `Origin` é o de `APP_URL`. As rotas `GET` não alteram dados.
 - **Login com Google:** `openid-client` com `state`, `nonce` e PKCE. O vínculo usa o `google_sub`, não o e-mail.
-- **Cabeçalhos HTTP:** `Content-Security-Policy` restritiva (`default-src 'self'`, scripts com *nonce* e `frame-ancestors 'none'`), `X-Content-Type-Options: nosniff`, `Strict-Transport-Security` e `Referrer-Policy`, configurados em `next.config.ts` e no middleware.
+- **Cabeçalhos HTTP:** `Content-Security-Policy` restritiva (`default-src 'self'`, scripts e estilos com *nonce*, sem `unsafe-inline` (o MUI injeta os estilos pelo Emotion, cujo cache recebe o mesmo `nonce`), e `frame-ancestors 'none'`), `X-Content-Type-Options: nosniff`, `Strict-Transport-Security` e `Referrer-Policy`, configurados em `next.config.ts` e no middleware.
 - **Entrada e saída:** corpo com tamanho máximo em cada rota (2 MB só na foto), consultas sempre parametrizadas, e cifra e letra tratadas como texto puro, nunca como HTML.
 - **Logs:** estruturados e sem dados pessoais. Não registram senha, código, token, e-mail nem IP puro; usam o id da pessoa e o `codigo` do erro (RNF20).
 - **Dependências:** versões travadas no `package-lock.json`, com Dependabot e `npm audit` na CI.
@@ -35,6 +35,7 @@ O app trata dados pessoais de membros de um ministério de igreja, e participar 
 | Dado | Para quê | Onde fica |
 |---|---|---|
 | Nome completo, e-mails (principal e de recuperação) e hash da senha | Identificar a pessoa e permitir o acesso | `usuarios`, `emails_usuario` |
+| Sexo | Mostrar o cargo no gênero da pessoa (RN111) | `usuarios.sexo` |
 | Foto (opcional) | Reconhecer os músicos nas escalas | `fotos_perfil` |
 | Instrumentos, escalas, presenças e status de escuta | Organizar os eventos | `usuarios_instrumentos`, `secao_musicos`, `colecao_musicos`, `confirmacoes_presenca`, `status_escuta` |
 | Identificador do Google (`google_sub`, opcional) | Login com Google | `contas_google` |
@@ -45,11 +46,13 @@ O app trata dados pessoais de membros de um ministério de igreja, e participar 
 | Versão e data do aceite dos termos | Registro do consentimento | `usuarios.termos_versao`, `usuarios.termos_aceitos_em` |
 
 - **Consentimento:** o cadastro só conclui com o aceite dos Termos de Uso e da Política de Privacidade (RN84).
-- **Minimização:** o app não pede CPF, telefone, endereço nem data de nascimento.
-- **Quem vê o quê:** os e-mails só aparecem para a própria pessoa, e coordenadores não os veem (RN77, RN81). Quem tem acesso total ao banco, por isso essa conta é restrita a quem é de confiança.
+- **Cookies:** só os essenciais (sessão, login com Google, tema, cache e downloads pelo botão Baixar), sem análise, publicidade nem terceiros, por isso sem aviso de recusa (RN109). A lista completa e os prazos estão na [Política de Cookies](legal/politica-de-cookies.md).
+- **Downloads no aparelho:** o que a pessoa baixa fica no IndexedDB do navegador, separado por conta, e é apagado ao sair da conta, em **Apagar todos os downloads** ou quando a sessão termina sem sair. Num aparelho compartilhado, a orientação na tela de downloads é sair da conta ao terminar (RN110).
+- **Minimização:** o app não pede CPF, telefone, endereço nem data de nascimento. O sexo só serve para mostrar o cargo no gênero da pessoa (RN111).
+- **Quem vê o quê:** os e-mails só aparecem para a própria pessoa, e coordenadores não os veem (RN77, RN81). Quem tem acesso total ao banco vê todos os dados, por isso esse acesso é restrito a pessoas de confiança.
 - **Eliminação:** a pessoa apaga a própria conta, e seus dados saem (RN83). O histórico de eventos e de cifras permanece sem identificá-la ("Pessoa removida").
 - **Retenção:** os dados duram enquanto a conta existir. Convites e códigos vencidos e os contadores de tentativas são apagados todo dia (RN72).
-- **Pedidos do titular:** corrigir nome, e-mails, foto e instrumentos e apagar a conta a própria pessoa faz no app. Os demais pedidos (como uma cópia dos dados) vão ao responsável indicado na Política de Privacidade.
+- **Pedidos do titular:** corrigir nome, sexo, e-mails, foto e instrumentos e apagar a conta a própria pessoa faz no app. Os demais pedidos (como uma cópia dos dados) vão ao responsável indicado na Política de Privacidade.
 - **Operadores:** Vercel (hospedagem), Supabase (banco), Resend (e-mail), Google (login opcional) e os serviços de push dos navegadores. Alguns processam dados fora do Brasil, e a Política informa essa transferência.
 - **Incidentes:** identificar e conter, avaliar o risco, trocar os segredos afetados e comunicar a ANPD e as pessoas atingidas nos casos e prazos da regulamentação vigente.
 - **Textos jurídicos:** os Termos de Uso e a Política de Privacidade precisam ser escritos e revisados por advogado antes do uso (veja [Deploy](desenvolvimento.md#deploy)).

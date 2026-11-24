@@ -28,6 +28,7 @@
 --    informativo; o tom tocado existe só em colecao_musicas (setlists e listas).
 --  * Valores de enum são VARCHAR validados na PARTE 2:
 --      papel:   COORDENADOR | MINISTERIADO | CONVIDADO
+--      sexo:    FEMININO | MASCULINO
 --      tipo:    SETLIST | LISTA
 --      status:  NAO_OUVI | OUVI | TOQUEI
 --  * slugs: minúsculas, números e hífens (ex.: "violao",
@@ -47,7 +48,7 @@
 -- ativo = false impede a pessoa de editar (feito pela aplicação).
 -- A documentação da API (Swagger) é pública, sem login. Coordenadores
 -- têm os poderes de coordenação, exceto apagar contas, ver e-mails e mudar nome,
--- foto ou instrumentos de outras pessoas (regras da aplicação).
+-- sexo, foto ou instrumentos de outras pessoas (regras da aplicação).
 -- token_versao entra no JWT da sessão: trocar ou redefinir a senha, ou o reset
 -- do segundo fator por um coordenador, o incrementa e invalida as sessões
 -- anteriores. A senha é guardada como hash scrypt (RN73).
@@ -56,6 +57,7 @@ CREATE TABLE usuarios (
     id           UUID         NOT NULL DEFAULT gen_random_uuid(),
     nome         TEXT         NOT NULL,                -- nome completo
     slug         TEXT         NOT NULL,                -- página própria
+    sexo         VARCHAR(10)  NOT NULL,                -- FEMININO | MASCULINO: cargo no gênero da pessoa (RN111)
     senha_hash   TEXT         NOT NULL,
     token_versao INTEGER      NOT NULL DEFAULT 1,
     papel        VARCHAR(20)  NOT NULL DEFAULT 'MINISTERIADO',
@@ -229,6 +231,7 @@ CREATE TABLE musicas (
     slug                  TEXT     NOT NULL,          -- artista-titulo, com o 1º artista
     cifra                 TEXT,                      -- em graus
     tom_original          TEXT,                      -- opcional, só informativo
+    compasso              TEXT,                      -- opcional, só informativo: 4/4, 3/4, 6/8... (RN112)
     link_youtube          TEXT,                      -- opcional
     marcada_para_revisao  BOOLEAN  NOT NULL DEFAULT FALSE,
     versao                INTEGER  NOT NULL DEFAULT 1,
@@ -472,6 +475,7 @@ CREATE TABLE musica_versoes (
     tipo           VARCHAR(12)  NOT NULL DEFAULT 'MUSICA',
     cifra          TEXT,
     tom_original   TEXT,
+    compasso       TEXT,
     colecao_id     UUID,
     tom_tocado     TEXT,
     usuario_id     UUID,
@@ -550,13 +554,15 @@ ALTER TABLE musica_versoes ADD CONSTRAINT ck_mv_tipo CHECK (
     AND (
         (tipo = 'MUSICA' AND colecao_id IS NULL AND tom_tocado IS NULL)
         OR
-        (tipo = 'TOM_TOCADO' AND colecao_id IS NOT NULL AND cifra IS NULL AND tom_original IS NULL)
+        (tipo = 'TOM_TOCADO' AND colecao_id IS NOT NULL AND cifra IS NULL AND tom_original IS NULL AND compasso IS NULL)
     )
 );
 ALTER TABLE musica_versoes ADD CONSTRAINT ck_mv_tom_tocado
     CHECK (tom_tocado IS NULL OR tom_tocado ~ '^[A-G][#b]?m?$');
 ALTER TABLE musica_versoes ADD CONSTRAINT ck_mv_tom_original
     CHECK (tom_original IS NULL OR tom_original ~ '^[A-G][#b]?m?$');
+ALTER TABLE musica_versoes ADD CONSTRAINT ck_mv_compasso
+    CHECK (compasso IS NULL OR compasso ~ '^(1[0-2]|[1-9])/(2|4|8|16)$');
 ALTER TABLE musica_versoes_artistas ADD CONSTRAINT ck_mva_posicao CHECK (posicao >= 1);
 CREATE INDEX ix_mv_usuario ON musica_versoes (usuario_id);
 CREATE INDEX ix_mv_colecao ON musica_versoes (colecao_id);
@@ -611,6 +617,34 @@ CREATE TRIGGER trg_musicas_atualizado BEFORE UPDATE ON musicas FOR EACH ROW EXEC
 CREATE TRIGGER trg_eventos_atualizado BEFORE UPDATE ON eventos FOR EACH ROW EXECUTE FUNCTION set_atualizado_em();
 CREATE TRIGGER trg_colecoes_atualizado BEFORE UPDATE ON colecoes FOR EACH ROW EXECUTE FUNCTION set_atualizado_em();
 
+-- Toda mudança em seções, itens e escala renova colecoes.atualizado_em: é por
+-- essa data que o app sabe que um setlist ou lista baixado mudou (RN110).
+CREATE FUNCTION fn_tocar_colecao() RETURNS trigger LANGUAGE plpgsql AS $$
+DECLARE
+    v_colecao UUID;
+BEGIN
+    IF TG_TABLE_NAME = 'secao_musicos' AND TG_OP = 'DELETE' THEN
+        SELECT colecao_id INTO v_colecao FROM secoes WHERE id = OLD.secao_id;
+    ELSIF TG_TABLE_NAME = 'secao_musicos' THEN
+        SELECT colecao_id INTO v_colecao FROM secoes WHERE id = NEW.secao_id;
+    ELSIF TG_OP = 'DELETE' THEN
+        v_colecao := OLD.colecao_id;
+    ELSE
+        v_colecao := NEW.colecao_id;
+    END IF;
+    UPDATE colecoes SET atualizado_em = CURRENT_TIMESTAMP WHERE id = v_colecao;
+    RETURN NULL;
+END;
+$$;
+CREATE TRIGGER trg_secoes_toca_colecao AFTER INSERT OR UPDATE OR DELETE ON secoes
+    FOR EACH ROW EXECUTE FUNCTION fn_tocar_colecao();
+CREATE TRIGGER trg_colecao_musicas_toca_colecao AFTER INSERT OR UPDATE OR DELETE ON colecao_musicas
+    FOR EACH ROW EXECUTE FUNCTION fn_tocar_colecao();
+CREATE TRIGGER trg_secao_musicos_toca_colecao AFTER INSERT OR UPDATE OR DELETE ON secao_musicos
+    FOR EACH ROW EXECUTE FUNCTION fn_tocar_colecao();
+CREATE TRIGGER trg_colecao_musicos_toca_colecao AFTER INSERT OR UPDATE OR DELETE ON colecao_musicos
+    FOR EACH ROW EXECUTE FUNCTION fn_tocar_colecao();
+
 -- Música repetida (RN34): mesmo título, sem diferenciar maiúsculas nem acentos,
 -- e mesmo conjunto de artistas. Conferida no fim da transação, porque os
 -- artistas são gravados depois da música.
@@ -649,7 +683,7 @@ CREATE CONSTRAINT TRIGGER trg_musica_artistas_duplicada
 
 -- Uma lista com donos não perde o último dono por exclusão direta (RN79).
 -- A exclusão em cascata (conta apagada ou lista apagada) é permitida: a lista
--- sem donos passa a ser pública (RN85). pg_trigger_depth() = 1 identifica a
+-- sem donos passa a ser pública (RN79, RN83). pg_trigger_depth() = 1 identifica a
 -- exclusão direta.
 CREATE FUNCTION fn_manter_um_dono() RETURNS trigger
     LANGUAGE plpgsql AS $$
@@ -670,6 +704,8 @@ CREATE TRIGGER trg_listas_donos_ultimo BEFORE DELETE ON listas_donos
 -- Valores permitidos (no lugar de enums).
 ALTER TABLE usuarios ADD CONSTRAINT ck_usuarios_papel
     CHECK (papel IN ('COORDENADOR', 'MINISTERIADO', 'CONVIDADO'));
+ALTER TABLE usuarios ADD CONSTRAINT ck_usuarios_sexo
+    CHECK (sexo IN ('FEMININO', 'MASCULINO'));
 ALTER TABLE convites_acesso ADD CONSTRAINT ck_convites_papel
     CHECK (papel IN ('COORDENADOR', 'MINISTERIADO', 'CONVIDADO'));
 ALTER TABLE status_escuta ADD CONSTRAINT ck_status_escuta
@@ -755,6 +791,9 @@ ALTER TABLE colecao_musicas ADD CONSTRAINT ck_cm_tom
     CHECK (tom IS NULL OR tom ~ '^[A-G][#b]?m?$');
 ALTER TABLE musicas ADD CONSTRAINT ck_musicas_tom_original
     CHECK (tom_original IS NULL OR tom_original ~ '^[A-G][#b]?m?$');
+-- Compasso: numerador de 1 a 12 e denominador 2, 4, 8 ou 16 (4/4, 3/4, 6/8, 12/8).
+ALTER TABLE musicas ADD CONSTRAINT ck_musicas_compasso
+    CHECK (compasso IS NULL OR compasso ~ '^(1[0-2]|[1-9])/(2|4|8|16)$');
 
 -- Contadores de versão começam em 1.
 ALTER TABLE musicas ADD CONSTRAINT ck_musicas_versao CHECK (versao >= 1);

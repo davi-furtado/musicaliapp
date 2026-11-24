@@ -28,9 +28,10 @@
 │  ├─ app/
 │  │  ├─ layout.tsx          # layout raiz (registra o service worker)
 │  │  ├─ page.tsx            # `/`: redireciona conforme a sessão
-│  │  ├─ documentos/         # públicos: Termos de Uso e Política de Privacidade
+│  │  ├─ documentos/         # públicos: Termos de Uso, Política de Privacidade e Política de Cookies
 │  │  │  ├─ termos-de-uso/
-│  │  │  └─ politica-privacidade/
+│  │  │  ├─ politica-privacidade/
+│  │  │  └─ politica-de-cookies/
 │  │  ├─ primeiro-acesso/    # cria o primeiro coordenador (só sem contas, com SETUP_TOKEN)
 │  │  ├─ auth/               # fora da área autenticada
 │  │  │  ├─ login/
@@ -61,12 +62,14 @@
 │  │  │  │  └─ [slug]/       # evento, setlist, escala e presença
 │  │  │  │     ├─ editar/
 │  │  │  │     └─ musicas/[musica]/
-│  │  │  ├─ configuracoes/   # visualização e exportação (padrões)
-│  │  │  │  ├─ conta/        # nome, foto e instrumentos
+│  │  │  ├─ configuracoes/   # visualização, exportação, notificações e downloads deste aparelho
+│  │  │  │  ├─ conta/        # nome, sexo, foto e instrumentos
 │  │  │  │  └─ seguranca/    # e-mails, senha, Google, códigos, desativação e exclusão
 │  │  │  └─ coordenacao/     # convites e gestão de contas
 │  │  └─ api/                # Route Handlers
 │  │     └─ docs/            # Swagger UI (público)
+│  ├─ tema/                  # tema do MUI (paleta, claro e escuro) e registro do Emotion com `nonce`
+│  ├─ content/legal/         # Termos de Uso, Política de Privacidade e Política de Cookies (Markdown)
 │  ├─ components/            # componentes React (ui, forms, setlist, cifra, dashboard)
 │  ├─ lib/
 │  │  ├─ db.ts               # cliente Prisma (singleton)
@@ -100,10 +103,11 @@ docker run --name musicaliapp-db -e POSTGRES_PASSWORD=dev -e POSTGRES_DB=musical
   -p 5432:5432 -d postgres:16
 
 # 2. Projeto Next com TypeScript e App Router
-npx create-next-app@15 musicaliapp && cd musicaliapp
+npx create-next-app@15 musicaliapp --ts --app --src-dir --eslint --no-tailwind --import-alias "@/*" && cd musicaliapp
 
 # 3. Dependências
 npm i prisma@6 @prisma/client@6 zod jose qrcode openid-client web-push resend \
+      @mui/material @mui/icons-material @mui/material-nextjs @emotion/react @emotion/styled @emotion/cache \
       sharp pdf-lib @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities \
       @asteasolutions/zod-to-openapi swagger-ui-react @serwist/next serwist
 npm i -D @types/qrcode @types/web-push @types/swagger-ui-react vitest @playwright/test prettier eslint
@@ -183,7 +187,7 @@ O fluxo da seção anterior (`docker run` do Postgres e `npm run dev` no seu com
 Como o acesso é por convite, o primeiro coordenador é criado pelo próprio app, sem conta nem senha padrão (RN106):
 
 1. Defina `SETUP_TOKEN` (32 caracteres ou mais) no `.env.local` e suba o app.
-2. Abra `/primeiro-acesso`, informe o token, seu nome completo, e-mail, senha e o nome do ministério (já preenchido com `NOME_MINISTERIO`), e aceite os termos. Sem `RESEND_API_KEY`, o código do e-mail aparece no terminal.
+2. Abra `/primeiro-acesso`, informe o token, seu nome completo, sexo, e-mail, senha e o nome do ministério (já preenchido com `NOME_MINISTERIO`), e aceite os termos. Sem `RESEND_API_KEY`, o código do e-mail aparece no terminal.
 3. Depois da criação, a rota responde `404` e o token não serve mais. Em produção, o app pede para ligar o segundo fator no primeiro login (RN103).
 
 Sem `SETUP_TOKEN`, a rota fica desligada e a conta pode ser criada direto no banco:
@@ -192,8 +196,8 @@ Sem `SETUP_TOKEN`, a rota fica desligada e a conta pode ser criada direto no ban
 HASH=$(node -e 'const c=require("crypto");const s=c.randomBytes(16);const h=c.scryptSync(process.argv[1],s,32,{N:16384,r:8,p:1});const b=x=>x.toString("base64url");console.log(["scrypt",16384,8,1,b(s),b(h)].join("$"))' 'SUA_SENHA')
 psql "postgresql://postgres:dev@localhost:5432/musicaliapp" -c \
   "WITH u AS (
-     INSERT INTO usuarios (nome, slug, senha_hash, papel, termos_versao)
-     VALUES ('Seu Nome Completo', 'seu-nome', '$HASH', 'COORDENADOR', '1.0')
+     INSERT INTO usuarios (nome, slug, sexo, senha_hash, papel, termos_versao)
+     VALUES ('Seu Nome Completo', 'seu-nome', 'FEMININO', '$HASH', 'COORDENADOR', '1.0')
      RETURNING id)
    INSERT INTO emails_usuario (usuario_id, email, tipo) SELECT id, 'voce@exemplo.com', 'PRINCIPAL' FROM u;"
 ```
@@ -254,7 +258,7 @@ psql "postgresql://postgres:dev@localhost:5432/musicaliapp" -c \
 |---|---|---|
 | Unitário | Vitest | Conversão de graus e tons e gramática de acordes; quebra da cifra em pares; slugs (RN03, RN13, RN15); filtro de busca e escape; datas em `America/Sao_Paulo`; `autorizar` (papel × ação). |
 | Integração | Vitest, com PostgreSQL 16 real (Docker local e *service container* na CI; o `docker compose build` também roda na CI, para o `Dockerfile` não quebrar sem aviso) | Cada rota por papel (coordenador, ministeriado, convidado, conta desativada e sem sessão); `versao` e `409 CONFLITO_VERSAO`; histórico (gravar e restaurar); convite consumido uma só vez em requisições simultâneas; exclusão de conta (RN83); limite de tentativas; as regras do `DDL.sql`. |
-| Ponta a ponta | Playwright (Chromium, em tela de celular e de computador) | Convite, cadastro com código e login; montar o setlist, reordenar e escalar; confirmar presença; exportar PDF; abrir offline. |
+| Ponta a ponta | Playwright (Chromium, em tela de celular e de computador) | Convite, cadastro com código e login; montar o setlist, reordenar e escalar; confirmar presença; exportar PDF; baixar um setlist, abri-lo sem conexão e apagar todos os downloads. |
 
 Os testes de integração usam um banco criado a partir do `DDL.sql`, o que também valida o próprio DDL. Neles, a camada de e-mail é trocada por um *stub* que guarda o código enviado.
 
@@ -265,7 +269,7 @@ Um requisito está pronto quando:
 1. a regra está implementada e tem teste;
 2. a autorização foi testada para cada papel;
 3. `typecheck`, `lint` e os testes passam na CI;
-4. a tela funciona no celular e pelo teclado;
+4. a tela funciona no celular (375 px) e no computador (1280 px), sem rolagem horizontal, e pelo teclado (RNF23);
 5. o `DDL.sql`, a migração e este README foram atualizados, quando mudaram;
 6. não há segredo, e-mail real nem dado pessoal no código, nos testes ou nos logs.
 
@@ -285,7 +289,7 @@ O app segue o nível AA do WCAG 2.1: contraste suficiente, tudo operável pelo t
 - **Contêiner (alternativa):** o mesmo app roda em uma VPS com Docker Compose ou Coolify, com proxy HTTPS, rotina diária própria e banco do compose ou externo. Veja [Rodando em contêiner](#rodando-em-contêiner-opcional).
 - **Conexão serverless:** em `DATABASE_URL`, use a conexão do **pooler** do Supabase com `?pgbouncer=true`.
 - **Primeiro acesso:** cadastre `SETUP_TOKEN` no ambiente, abra `/primeiro-acesso` logo depois do primeiro deploy e crie o coordenador (RN106). Não deixe o sistema sem contas e com o token à vista: quem o tiver pode criar o primeiro coordenador. Ligue o segundo fator em seguida.
-- **Termos e privacidade:** antes do deploy, escreva `/documentos/termos-de-uso` e `/documentos/politica-privacidade` e revise com um advogado. Os Termos devem dizer que o app é de uso interno do ministério e que as letras e as cifras pertencem aos autores. Sem o aceite, o cadastro não conclui (RN84).
+- **Termos e privacidade:** antes do deploy, escreva `/documentos/termos-de-uso` e `/documentos/politica-privacidade`, complete o rascunho da [Política de Cookies](legal/politica-de-cookies.md) e revise com um advogado. Os Termos devem dizer que o app é de uso interno do ministério e que as letras e as cifras pertencem aos autores. Sem o aceite, o cadastro não conclui (RN84).
 - **Google:** no Google Cloud, configure a tela de consentimento com os escopos `openid`, `email` e `profile` e publique o app, saindo do modo Teste. O modo Teste limita a 100 usuários e faz os tokens de atualização expirarem em 7 dias. Esses escopos não exigem verificação do Google.
 - **E-mail:** crie a conta no Resend, verifique o domínio de envio nos registros DNS e cadastre `RESEND_API_KEY` e `EMAIL_FROM`. O plano gratuito envia a qualquer destinatário, mas só a partir de um domínio verificado.
 - **Backup:** um workflow agendado do GitHub Actions (semanal) roda `pg_dump` com a conexão direta do Supabase (`DIRECT_URL`, não o pooler), cifra o arquivo (por exemplo, com `age`) e o guarda como artefato do workflow, com prazo de retenção definido. Teste a restauração em um banco vazio antes do uso real e depois de tempos em tempos: um backup que nunca foi restaurado não é garantia.

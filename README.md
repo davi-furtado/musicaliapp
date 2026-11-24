@@ -10,6 +10,8 @@ PWA para organizar a biblioteca de músicas, os eventos e os setlists de um mini
 | [docs/funcionalidades.md](docs/funcionalidades.md) | Papéis, convites, dashboard, músicas, eventos, setlists, escala, presença, push, PWA e exclusão de contas. |
 | [docs/cifra.md](docs/cifra.md) | Cifra em graus, padrão de escrita, tons e tutorial de acordes. |
 | [docs/arquitetura.md](docs/arquitetura.md) | Stack, decisões de arquitetura e modelo de dados. |
+| [docs/design.md](docs/design.md) | Paleta de cores, tema do Material UI, modo escuro e responsividade (celular e computador). |
+| [docs/legal/politica-de-cookies.md](docs/legal/politica-de-cookies.md) | Rascunho da Política de Cookies, a revisar com um advogado. |
 | [docs/api.md](docs/api.md) | Esquema de URLs, busca e ordenação, API e Swagger. |
 | [docs/desenvolvimento.md](docs/desenvolvimento.md) | Estrutura de pastas, execução local, variáveis de ambiente, testes e deploy. |
 | [docs/seguranca-e-privacidade.md](docs/seguranca-e-privacidade.md) | Segurança e LGPD. |
@@ -21,19 +23,19 @@ PWA para organizar a biblioteca de músicas, os eventos e os setlists de um mini
 - Mantém uma **biblioteca de músicas** com a cifra escrita em **graus do campo harmônico**, que o app mostra em qualquer tom.
 - Organiza **eventos** (missas, ensaios, retiros) e **setlists**, com seções, escala de músicos e tom tocado em cada evento.
 - Mostra um **dashboard** com os números do ministério, os próximos eventos e os mais e menos tocados de músicas e artistas, visível a todos os membros.
-- Permite **convidar pessoas de fora** para participarem de um evento. Elas veem tudo no app, mas não editam nada.
+- Permite **convidar pessoas de fora** para participarem de um evento. Elas veem tudo no app e só editam a escala dos eventos a que foram convidadas (RN55).
 - Atualiza os dados quando o app é aberto ou a página é recarregada.
-- Funciona offline **somente para leitura**, com cache do que já foi carregado.
+- Funciona offline **somente para leitura**, com o que a pessoa baixou pelo botão **Baixar** (RN110).
 - Avisa por notificação push quando um setlist é **publicado** e lembra de confirmar presença na véspera.
 - Cada usuário, artista, instrumento, evento, música e lista tem uma página própria, acessada por um `slug` amigável, com um botão **Compartilhar**.
-- Cada conta tem de um a três e-mails, confirmados por código. A pessoa pode também entrar com Google e apagar a própria conta. A senha pode ser recuperada por código enviado ao e-mail ou por códigos de recuperação guardados pela própria pessoa.
+- Cada conta tem um e-mail principal e, se a pessoa quiser, um de recuperação, confirmados por código. A pessoa pode também entrar com Google e apagar a própria conta. A senha pode ser recuperada por código enviado ao e-mail ou por códigos de recuperação guardados pela própria pessoa.
 
 
 Os requisitos têm identificadores estáveis: **RF** (funcional), **RNF** (não funcional) e **RN** (regra de negócio). Tudo no app está em português do Brasil.
 
 ## Stack
 
-Next.js 15 (App Router) + React 19 + TypeScript, PostgreSQL (Supabase em produção) com Prisma 6, autenticação própria com JWT, Vitest e Playwright, deploy na Vercel. Detalhes em [docs/arquitetura.md](docs/arquitetura.md).
+Next.js 15 (App Router) + React 19 + TypeScript, Material UI (sem Tailwind), PostgreSQL (Supabase em produção) com Prisma 6, autenticação própria com JWT, Vitest e Playwright, deploy na Vercel. Detalhes em [docs/arquitetura.md](docs/arquitetura.md).
 
 ## Rodando localmente
 
@@ -56,6 +58,7 @@ O app também roda em **contêiner** (`docker compose up -d --build`), sem a Ver
 | Grau | O acorde pela posição no campo harmônico (`1`, `4`, `5`, `6m`…). Não depende do tom. |
 | Tom original | O tom em que a música costuma ser tocada ou foi escrita. Opcional e só informativo. |
 | Tom tocado | O tom escolhido para uma música em um setlist ou lista. Vale só ali. |
+| Compasso | A fórmula de compasso da música (`4/4`, `3/4`, `6/8`…). Opcional e informativa (RN112). |
 | Evento | Missa, ensaio ou retiro, com data e hora. |
 | Setlist | O repertório de um evento, no máximo um por evento. |
 | Lista | Um repertório avulso, sem evento, com um ou mais donos. Com **Edição pública**, todo membro ativo a edita. |
@@ -63,8 +66,9 @@ O app também roda em **contêiner** (`docker compose up -d --build`), sem a Ver
 | Seção | Agrupamento dentro de uma coleção ("Animação", "Adoração"). |
 | Marcador de seção | A linha `[Refrão]` ou `[Verso 1]` dentro da cifra. Não é a seção da coleção. |
 | Execução | Uma música tocada no setlist publicado de um evento que já aconteceu (RN24). |
-| Ministeriado e coordenador | Cargos de membro. O coordenador convida e gerencia eventos e contas (RN05). |
-| Convidado | Pessoa de fora, convidada para eventos. Vê tudo e não edita (RN55). |
+| Ministeriado e coordenador | Cargos de membro. O coordenador convida e gerencia eventos e contas (RN05). Cada pessoa vê o cargo no próprio gênero: ministeriada, coordenadora (RN111). |
+| Download | Música, setlist ou lista guardada no aparelho pelo botão **Baixar**, para ler sem internet (RN110). Não é a exportação em PDF. |
+| Convidado | Pessoa de fora, convidada para eventos. Vê tudo e só edita a escala dos seus eventos (RN55). |
 | Slug | Parte legível da URL (`/musicas/<slug>`). Acompanha o nome (RN13). |
 | Versão do histórico | Um ponto do histórico da música, com título, autor e data (RN90). |
 | `versao` (contador) | Número que detecta edições simultâneas (RN38). Não é o histórico. |

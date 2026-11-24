@@ -4,9 +4,11 @@
 
 | Papel | O que pode |
 |---|---|
-| **Coordenador** | Convida pessoas (inclusive convidados de evento), altera o cargo de qualquer usuário, cria e cancela eventos, desativa e reativa contas. Não apaga contas, não vê e-mails e não altera nome, foto ou instrumentos de outras pessoas (RN05). |
+| **Coordenador** | Convida pessoas (inclusive convidados de evento), altera o cargo de qualquer usuário, cria e cancela eventos, desativa e reativa contas. Não apaga contas, não vê e-mails e não altera nome, sexo, foto ou instrumentos de outras pessoas (RN05). |
 | **Ministeriado** | Usa o app como músico, dentro das permissões de qualquer membro ativo (abaixo). |
-| **Convidado** | Vê tudo o que um membro vê, mas não edita nada (veja [Convidados de evento](#convidados-de-evento)). |
+| **Convidado** | Vê tudo o que um membro vê, mas só edita a escala dos eventos a que foi convidado (veja [Convidados de evento](#convidados-de-evento)). |
+
+O cargo de cada pessoa aparece no gênero dela (Coordenadora, Ministeriada, Convidada), conforme o sexo informado no cadastro (RN111). Esta documentação usa o masculino genérico para falar do cargo em geral.
 
 **Qualquer membro ativo** pode:
 
@@ -15,7 +17,7 @@
 - publicar setlists de eventos;
 - criar listas, editar as que são suas ou que foram compartilhadas com elas, e compartilhá-las;
 - criar e editar instrumentos, e cadastrar e renomear artistas;
-- alterar nome, e-mails, senha, foto e os instrumentos que toca, e apagar a própria conta;
+- alterar nome, sexo, e-mails, senha, foto e os instrumentos que toca, e apagar a própria conta;
 - marcar seu status de escuta e confirmar presença.
 
 **Qualquer usuário logado**, ativo, desativado ou convidado, vê o dashboard e os dados do app. Os membros, ativos ou não, confirmam presença; o convidado confirma nos eventos a que foi convidado.
@@ -24,18 +26,19 @@
 
 Coordenadores geram um **link de convite** e o enviam à pessoa. O link tem o cargo que a pessoa terá (ministeriado ou coordenador), é de uso único e vale 7 dias. Não há e-mail do convidado, e quem convida só escolhe o cargo. Logo após gerar o link, quem o criou vê a contagem do tempo restante até a expiração.
 
-1. A pessoa abre o link, informa nome completo, e-mail e senha e pede o código. O código de 6 dígitos chega ao e-mail; ela o digita e a conta é criada com o cargo do convite, já logada. O convite só é consumido nesse momento.
+1. A pessoa abre o link, informa nome completo, sexo, e-mail e senha e pede o código. O código de 6 dígitos chega ao e-mail; ela o digita e a conta é criada com o cargo do convite, já logada. O convite só é consumido nesse momento.
 2. Se o e-mail já tem conta, a resposta é a mesma de um pedido novo ("código enviado"), para não revelar quais e-mails estão cadastrados (RN71). No lugar do código, o dono da conta recebe um aviso de que alguém tentou usar o e-mail, com a orientação de entrar e abrir o link de novo, se foi ele.
 3. No primeiro login, a pessoa escolhe os instrumentos que toca (zero ou mais) e pode alterá-los depois.
 
-O **primeiro coordenador** não vem de convite, porque ainda não há quem convide: é criado em `/primeiro-acesso`, que só existe enquanto o sistema não tem nenhuma conta e exige o `SETUP_TOKEN` do ambiente (RN106). A pessoa informa o token, nome completo, e-mail (confirmado por código), senha e o nome do ministério, e aceita os termos. Não há conta nem senha padrão, e depois da criação a rota deixa de existir.
+O **primeiro coordenador** não vem de convite, porque ainda não há quem convide: é criado em `/primeiro-acesso`, que só existe enquanto o sistema não tem nenhuma conta e exige o `SETUP_TOKEN` do ambiente (RN106). A pessoa informa o token, nome completo, sexo, e-mail (confirmado por código), senha e o nome do ministério, e aceita os termos. Não há conta nem senha padrão, e depois da criação a rota deixa de existir.
 
 ## Identidade do ministério
 
-O app leva o **nome** e a **logo** do ministério. O nome aparece na tela de login, no título das páginas, no manifesto do PWA e nos e-mails; a logo, no login e no cabeçalho.
+O app leva o **nome** e a **logo** do ministério. O nome aparece na tela de login, no título das páginas, no manifesto do PWA e nos e-mails; a logo, no login, no topo do app, nos e-mails e nos ícones do PWA (192 e 512 px, gerados pelo servidor a partir da imagem enviada).
 
 - O valor inicial vem do ambiente (`NOME_MINISTERIO` e `LOGO_MINISTERIO_PATH`) e é gravado em `configuracoes_app` na primeira subida.
 - Depois, os coordenadores alteram o nome e enviam, trocam ou removem a logo em `/coordenacao`. Valem as regras de RN105, e o ambiente não sobrescreve o que foi salvo.
+- A logo aceita PNG ou JPEG de até 512 KB. O servidor valida e regrava a imagem (como faz com as fotos de perfil), e ela aparece no tamanho certo em cada tela: até 40 px de altura no celular e 56 px no computador (veja [Design](design.md#responsividade)).
 - `GET /api/publico/ministerio` devolve o nome e o endereço da logo, sem sessão, para a tela de login.
 
 ## Convidados de evento
@@ -107,7 +110,7 @@ ORDER BY execucoes DESC, busca_norm(m.titulo), m.id;   -- execucoes ASC para as 
 
 Para mês, ano ou um mês ou ano específico, `:inicio` e `:fim` são o primeiro dia do período e o primeiro dia do período seguinte. No período **geral** o filtro de datas é omitido. A API faz essas consultas direto nas tabelas, sem views de ranking. A contagem de artistas segue a mesma ideia, juntando `artistas`, `musica_artistas` e `vw_execucoes`.
 
-O dashboard é servido por `GET /api/dashboard`, e cada listagem pela própria rota do seu tipo (veja a tabela de endpoints). Como o resto do app, o dashboard pode ser consultado offline com os últimos dados carregados. Os números saem de consultas do Prisma (contagens e próximos eventos) e as execuções, de `$queryRaw`; só `vw_execucoes` e `vw_ultima_execucao` existem como views.
+O dashboard é servido por `GET /api/dashboard`, e cada listagem pela própria rota do seu tipo (veja a tabela de endpoints). O dashboard precisa de conexão: sem internet, o início mostra os downloads da pessoa. Os números saem de consultas do Prisma (contagens e próximos eventos) e as execuções, de `$queryRaw`; só `vw_execucoes` e `vw_ultima_execucao` existem como views.
 
 ## Músicas
 
@@ -118,6 +121,8 @@ Há uma única biblioteca de músicas, sem divisão por períodos. A ordem de gr
 Uma música tem **título**, **um ou mais artistas** (o primeiro, pela ordem, dá o slug), **cifra** (em graus), **tom original** (opcional, só informativo), **link do YouTube** (opcional) e a marca de revisão. **Não tem músicos**: estes existem apenas nos setlists. O tom tocado é definido apenas nos setlists e listas. A música não guarda arquivos de áudio.
 
 ### Cadastro
+
+O **compasso** é opcional: o campo oferece 4/4, 3/4, 2/4, 6/8 e 12/8 e aceita outro valor no formato `N/D` (RN112). Ele aparece na tela da cifra ao lado do tom original.
 
 O botão **"+"** abre o formulário de nova música. Ao digitar o título, o app avisa se já existe uma música parecida ("Já existe 'Segura na Mão de Deus'. Usar essa?"). A API não aceita duas músicas com o mesmo título e o mesmo conjunto de artistas.
 
@@ -228,10 +233,23 @@ Gere as chaves com `npx web-push generate-vapid-keys`.
 ## PWA e uso offline
 
 - `manifest.json` e Service Worker registrados no layout raiz.
-- **Offline é somente leitura**: o app mostra o que foi carregado (dashboard, músicas, cifras, eventos e setlists), e edições exigem conexão. Não há fila de sincronização.
+- **Offline é somente leitura**: edições exigem conexão. Não há fila de sincronização.
 - Atualização dos dados ao abrir o app ou recarregar a página.
-- O cache é feito pelo service worker (por exemplo com Serwist): as páginas e as respostas `GET` da API já visitadas ficam guardadas e são atualizadas ao abrir o app (*stale-while-revalidate*). Não há banco de dados local.
+- O service worker (por exemplo com Serwist) guarda só os arquivos do app (telas, scripts, ícones e a logo do ministério), para ele abrir sem internet, e os atualiza a cada versão. Respostas da API não ficam nesse cache: os dados sem internet vêm só dos downloads.
+- O que precisa estar disponível sem internet é **baixado pelo botão Baixar** (abaixo).
 - A leitura offline inclui a cifra, o tamanho da fonte e a rolagem automática, que não dependem de rede.
+
+### Downloads
+
+Para levar músicas, setlists e listas para um lugar sem internet, a pessoa aperta **Baixar** (RF74, RN110).
+
+1. **Onde fica o botão:** no topo da página de uma música, de um evento (o setlist) e de uma lista, ao lado de **Compartilhar** e **Exportar**. No celular, ele aparece como ícone de download com o rótulo **Baixar**. **Exportar** gera um arquivo Markdown ou PDF (RF59); **Baixar** guarda o item no app para ler offline.
+2. **Estados:** **Baixar** → **Baixando** (com progresso, no setlist e na lista) → **Baixado** (com a data). O estado **Atualizar** aparece quando o item mudou e a atualização automática não conseguiu terminar (por exemplo, por falta de espaço ou de conexão); apertá-lo tenta de novo. Um menu no botão **Baixado** tem **Remover download**.
+3. **O que vai junto:** no setlist e na lista, todas as músicas, com as cifras locais, os tons tocados, as seções e a escala. Baixar um setlist não marca as músicas dele como baixadas uma a uma: elas ficam disponíveis dentro do setlist e, sem conexão, também aparecem na listagem de músicas.
+4. **Atualização:** ao abrir o app com internet, ele confere os downloads (`POST /api/downloads/verificar`) e atualiza o que mudou, sem a pessoa precisar apertar nada. O que foi apagado ou deixou de estar acessível sai do aparelho.
+5. **Sem internet:** uma faixa no topo avisa "Sem conexão: mostrando os seus downloads". As listagens mostram só o que está baixado, com o selo **Baixado**, e as páginas não baixadas mostram um aviso no lugar do conteúdo.
+6. **Gerenciar:** em `/configuracoes`, a parte **Downloads** lista tudo o que está baixado neste aparelho, com o espaço usado, e tem **Remover** em cada item e **Apagar todos os downloads**, com confirmação (RF81).
+7. **Privacidade:** os downloads são do aparelho e da conta. Sair da conta apaga todos, e o app também os apaga quando a sessão termina sem sair (RN110).
 
 ## Desativação e exclusão de contas
 
