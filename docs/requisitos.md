@@ -144,7 +144,7 @@
 | RN09 | O campo de nome guarda o **nome completo**. |
 | RN10 | Convidado não tem o campo `ativo` e não pode ser desativado. Seu acesso ao app dura enquanto ele estiver em ao menos um evento; ao ser removido de todos, perde o acesso. |
 | RN11 | Um convidado vira ministeriado por um convite de ministeriado aceito com a conta logada, ou por atribuição de um coordenador. |
-| RN111 | **Cargo no gênero da pessoa.** `usuarios.sexo` é `FEMININO` ou `MASCULINO`, obrigatório, informado no cadastro e alterado só pela própria pessoa (RN77). Onde o cargo de uma pessoa aparece (perfil, listagem de usuários, escalas, presença, coordenação e e-mails), ele sai no gênero dela: `COORDENADOR` é Coordenador ou Coordenadora, `MINISTERIADO` é Ministeriado ou Ministeriada, `CONVIDADO` é Convidado ou Convidada. Onde o texto fala do cargo em geral, e não de uma pessoa (menus, filtros, a escolha do cargo no convite), o app usa a forma "Coordenador(a)", "Ministeriado(a)" e "Convidado(a)". O sexo não tem outro uso no app. |
+| RN111 | **Cargo no gênero da pessoa.** `usuarios.sexo` é `FEMININO` ou `MASCULINO`, obrigatório, informado no cadastro e alterado só pela própria pessoa (RN77). Onde o cargo de uma pessoa aparece (perfil, listagem de usuários, escalas, presença, coordenação e e-mails), ele sai no gênero dela: `COORDENADOR` é Coordenador ou Coordenadora, `MINISTERIADO` é Ministeriado ou Ministeriada, `CONVIDADO` é Convidado ou Convidada. Nos filtros, o cargo aparece no masculino (Coordenador, Ministeriado, Convidado). Nos outros textos que falam do cargo em geral, e não de uma pessoa (menus e a escolha do cargo no convite), o app usa a forma "Coordenador(a)", "Ministeriado(a)" e "Convidado(a)". O sexo não tem outro uso no app. |
 
 ### Slugs
 
