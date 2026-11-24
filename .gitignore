@@ -1,6 +1,9 @@
 # Configurações do VS Code
 .vscode/
 
+# Configurações locais do Claude Code (skills, agentes e hooks)
+.claude/
+
 # Dependências do Node
 node_modules/
 npm-debug.log*
