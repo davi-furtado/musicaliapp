@@ -31,3 +31,6 @@ test-results/
 # Sistema operacional
 .DS_Store
 Thumbs.db
+
+# Prévias geradas da logo (arquivos grandes, refeitos pelos scripts)
+design/logo/previa*.html
